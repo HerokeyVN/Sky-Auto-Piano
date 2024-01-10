@@ -35,22 +35,20 @@ function createWindow() {
 
   ipcMain.on("play", (event, data) => {
     //var keyMap = JSON.parse(fs.readFileSync(path.join(__dirname, "data", data), { encoding: "utf8" }));
-    
-    isPlay = !isPlay ? true:false;
-    isPlay ? win.minimize():"";
+
+    isPlay = !isPlay ? true : false;
+    isPlay ? win.minimize() : "";
     let mapDelay = Object.keys(data.keys);
     autoPlay(data.keys);
-    sendTimeProcess(Number(mapDelay[mapDelay.length-1]), data.sec);
+    sendTimeProcess(Number(mapDelay[mapDelay.length - 1]), data.sec);
   })
 
   async function sendTimeProcess(total, sec) {
-    for(let i = sec; i<=Math.trunc(total / (1000)); i++) {
-      await new Promise((rev) => setTimeout(rev, 1*1000));
+    for (let i = sec; i <= Math.trunc(total / (1000)); i++) {
+      await new Promise((rev) => setTimeout(rev, 1 * 1000));
       if (!isPlay) return;
       win.webContents.send("process-bar", i);
     }
-    win.webContents.send("stop-player");
-    isPlay = false;
   }
 
   globalShortcut.register('Shift+C', () => {
@@ -62,6 +60,27 @@ function createWindow() {
   globalShortcut.register('Shift+B', () => {
     win.webContents.send("btn-next");
   })
+
+  async function autoPlay(keyMap) {
+    let ks = (new Hardware("Sky")).keyboard;
+    let objKey = Object.keys(keyMap);
+    //await new Promise((rev) => setTimeout(rev, 0.5 * 1000));
+
+    for (let i = 1; i < objKey.length; i++) {
+      let delay = objKey[i] - objKey[i - 1];
+
+      if (!isPlay) break;
+      console.log(keyMap[objKey[i - 1]]);
+      for (let j of keyMap[objKey[i - 1]]) ks.sendKeys(j);
+
+      await new Promise((rev) => setTimeout(rev, delay));
+    }
+    //if (!isPlay) return;
+    console.log(keyMap[objKey[objKey.length - 1]]);
+    for (let j of keyMap[objKey[objKey.length - 1]]) ks.sendKeys(j);
+    isPlay = false;
+    win.webContents.send("stop-player");
+  }
 }
 
 app.whenReady().then(() => {
@@ -79,23 +98,4 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
-
-async function autoPlay(keyMap) {
-  let ks = (new Hardware("Sky")).keyboard;
-  let objKey = Object.keys(keyMap);
-  await new Promise((rev) => setTimeout(rev, 0.5 * 1000));
-
-  for (let i = 1; i < objKey.length; i++) {
-    let delay = objKey[i] - objKey[i - 1];
-
-    if (!isPlay) break;
-    console.log(keyMap[objKey[i - 1]]);
-    for (let j of keyMap[objKey[i - 1]]) ks.sendKeys(j);
-
-    await new Promise((rev) => setTimeout(rev, delay));
-  }
-  if (!isPlay) return;
-  console.log(keyMap[objKey[objKey.length - 1]]);
-  for (let j of keyMap[objKey[objKey.length - 1]]) ks.sendKeys(j);
-}
 

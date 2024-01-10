@@ -46,7 +46,10 @@ function encSheet(json) {
         tempEnc[i.time].push(keys[parseInt(i.key.split("Key")[1])]);
     }
 
-    fs.writeFileSync(path.join(__dirname, "..", "data", fileName), JSON.stringify(!tempEnc["0"] ? {"0": [], ...tempEnc}:tempEnc), { mode: 0o666 });
+    let temp = Object.keys(tempEnc);
+    tempEnc[(Math.trunc(Number(temp[temp.length - 1]) / 1000) + 1) * 1000] = [];
+
+    fs.writeFileSync(path.join(__dirname, "..", "data", fileName), JSON.stringify(!tempEnc["0"] ? { "0": [], ...tempEnc } : tempEnc), { mode: 0o666 });
     listSheet.push({
         name: json.name,
         author: json.author,
@@ -62,7 +65,7 @@ function encSheet(json) {
 }
 
 function random(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+    return Math.floor(Math.random() * (max - min + 2)) + min;
 }
 
 function printSheet() {
@@ -125,7 +128,7 @@ function updateFooter(info, id) {
 }
 
 function btnPrev() {
-    if (playing-1 < 0) playing = listSheet.length-1;
+    if (playing - 1 < 0) playing = listSheet.length - 1;
     else playing--;
     !listKeys[playing] ? listKeys[playing] = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", listSheet[playing].keyMap), { encoding: "utf8" })) : "";
     updateFooter({ ...listSheet[playing], keys: listKeys[playing] }, playing);
@@ -142,7 +145,7 @@ document.getElementById('btn-prev').addEventListener("click", btnPrev);
 ipcRenderer.on('btn-prev', btnPrev);
 
 function btnNext() {
-    if (playing+1 >= listSheet.length) playing = 0;
+    if (playing + 1 >= listSheet.length) playing = 0;
     else playing++;
     !listKeys[playing] ? listKeys[playing] = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", listSheet[playing].keyMap), { encoding: "utf8" })) : "";
     updateFooter({ ...listSheet[playing], keys: listKeys[playing] }, playing);
@@ -161,10 +164,10 @@ function btnPlay() {
     isPlay = isPlay ? false : true;
     let send = {
         keys: sec2array(Number(document.getElementsByClassName('process-bar')[0].value), listKeys[playing]),
-        sec: Number(document.getElementsByClassName('process-bar')[0].value)+1
+        sec: Number(document.getElementsByClassName('process-bar')[0].value)
     }
     ipcRenderer.send("play", send);
-    document.getElementsByClassName('process-bar')[0].disabled = isPlay ? true:false;
+    document.getElementsByClassName('process-bar')[0].disabled = isPlay ? true : false;
     document.getElementById('btn-play').innerHTML = isPlay ? `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pause-fill" viewBox="0 0 16 16">
     <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"/>
     </svg>
@@ -177,38 +180,38 @@ function btnPlay() {
 document.getElementById('btn-play').addEventListener("click", btnPlay);
 ipcRenderer.on('btn-play', btnPlay);
 
-ipcRenderer.on("process-bar", (event, data)=>{
-	document.getElementsByClassName('process-bar')[0].value = data;
+ipcRenderer.on("process-bar", (event, data) => {
+    document.getElementsByClassName('process-bar')[0].value = data;
     //console.log(data);
     let s2m = sec2min(Number(data));
-    let min = s2m.min < 10 ? "0"+(s2m.min+""):s2m.min;
-    let sec = s2m.sec < 10 ? "0"+(s2m.sec+""):s2m.sec;
+    let min = s2m.min < 10 ? "0" + (s2m.min + "") : s2m.min;
+    let sec = s2m.sec < 10 ? "0" + (s2m.sec + "") : s2m.sec;
     document.getElementsByClassName('live-time')[0].innerHTML = `${min}:${sec}`
 })
-ipcRenderer.on("stop-player", (event, data)=>{
-	document.getElementById('btn-play').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heipkihght="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
+ipcRenderer.on("stop-player", (event, data) => {
+    document.getElementById('btn-play').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heipkihght="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
     <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
     </svg>
     Play (Shift+V)`;
     isPlay = false;
-    document.getElementById('process-bar').disabled = isPlay ? true:false;
+    document.getElementById('process-bar').disabled = isPlay ? true : false;
     document.getElementsByClassName('process-bar')[0].value = 0;
     document.getElementsByClassName('live-time')[0].innerHTML = '00:00';
 })
 
-document.getElementById('process-bar').addEventListener('change', (data)=>{
+document.getElementById('process-bar').addEventListener('change', (data) => {
     document.getElementsByClassName('process-bar')[0].max = maxPCB;
     //console.log(document.getElementsByClassName('process-bar')[0].value);
     let s2m = sec2min(Number(data.target.value));
-    let min = s2m.min < 10 ? "0"+(s2m.min+""):s2m.min;
-    let sec = s2m.sec < 10 ? "0"+(s2m.sec+""):s2m.sec;
+    let min = s2m.min < 10 ? "0" + (s2m.min + "") : s2m.min;
+    let sec = s2m.sec < 10 ? "0" + (s2m.sec + "") : s2m.sec;
     document.getElementsByClassName('live-time')[0].innerHTML = `${min}:${sec}`;
 })
 
 function sec2min(sec) {
     let res = {
-        min: Math.trunc(sec/60),
-        sec: sec - Math.trunc(sec/60)*60
+        min: Math.trunc(sec / 60),
+        sec: sec - Math.trunc(sec / 60) * 60
     }
     return res;
 }
@@ -216,7 +219,7 @@ function sec2min(sec) {
 function sec2array(sec, arr) {
     let res = { ...arr };
     for (let i in arr) {
-        if (Number(i) < sec*1000) delete res[i];
+        if (Number(i) < sec * 1000) delete res[i];
     }
 
     return res;
