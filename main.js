@@ -69,7 +69,7 @@ function createWindow() {
     for (let i = 1; i < objKey.length; i++) {
       let delay = objKey[i] - objKey[i - 1];
 
-      if (!isPlay) break;
+      if (!isPlay) return isPlay = false;;
       console.log(keyMap[objKey[i - 1]]);
       for (let j of keyMap[objKey[i - 1]]) ks.sendKeys(j);
 
