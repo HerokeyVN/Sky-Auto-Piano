@@ -10,7 +10,7 @@
     "build": "electron-packager . SkyAutoPiano --platform=win32 --arch=x64 --overwrite"
   },
   "author": "HerokeyVN",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "electron": "^28.1.0",
     "electron-packager": "^17.1.2",
