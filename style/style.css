@@ -22,19 +22,19 @@ body {
 
 body::-webkit-scrollbar {
     width: 6px;
-    background-color: var(--font-color);
+    background-color: #071324;
     border-radius: 25px;
 }
 
 body::-webkit-scrollbar-thumb {
     width: 6px;
-    background-color: #071324;
+    background-color: var(--font-color);
     border-radius: 25px;
 }
 
 body::-webkit-scrollbar-track {
     -webkit-box-shadow: inset 0 0 6px rgba (0, 0, 0, 0.3);
-    background-color: var(--font-color);
+    background-color: #071324;
     border-radius: 25px;
 }
 
@@ -235,8 +235,8 @@ input[type=number]::-webkit-outer-spin-button {
 /*Long press button*/
 
 .long-press-btn {
-    position: relative;
-    bottom: -7px;
+    position: absolute;
+    bottom: 60px;
 }
 
 .long-press-btn .switch {
@@ -330,6 +330,7 @@ input[type=number]::-webkit-outer-spin-button {
     opacity: 0;
     -webkit-transform: translate3d(0, 100%, 0);
     transform: translate3d(0, 100%, 0);
+    color: var(--hover);
 }
 
 .long-press-btn .switch+label .switch-x-hiddenlabel {
@@ -356,4 +357,5 @@ input[type=number]::-webkit-outer-spin-button {
     opacity: 1;
     -webkit-transform: none;
     transform: none;
+    color: var(--hover);
 }
