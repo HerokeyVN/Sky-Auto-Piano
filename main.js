@@ -12,14 +12,14 @@ const keys = ["y", "u", "i", "o", "p",
 var isPlay = false;
 var interval;
 
-Menu.setApplicationMenu(Menu.buildFromTemplate([]))
+//Menu.setApplicationMenu(Menu.buildFromTemplate([]))
 
 function createWindow() {
   const win = new BrowserWindow({
     width: 750,
-    minWidth: 650,
+    minWidth: 700,
     height: 600,
-    minHeight: 185,
+    minHeight: 200,
     backgroundColor: "#0a1930",
     // transparent: true,
     // frame: false,
