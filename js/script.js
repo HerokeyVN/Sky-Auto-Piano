@@ -5,13 +5,14 @@ const fs = require("fs");
 const path = require("path");
 const { Base64 } = require('js-base64');
 const keys = ["y", "u", "i", "o", "p",
-    "h", "j", "k", "l", ";",
-    "n", "m", ",", ".", "/"];
+              "h", "j", "k", "l", ";",
+              "n", "m", ",", ".", "/"];
 var listSheet = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "listSheet.json"), { encoding: "utf8" }));
 var listKeys = [];
 var playing = 0;
 var isPlay = false;
 var maxPCB = 0;
+var loopMode = 0;
 
 // Load card
 printSheet();
@@ -137,7 +138,9 @@ function btnPrev() {
         btnPlay();
         document.getElementsByClassName('process-bar')[0].value = 0;
         document.getElementsByClassName('live-time')[0].innerHTML = `00:00`;
-        setTimeout(btnPlay, 1000);
+        let delay = document.getElementById('delay-loop').value;
+        delay = (delay == 0 ? 0.5:delay);
+        setTimeout(btnPlay, delay*1000);
     }
 }
 
@@ -154,7 +157,9 @@ function btnNext() {
         btnPlay();
         document.getElementsByClassName('process-bar')[0].value = 0;
         document.getElementsByClassName('live-time')[0].innerHTML = `00:00`;
-        setTimeout(btnPlay, 1000);
+        let delay = document.getElementById('delay-loop').value;
+        delay = (delay == 0 ? 0.5:delay);
+        setTimeout(btnPlay, delay*1000);
     }
 }
 document.getElementById('btn-next').addEventListener("click", btnNext);
@@ -164,7 +169,9 @@ function btnPlay() {
     isPlay = isPlay ? false : true;
     let send = {
         keys: sec2array(Number(document.getElementsByClassName('process-bar')[0].value), listKeys[playing]),
-        sec: Number(document.getElementsByClassName('process-bar')[0].value)
+        sec: Number(document.getElementsByClassName('process-bar')[0].value),
+        lockTime: (new Date()).getTime()+'',
+        isPlay
     }
     ipcRenderer.send("play", send);
     document.getElementsByClassName('process-bar')[0].disabled = isPlay ? true : false;
@@ -197,6 +204,27 @@ ipcRenderer.on("stop-player", (event, data) => {
     document.getElementById('process-bar').disabled = isPlay ? true : false;
     document.getElementsByClassName('process-bar')[0].value = 0;
     document.getElementsByClassName('live-time')[0].innerHTML = '00:00';
+    if (loopMode == 1) {
+        btnNext();
+        let delay = document.getElementById('delay-loop').value;
+        delay = (delay == 0 ? 0.5:delay);
+        setTimeout(btnPlay, delay*1000);
+        return;
+    }
+    if (loopMode == 2) {
+        let delay = document.getElementById('delay-loop').value;
+        delay = (delay == 0 ? 0.5:delay);
+        setTimeout(btnPlay, delay*1000);
+        return;
+    }
+})
+ipcRenderer.on("stop", (event, data) => {
+    document.getElementById('btn-play').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heipkihght="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
+    <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+    </svg>
+    Play (Shift+V)`;
+    isPlay = false;
+    document.getElementById('process-bar').disabled = isPlay ? true : false;
 })
 
 document.getElementById('process-bar').addEventListener('change', (data) => {
@@ -206,6 +234,45 @@ document.getElementById('process-bar').addEventListener('change', (data) => {
     let min = s2m.min < 10 ? "0" + (s2m.min + "") : s2m.min;
     let sec = s2m.sec < 10 ? "0" + (s2m.sec + "") : s2m.sec;
     document.getElementsByClassName('live-time')[0].innerHTML = `${min}:${sec}`;
+})
+
+// long-press button
+
+document.getElementsByClassName("long-press")[0].addEventListener('click', (data)=>{
+    ipcRenderer.send("longPressMode", data.target.checked);
+})
+
+// loop button
+
+document.getElementsByClassName("bi-loop")[0].addEventListener('click', ()=>{
+    if (loopMode == 0) {
+        loopMode = 1;
+        document.getElementsByClassName("bi-loop")[0].style = "    box-shadow: inset 0 0 15px 0 rgba(256, 256, 256, 0.2), 0 0 15px 0 rgba(256, 256, 256, 0.4); border-radius: 5px; padding: 0 2px;"
+    } else if (loopMode == 1) {
+        loopMode = 2;
+        document.getElementsByClassName("bi-loop")[0].innerHTML = `<path d="M11 4v1.466a.25.25 0 0 0 .41.192l2.36-1.966a.25.25 0 0 0 0-.384l-2.36-1.966a.25.25 0 0 0-.41.192V3H5a5 5 0 0 0-4.48 7.223.5.5 0 0 0 .896-.446A4 4 0 0 1 5 4zm4.48 1.777a.5.5 0 0 0-.896.446A4 4 0 0 1 11 12H5.001v-1.466a.25.25 0 0 0-.41-.192l-2.36 1.966a.25.25 0 0 0 0 .384l2.36 1.966a.25.25 0 0 0 .41-.192V13h6a5 5 0 0 0 4.48-7.223Z"/>
+        <path d="M9 5.5a.5.5 0 0 0-.854-.354l-1.75 1.75a.5.5 0 1 0 .708.708L8 6.707V10.5a.5.5 0 0 0 1 0z"/>`;
+    } else if (loopMode == 2) {
+        loopMode = 0;
+        document.getElementsByClassName("bi-loop")[0].style = "";
+        document.getElementsByClassName("bi-loop")[0].innerHTML = `<path d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 0-.384l2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z"/>`;
+    }
+})
+
+//delay loop
+
+document.getElementById('delay-loop').addEventListener("change", (data)=>{
+    document.getElementById('delay-next-value').innerHTML = `Delay next: ${data.target.value}s`;
+});
+
+//speed change
+
+document.getElementById('speed-btn').addEventListener('change', (data)=>{
+    //console.log(data.target.value);
+    if (Number(data.target.value) < Number(data.target.min)) data.target.value = data.target.min;
+    if (Number(data.target.value) > Number(data.target.max)) data.target.value = data.target.max;
+    console.log(data.target.value);
+    ipcRenderer.send("changeSpeed", data.target.value);
 })
 
 function sec2min(sec) {

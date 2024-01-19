@@ -7,12 +7,15 @@ import { moveMessagePortToContext } from 'worker_threads';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const keys = ["y", "u", "i", "o", "p",
-  "h", "j", "k", "l", ";",
-  "n", "m", ",", ".", "/"];
+              "h", "j", "k", "l", ";",
+              "n", "m", ",", ".", "/"];
 var isPlay = false;
-var interval;
+var curPlay = '';
+//setting
+var longPressMode = false;
+var speed = 1;
 
-//Menu.setApplicationMenu(Menu.buildFromTemplate([]))
+Menu.setApplicationMenu(Menu.buildFromTemplate([]))
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -36,17 +39,30 @@ function createWindow() {
   ipcMain.on("play", (event, data) => {
     //var keyMap = JSON.parse(fs.readFileSync(path.join(__dirname, "data", data), { encoding: "utf8" }));
 
-    isPlay = !isPlay ? true : false;
-    isPlay ? win.minimize() : "";
+    isPlay = data.isPlay;
+    isPlay ? win.minimize() : '';
+    console.log(isPlay);
+    !isPlay ? win.webContents.send("stop"):'';
+    if (!isPlay) return;
+    curPlay = data.lockTime;
     let mapDelay = Object.keys(data.keys);
     autoPlay(data.keys);
     sendTimeProcess(Number(mapDelay[mapDelay.length - 1]), data.sec);
   })
 
+  ipcMain.on("longPressMode", (event, data) => {
+    longPressMode = data;
+  })
+
+  ipcMain.on("changeSpeed", (event, data) => {
+    speed = Number(data);
+  })
+
   async function sendTimeProcess(total, sec) {
+    let lockTime = curPlay+'';
     for (let i = sec; i <= Math.trunc(total / (1000)); i++) {
-      await new Promise((rev) => setTimeout(rev, 1 * 1000));
-      if (!isPlay) return;
+      await new Promise((rev) => setTimeout(rev, Math.trunc(1000/speed)));
+      if (!isPlay || lockTime != curPlay) return;
       win.webContents.send("process-bar", i);
     }
   }
@@ -64,16 +80,18 @@ function createWindow() {
   async function autoPlay(keyMap) {
     let ks = (new Hardware("Sky")).keyboard;
     let objKey = Object.keys(keyMap);
+    let lockTime = curPlay+'';
     //await new Promise((rev) => setTimeout(rev, 0.5 * 1000));
 
     for (let i = 1; i < objKey.length; i++) {
       let delay = objKey[i] - objKey[i - 1];
 
-      if (!isPlay) return isPlay = false;;
-      console.log(keyMap[objKey[i - 1]]);
-      for (let j of keyMap[objKey[i - 1]]) ks.sendKeys(j);
+      if (!isPlay || lockTime != curPlay) return isPlay = false;
+      console.log(keyMap[objKey[i - 1]], lockTime);
+      for (let j of keyMap[objKey[i - 1]]) ks.sendKeys(j, longPressMode ? (delay>=35 ? delay : undefined):undefined);
 
-      await new Promise((rev) => setTimeout(rev, delay));
+      console.log(speed)
+      await new Promise((rev) => setTimeout(rev, Math.trunc(delay/speed)));
     }
     //if (!isPlay) return;
     console.log(keyMap[objKey[objKey.length - 1]]);

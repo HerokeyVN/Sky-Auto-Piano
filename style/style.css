@@ -210,8 +210,8 @@ body::-webkit-scrollbar-track {
 
 .speed {
     position: absolute;
-    right: 1px;
-    top: 25px;
+    right: 25px;
+    top: 35px;
 }
 
 .speed a {
@@ -219,7 +219,7 @@ body::-webkit-scrollbar-track {
 }
 
 #speed-btn {
-    width: 45px;
+    width: 30px;
     height: 10px;
     background-color: var(--background-color);
     border: 0;
