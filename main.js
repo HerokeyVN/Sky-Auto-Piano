@@ -62,7 +62,7 @@ Menu.setApplicationMenu(Menu.buildFromTemplate([]));
 		}
 
 		// Extract the support module
-		if (pkgUpdate.module_version != pkgUpdate.module_version) {
+		if (pkgUpdate.module_version != pkgLocal.module_version) {
 			console.log("Update:", 'Start extracting the support module...');
 			try {
 				await extractZip(path.join(__dirname, "node_modules.zip"), __dirname);
