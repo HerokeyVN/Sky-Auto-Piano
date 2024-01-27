@@ -1,6 +1,4 @@
-const { ipcRenderer, globalShortcut } = require('electron');
-// const globalShortcut = remote.globalShortcut;
-console.log(globalShortcut)
+const { ipcRenderer } = require('electron');
 const fs = require("fs");
 const path = require("path");
 const { Base64 } = require('js-base64');
@@ -29,10 +27,7 @@ document.getElementsByClassName('btn-add')[0].addEventListener('change', (event)
     let repl = fs.readFileSync(path.join(__dirname, "..", "js", "repl"));
     //console.log(repl);
     let text = fs.readFileSync(files[0].path, { encoding: "utf8" }).replaceAll("��", '').replaceAll(repl, '');
-    //console.log(eval(text).name);
     let json = eval(text)[0];
-
-    //console.log(json);
     encSheet(json);
 })
 
@@ -61,7 +56,6 @@ function encSheet(json) {
     fs.writeFileSync(path.join(__dirname, "..", "data", "listSheet.json"), JSON.stringify(listSheet, null, 4), { mode: 0o666 });
 
     printSheet()
-    //console.log(tempEnc);
 
 }
 
@@ -120,7 +114,7 @@ function updateFooter(info, id) {
     document.getElementsByClassName('name-playing')[0].innerHTML = info.name;
     document.getElementsByClassName('process-bar')[0].value = 0;
     document.getElementsByClassName('live-time')[0].innerHTML = `00:00`
-    //console.log(Number(delayMap[delayMap.length - 1]) / 1000);
+    
     let totalMin = Math.trunc(Number(delayMap[delayMap.length - 1]) / (60 * 1000));
     totalMin < 10 ? totalMin = "0" + (totalMin + "") : "";
     let totalSec = Math.trunc(Number(delayMap[delayMap.length - 1]) / (1000)) - (totalMin * 60);
@@ -229,7 +223,7 @@ ipcRenderer.on("stop", (event, data) => {
 
 document.getElementById('process-bar').addEventListener('change', (data) => {
     document.getElementsByClassName('process-bar')[0].max = maxPCB;
-    //console.log(document.getElementsByClassName('process-bar')[0].value);
+    
     let s2m = sec2min(Number(data.target.value));
     let min = s2m.min < 10 ? "0" + (s2m.min + "") : s2m.min;
     let sec = s2m.sec < 10 ? "0" + (s2m.sec + "") : s2m.sec;
@@ -268,7 +262,6 @@ document.getElementById('delay-loop').addEventListener("change", (data)=>{
 //speed change
 
 document.getElementById('speed-btn').addEventListener('change', (data)=>{
-    //console.log(data.target.value);
     if (Number(data.target.value) < Number(data.target.min)) data.target.value = data.target.min;
     if (Number(data.target.value) > Number(data.target.max)) data.target.value = data.target.max;
     console.log(data.target.value);
