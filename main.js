@@ -48,7 +48,7 @@ Menu.setApplicationMenu(Menu.buildFromTemplate([]));
 		let pathFile = path.join(__dirname, "update");
 		try {
 			// Download support module
-			if (pkgUpdate.module_version != pkgUpdate.module_version) {
+			if (pkgUpdate.module_version != pkgLocal.module_version) {
 				console.log("Update:", 'Start downloading support module...');
 				await downloadUpdate(__dirname, "node_modules.zip");
 			}
