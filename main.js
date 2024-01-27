@@ -97,7 +97,7 @@ Menu.setApplicationMenu(Menu.buildFromTemplate([]));
 				if (!fs.lstatSync(path.join(pathFile, folderUpdate, i)).isFile()) copyFolder(path.join(pathFile, folderUpdate, i), path.join(pathFile, "..", i));
 				else fs.renameSync(path.join(pathFile, folderUpdate, i), path.join(pathFile, "..", i));
 			}
-		fs.unlinkSync(path.join(pathFile));
+		fs.unlinkSync(path.join(pathFile, folderUpdate));
 		console.log("Update:", "Complete update. Restart to apply update.");
 
 	} else console.log("Update:", "Awesome, you're on the latest version!");
