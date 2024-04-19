@@ -171,7 +171,7 @@ function createWindow() {
 
       if (!isPlay || lockTime != curPlay) return isPlay = false;
       console.log(keyMap[objKey[i - 1]], lockTime);
-      for (let j of keyMap[objKey[i - 1]]) ks.sendKeys(j, longPressMode ? delay-(delay-Math.trunc(delay/speed)+35) : undefined);
+      for (let j of keyMap[objKey[i - 1]]) ks.sendKeys(j, longPressMode ? Math.trunc(delay/speed)-35 : undefined);
 
       await new Promise((rev) => setTimeout(rev, Math.trunc(delay/speed)));
     }
