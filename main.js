@@ -171,14 +171,13 @@ function createWindow() {
 
       if (!isPlay || lockTime != curPlay) return isPlay = false;
       console.log(keyMap[objKey[i - 1]], lockTime);
-      for (let j of keyMap[objKey[i - 1]]) ks.sendKeys(j, longPressMode ? (delay>=35 ? delay : undefined):undefined);
+      for (let j of keyMap[objKey[i - 1]]) ks.sendKeys(j, longPressMode ? delay-(delay-Math.trunc(delay/speed)+35) : undefined);
 
-      console.log(speed)
       await new Promise((rev) => setTimeout(rev, Math.trunc(delay/speed)));
     }
     //if (!isPlay) return;
     console.log(keyMap[objKey[objKey.length - 1]]);
-    for (let j of keyMap[objKey[objKey.length - 1]]) ks.sendKeys(j);
+    for (let j of keyMap[objKey[objKey.length - 1]]) ks.sendKeys(j, longPressMode ? 500-35 : undefined);
     isPlay = false;
     win.webContents.send("stop-player");
   }
