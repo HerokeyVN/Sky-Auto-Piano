@@ -2,10 +2,20 @@ const { ipcRenderer } = require('electron');
 const fs = require("fs");
 const path = require("path");
 const { Base64 } = require('js-base64');
+//const notie = require(path.join(__dirname, 'notie.js')); // optional, default = 4, enum: [1, 2, 3, 4, 5, 'success', 'warning', 'error', 'info', 'neutral']
 const keys = ["y", "u", "i", "o", "p",
               "h", "j", "k", "l", ";",
               "n", "m", ",", ".", "/"];
-var listSheet = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "listSheet.json"), { encoding: "utf8" }));
+
+// Read list sheet
+ensureExists(path.join(__dirname, "data"));
+try {
+    var listSheet = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "listSheet.json"), { encoding: "utf8" }));
+} catch (_) {
+    fs.writeFileSync(path.join(__dirname, "..", "data", "listSheet.json"), JSON.stringify([], null, 4), { mode: 0o666 });
+    listSheet = [];
+}
+
 var listKeys = [];
 var playing = 0;
 var isPlay = false;
@@ -13,6 +23,7 @@ var maxPCB = 0;
 var loopMode = 0;
 
 // Load card
+
 printSheet();
 
 if (listSheet.length > 0) {
@@ -22,17 +33,76 @@ if (listSheet.length > 0) {
 }
 
 // Add sheet
-document.getElementsByClassName('btn-add')[0].addEventListener('change', (event) => {
+document.getElementsByClassName('btn-add')[0].addEventListener('change', async (event) => {
     const { files } = event.target;
+    
     let repl = fs.readFileSync(path.join(__dirname, "..", "js", "repl"));
     //console.log(repl);
-    let text = fs.readFileSync(files[0].path, { encoding: "utf8" }).replaceAll("��", '').replaceAll(repl, '');
-    let json = eval(text)[0];
-    encSheet(json);
+    let done = 0;
+    for (let file of files) {
+        let text = fs.readFileSync(file.path, { encoding: "utf8" }).replaceAll("��", '').replaceAll(repl, '');
+        let json;
+        try {
+            json = eval(text)[0];
+        } catch (_) {
+            if (files.length == 1) {
+                notie.alert({
+                    type: 3,
+                    text: "File Sheet is not in the format. Please check again!"
+                })
+            }
+            continue;
+        }
+
+        let res;
+        try {
+            res = encSheet(json);
+        } catch (err) {
+            console.error(err);
+            if (files.length == 1) {
+                notie.alert({
+                    type: 3,
+                    text: "File Sheet is not in the format. Please check again!"
+                })
+            }
+            continue;
+        }
+        if (!res) {
+            done++;
+            continue;
+        }
+        if (files.length == 1) {
+            notie.alert({
+                type: 3,
+                text: res.msg
+            })
+        }
+    }
+    printSheet();
+
+    if (files.length > 1) notie.alert({
+        type: (done > 0 ? 1:3),
+        text: `Complete import! Success: ${done}. Error: ${files.length-done}`
+    })
+    else if (done > 0) notie.alert({
+        type: 1,
+        text: `Complete import!`
+    });
 })
 
 function encSheet(json) {
-    if (json.isEncrypted) return;
+    if (json.isEncrypted) return {
+        errCode: 1,
+        msg: "Sheet has been encrypted!"
+    };
+    if (!json.songNotes) return {
+        errCode: 2,
+        msg: "The sheet file is not valid, please try again with another file!"
+    }
+    if (typeof json.songNotes[0] != "object") return {
+        errCode: 1,
+        msg: "Sheet has been encrypted!"
+    };
     let tempEnc = {};
     //let fileName = Base64.encode((new Date()).getTime+"")+'.json';
     let fileName = Base64.encode(random(1, 9999) + (json.name + "").replace(/[^a-zA-Z0-9]/g, '-')) + '.json';
@@ -54,9 +124,6 @@ function encSheet(json) {
         keyMap: fileName
     })
     fs.writeFileSync(path.join(__dirname, "..", "data", "listSheet.json"), JSON.stringify(listSheet, null, 4), { mode: 0o666 });
-
-    printSheet()
-
 }
 
 function random(min, max) {
@@ -90,7 +157,9 @@ function printSheet() {
         let btnPlay = document.getElementsByClassName("card");
         btnPlay[j].onclick = () => {
             //ipcRenderer.send("play", i.keyMap);
-            !listKeys[j] ? listKeys[j] = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", i.keyMap), { encoding: "utf8" })) : "";
+            try {
+                !listKeys[j] ? listKeys[j] = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", i.keyMap), { encoding: "utf8" })) : "";
+            } catch (_){}
 
             updateFooter({ ...listSheet[j], keys: listKeys[j] }, j);
         }
@@ -283,4 +352,21 @@ function sec2array(sec, arr) {
     }
 
     return res;
+}
+
+function ensureExists(path, mask) {
+	if (typeof mask != 'number') {
+		mask = 0o777;
+	}
+	try {
+		fs.mkdirSync(path, {
+			mode: mask,
+			recursive: true
+		});
+		return;
+	} catch (ex) {
+		return {
+			err: ex
+		};
+	}
 }
