@@ -8,7 +8,7 @@ const keys = ["y", "u", "i", "o", "p",
               "n", "m", ",", ".", "/"];
 
 // Read list sheet
-ensureExists(path.join(__dirname, "data"));
+ensureExists(path.join(__dirname, "..", "data"));
 try {
     var listSheet = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "listSheet.json"), { encoding: "utf8" }));
 } catch (_) {
