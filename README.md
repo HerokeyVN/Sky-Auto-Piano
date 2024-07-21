@@ -1,4 +1,6 @@
 # Sky Auto Piano
+<img alt="Static Badge" src="https://img.shields.io/badge/platform-Windows-Green"> <img alt="GitHub package.json version" src="https://img.shields.io/github/package-json/v/HerokeyVN/Sky-Auto-Piano"> <img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/HerokeyVN/Sky-Auto-Piano/total"> <img alt="GitHub License" src="https://img.shields.io/github/license/HerokeyVN/Sky-Auto-Piano">
+
 
 ## Introduction
 
