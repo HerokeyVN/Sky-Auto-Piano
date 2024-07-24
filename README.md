@@ -4,7 +4,7 @@
 
 ## Introduction
 
-Sky Auto Piano is an automatic music playing software for the game Sky. It allows players to enjoy music without having to focus on controls.
+Sky Auto Piano is an automatic music playing software for the game Sky. It allows players to enjoy music without having to controls.
 ## Installation
 
 1. Download the installation file from [releases](https://github.com/HerokeyVN/Sky-Auto-Piano/releases/).
@@ -13,7 +13,7 @@ Sky Auto Piano is an automatic music playing software for the game Sky. It allow
 Instructional videos: [Link](https://youtu.be/OUjYHQyiGhs).
 ## Support
 
-If you encounter any issues or have questions, please contact us via email: herokey2018@gmail.com
+If you encounter any issues or have questions, please contact me via email: herokey2018@gmail.com
 
 ## License
 
