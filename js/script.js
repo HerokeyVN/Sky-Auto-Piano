@@ -35,12 +35,12 @@ if (listSheet.length > 0) {
 // Add sheet
 document.getElementsByClassName('btn-add')[0].addEventListener('change', (event) => {
     const { files } = event.target;
-    
-    let repl = fs.readFileSync(path.join(__dirname, "..", "js", "repl"));
-    //console.log(repl);
+
     let done = 0;
     for (let file of files) {
-        let text = fs.readFileSync(file.path, { encoding: "utf8" }).replaceAll("��", '').replaceAll(repl, '');
+        let typeDetect = (fs.readFileSync(file.path, { encoding: "utf8" }))[0] != '[' ? "utf16le":"utf8";
+        let text = decUTF16toUTF8(fs.readFileSync(file.path, { encoding: typeDetect }));
+        
         let json;
         try {
             if (text[0] != '[') throw new Error();
@@ -82,8 +82,8 @@ document.getElementsByClassName('btn-add')[0].addEventListener('change', (event)
     printSheet();
 
     if (files.length > 1) notie.alert({
-        type: (done > 0 ? 1:3),
-        text: `Complete import! Success: ${done}. Error: ${files.length-done}`
+        type: (done > 0 ? 1 : 3),
+        text: `Complete import! Success: ${done}. Error: ${files.length - done}`
     })
     else if (done > 0) notie.alert({
         type: 1,
@@ -160,7 +160,7 @@ function printSheet() {
             //ipcRenderer.send("play", i.keyMap);
             try {
                 !listKeys[j] ? listKeys[j] = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", i.keyMap), { encoding: "utf8" })) : "";
-            } catch (_){}
+            } catch (_) { }
 
             updateFooter({ ...listSheet[j], keys: listKeys[j] }, j);
         }
@@ -184,7 +184,7 @@ function updateFooter(info, id) {
     document.getElementsByClassName('name-playing')[0].innerHTML = info.name;
     document.getElementsByClassName('process-bar')[0].value = 0;
     document.getElementsByClassName('live-time')[0].innerHTML = `00:00`
-    
+
     let totalMin = Math.trunc(Number(delayMap[delayMap.length - 1]) / (60 * 1000));
     totalMin < 10 ? totalMin = "0" + (totalMin + "") : "";
     let totalSec = Math.trunc(Number(delayMap[delayMap.length - 1]) / (1000)) - (totalMin * 60);
@@ -203,8 +203,8 @@ function btnPrev() {
         document.getElementsByClassName('process-bar')[0].value = 0;
         document.getElementsByClassName('live-time')[0].innerHTML = `00:00`;
         let delay = document.getElementById('delay-loop').value;
-        delay = (delay == 0 ? 0.5:delay);
-        setTimeout(btnPlay, delay*1000);
+        delay = (delay == 0 ? 0.5 : delay);
+        setTimeout(btnPlay, delay * 1000);
     }
 }
 
@@ -222,8 +222,8 @@ function btnNext() {
         document.getElementsByClassName('process-bar')[0].value = 0;
         document.getElementsByClassName('live-time')[0].innerHTML = `00:00`;
         let delay = document.getElementById('delay-loop').value;
-        delay = (delay == 0 ? 0.5:delay);
-        setTimeout(btnPlay, delay*1000);
+        delay = (delay == 0 ? 0.5 : delay);
+        setTimeout(btnPlay, delay * 1000);
     }
 }
 document.getElementById('btn-next').addEventListener("click", btnNext);
@@ -234,7 +234,7 @@ function btnPlay() {
     let send = {
         keys: sec2array(Number(document.getElementsByClassName('process-bar')[0].value), listKeys[playing]),
         sec: Number(document.getElementsByClassName('process-bar')[0].value),
-        lockTime: (new Date()).getTime()+'',
+        lockTime: (new Date()).getTime() + '',
         isPlay
     }
     ipcRenderer.send("play", send);
@@ -271,14 +271,14 @@ ipcRenderer.on("stop-player", (event, data) => {
     if (loopMode == 1) {
         btnNext();
         let delay = document.getElementById('delay-loop').value;
-        delay = (delay == 0 ? 0.5:delay);
-        setTimeout(btnPlay, delay*1000);
+        delay = (delay == 0 ? 0.5 : delay);
+        setTimeout(btnPlay, delay * 1000);
         return;
     }
     if (loopMode == 2) {
         let delay = document.getElementById('delay-loop').value;
-        delay = (delay == 0 ? 0.5:delay);
-        setTimeout(btnPlay, delay*1000);
+        delay = (delay == 0 ? 0.5 : delay);
+        setTimeout(btnPlay, delay * 1000);
         return;
     }
 })
@@ -293,7 +293,7 @@ ipcRenderer.on("stop", (event, data) => {
 
 document.getElementById('process-bar').addEventListener('change', (data) => {
     document.getElementsByClassName('process-bar')[0].max = maxPCB;
-    
+
     let s2m = sec2min(Number(data.target.value));
     let min = s2m.min < 10 ? "0" + (s2m.min + "") : s2m.min;
     let sec = s2m.sec < 10 ? "0" + (s2m.sec + "") : s2m.sec;
@@ -302,13 +302,13 @@ document.getElementById('process-bar').addEventListener('change', (data) => {
 
 // long-press button
 
-document.getElementsByClassName("long-press")[0].addEventListener('click', (data)=>{
+document.getElementsByClassName("long-press")[0].addEventListener('click', (data) => {
     ipcRenderer.send("longPressMode", data.target.checked);
 })
 
 // loop button
 
-document.getElementsByClassName("bi-loop")[0].addEventListener('click', ()=>{
+document.getElementsByClassName("bi-loop")[0].addEventListener('click', () => {
     if (loopMode == 0) {
         loopMode = 1;
         document.getElementsByClassName("bi-loop")[0].style = "    box-shadow: inset 0 0 15px 0 rgba(256, 256, 256, 0.2), 0 0 15px 0 rgba(256, 256, 256, 0.4); border-radius: 5px; padding: 0 2px;"
@@ -325,13 +325,13 @@ document.getElementsByClassName("bi-loop")[0].addEventListener('click', ()=>{
 
 //delay loop
 
-document.getElementById('delay-loop').addEventListener("change", (data)=>{
+document.getElementById('delay-loop').addEventListener("change", (data) => {
     document.getElementById('delay-next-value').innerHTML = `Delay next: ${data.target.value}s`;
 });
 
 //speed change
 
-document.getElementById('speed-btn').addEventListener('change', (data)=>{
+document.getElementById('speed-btn').addEventListener('change', (data) => {
     if (Number(data.target.value) < Number(data.target.min)) data.target.value = data.target.min;
     if (Number(data.target.value) > Number(data.target.max)) data.target.value = data.target.max;
     console.log(data.target.value);
@@ -355,19 +355,34 @@ function sec2array(sec, arr) {
     return res;
 }
 
+function decUTF16toUTF8(str) {
+    const utf16leArray = new Uint16Array(str.length);
+    for (let i = 0; i < str.length; i++) {
+        utf16leArray[i] = str.charCodeAt(i);
+    }
+
+    // Convert Uint16Array to a Uint8Array (UTF-8)
+    const utf8Array = new TextEncoder().encode(String.fromCharCode.apply(null, utf16leArray));
+
+    // Convert Uint8Array to a UTF-8 string
+    const utf8String = new TextDecoder('utf-8').decode(utf8Array);
+
+    return utf8String;
+}
+
 function ensureExists(path, mask) {
-	if (typeof mask != 'number') {
-		mask = 0o777;
-	}
-	try {
-		fs.mkdirSync(path, {
-			mode: mask,
-			recursive: true
-		});
-		return;
-	} catch (ex) {
-		return {
-			err: ex
-		};
-	}
+    if (typeof mask != 'number') {
+        mask = 0o777;
+    }
+    try {
+        fs.mkdirSync(path, {
+            mode: mask,
+            recursive: true
+        });
+        return;
+    } catch (ex) {
+        return {
+            err: ex
+        };
+    }
 }
