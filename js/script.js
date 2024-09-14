@@ -33,7 +33,7 @@ if (listSheet.length > 0) {
 }
 
 // Add sheet
-document.getElementsByClassName('btn-add')[0].addEventListener('change', async (event) => {
+document.getElementsByClassName('btn-add')[0].addEventListener('change', (event) => {
     const { files } = event.target;
     
     let repl = fs.readFileSync(path.join(__dirname, "..", "js", "repl"));

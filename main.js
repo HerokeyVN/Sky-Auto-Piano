@@ -25,8 +25,8 @@ var longPressMode = false;
 var speed = 1;
 
 if (!devMode) Menu.setApplicationMenu(Menu.buildFromTemplate([]));
-app.setAppUserModelId("Sky Auto Music");
-app.setName("Sky Auto Music");
+app.setAppUserModelId("Sky Auto Piano");
+app.setName("Sky Auto Piano");
 
 // Function update
 
