@@ -171,13 +171,13 @@ function createWindow() {
 		}
 	}
 
-	globalShortcut.register('Shift+C', () => {
+	globalShortcut.register('Ctrl+Shift+C', () => {
 		win.webContents.send("btn-prev");
 	})
-	globalShortcut.register('Shift+V', () => {
+	globalShortcut.register('Ctrl+Shift+V', () => {
 		win.webContents.send("btn-play");
 	})
-	globalShortcut.register('Shift+B', () => {
+	globalShortcut.register('Ctrl+Shift+B', () => {
 		win.webContents.send("btn-next");
 	})
 

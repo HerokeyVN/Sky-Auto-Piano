@@ -43,6 +43,7 @@ document.getElementsByClassName('btn-add')[0].addEventListener('change', async (
         let text = fs.readFileSync(file.path, { encoding: "utf8" }).replaceAll("��", '').replaceAll(repl, '');
         let json;
         try {
+            if (text[0] != '[') throw new Error();
             json = eval(text)[0];
         } catch (_) {
             if (files.length == 1) {
