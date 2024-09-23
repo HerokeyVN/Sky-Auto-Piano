@@ -2,6 +2,7 @@ const { ipcRenderer } = require('electron');
 const fs = require("fs");
 const path = require("path");
 const { Base64 } = require('js-base64');
+var config = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "config", "config.json")));
 //const notie = require(path.join(__dirname, 'notie.js')); // optional, default = 4, enum: [1, 2, 3, 4, 5, 'success', 'warning', 'error', 'info', 'neutral']
 const keys = ["y", "u", "i", "o", "p",
               "h", "j", "k", "l", ";",
@@ -21,6 +22,18 @@ var playing = 0;
 var isPlay = false;
 var maxPCB = 0;
 var loopMode = 0;
+
+// Load Footer
+
+document.getElementById("shortcut-pre").innerHTML = config.shortcut.pre;
+document.getElementById("shortcut-play").innerHTML = config.shortcut.play;
+document.getElementById("shortcut-next").innerHTML = config.shortcut.next;
+
+if (config.panel.autoSave) {
+    document.getElementById("speed-btn").value = config.panel.speed;
+    document.getElementById("switch").checked = config.panel.longPressMode;
+    document.getElementById("delay-loop").value = config.panel.delayNext;
+}
 
 // Load card
 
@@ -327,6 +340,7 @@ document.getElementsByClassName("bi-loop")[0].addEventListener('click', () => {
 
 document.getElementById('delay-loop').addEventListener("change", (data) => {
     document.getElementById('delay-next-value').innerHTML = `Delay next: ${data.target.value}s`;
+    ipcRenderer.send("changeDelayNext", data.target.value);
 });
 
 //speed change
@@ -336,6 +350,16 @@ document.getElementById('speed-btn').addEventListener('change', (data) => {
     if (Number(data.target.value) > Number(data.target.max)) data.target.value = data.target.max;
     console.log(data.target.value);
     ipcRenderer.send("changeSpeed", data.target.value);
+})
+
+// Button Setting
+
+document.getElementById('btn-setting').addEventListener("click", ()=>{
+    notie.alert({
+        type: 2,
+        text: "When opening the settings, you will not be able to use shortcuts, please turn off the settings to use the shortcut!"
+    })
+    ipcRenderer.send("openSetting");
 })
 
 function sec2min(sec) {

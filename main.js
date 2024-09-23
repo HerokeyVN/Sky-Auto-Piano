@@ -10,6 +10,13 @@ import AdmZip from 'adm-zip';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Single Instance Lock
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+	app.quit();
+	process.exit();
+}
+
 // Update info
 const linkUpdate = "https://github.com/HerokeyVN/Sky-Auto-Piano/archive/refs/heads/main.zip";
 const moduleUpdate = "https://raw.githubusercontent.com/HerokeyVN/Temp/main/mdl_SAM/node_modules.zip";
@@ -20,9 +27,33 @@ var isPlay = false;
 var curPlay = '';
 var updatedNoti = undefined;
 // Setting
+const dirSetting = path.join(__dirname, "config", "config.json");
+ensureExists(path.join(__dirname, "config"));
+if (!fs.existsSync(dirSetting)) fs.writeFileSync(dirSetting, JSON.stringify({
+	panel: {
+		longPressMode: false,
+		speed: 1,
+		delayNext: 1,
+		autoSave: true
+	},
+	keyboard: {
+		customKeyboard: false,
+		keys: ["y", "u", "i", "o", "p",
+			   "h", "j", "k", "l", ";",
+			   "n", "m", ",", ".", "/"]
+	},
+	shortcut: {
+		pre: "Ctrl+Shift+C",
+		play: "Ctrl+Shift+V",
+		next: "Ctrl+Shift+B"
+	}
+}, null, 4));
+var config = JSON.parse(fs.readFileSync(dirSetting));
+
 var devMode = false;
-var longPressMode = false;
-var speed = 1;
+var longPressMode = config.autoSave ? config.longPressMode:false;
+var speed = config.autoSave ? config.speed:1;
+var delayNext = config.autoSave ? config.delayNext:1;
 
 if (!devMode) Menu.setApplicationMenu(Menu.buildFromTemplate([]));
 app.setAppUserModelId("Sky Auto Piano");
@@ -133,6 +164,7 @@ function createWindow() {
 
 	win.loadFile(path.join(__dirname, 'index', 'index.html'));
 
+	// Send noti went update done
 	if (updatedNoti) {
 		let notification = new Notification(updatedNoti);
 		notification.on('click', (event, arg) => {
@@ -142,6 +174,7 @@ function createWindow() {
 		notification.show();
 	}
 
+	// Processing the Play button event
 	ipcMain.on("play", (event, data) => {
 		isPlay = data.isPlay;
 		isPlay ? win.minimize() : '';
@@ -154,14 +187,25 @@ function createWindow() {
 		sendTimeProcess(Number(mapDelay[mapDelay.length - 1]), data.sec);
 	})
 
+	// Handling the event of the LongpressMode button
 	ipcMain.on("longPressMode", (event, data) => {
-		longPressMode = data;
+		longPressMode = data; config.panel.longPressMode = longPressMode;
+		fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
 	})
 
+	// Processing speed changes
 	ipcMain.on("changeSpeed", (event, data) => {
-		speed = Number(data);
+		speed = Number(data); config.panel.speed = speed;
+		fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
 	})
 
+	// Processing delay next changes
+	ipcMain.on("changeDelayNext", (event, data) => {
+		delayNext = Number(data); config.panel.delayNext = delayNext;
+		fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
+	})
+
+	// Send time data to front-end
 	async function sendTimeProcess(total, sec) {
 		let lockTime = curPlay + '';
 		for (let i = sec; i <= Math.trunc(total / (1000)); i++) {
@@ -171,36 +215,98 @@ function createWindow() {
 		}
 	}
 
-	globalShortcut.register('Ctrl+Shift+C', () => {
+	// Processing the shortcut event
+	globalShortcut.register(config.shortcut.pre, () => {
 		win.webContents.send("btn-prev");
 	})
-	globalShortcut.register('Ctrl+Shift+V', () => {
+	globalShortcut.register(config.shortcut.play, () => {
 		win.webContents.send("btn-play");
 	})
-	globalShortcut.register('Ctrl+Shift+B', () => {
+	globalShortcut.register(config.shortcut.next, () => {
 		win.webContents.send("btn-next");
 	})
 
+	// The main program automatically plays music (send pressing keys)
 	async function autoPlay(keyMap) {
+		let keysID = {"y": 0, "u": 1, "i": 2, "o": 3, "p": 4,
+					  "h": 5, "j": 6, "k": 7, "l": 8, ";": 9,
+					  "n": 10, "m": 11, ",": 12, ".": 13, "/": 14};
 		let ks = (new Hardware("Sky")).keyboard;
 		let objKey = Object.keys(keyMap);
-		let lockTime = curPlay + '';
+		let lockTime = curPlay + ''; // The variable to determine whether the user will transfer the song while another song is running or not
 
 		for (let i = 1; i < objKey.length; i++) {
 			let delay = objKey[i] - objKey[i - 1];
 
 			if (!isPlay || lockTime != curPlay) return isPlay = false;
 			console.log(keyMap[objKey[i - 1]], lockTime);
-			for (let j of keyMap[objKey[i - 1]]) ks.sendKeys(j, longPressMode ? Math.trunc(delay / speed) - 35 : undefined);
+			for (let key of keyMap[objKey[i - 1]]) {
+				if (config.keyboard.customKeyboard) key = config.keyboard.keys[keysID[key]];
+				ks.sendKeys(key, longPressMode ? Math.trunc(delay / speed) - 35 : undefined);
+			}
 
 			await new Promise((rev) => setTimeout(rev, Math.trunc(delay / speed)));
 		}
 		//if (!isPlay) return;
-		console.log(keyMap[objKey[objKey.length - 1]]);
-		for (let j of keyMap[objKey[objKey.length - 1]]) ks.sendKeys(j, longPressMode ? 500 - 35 : undefined);
+		//console.log(keyMap[objKey[objKey.length - 1]]);
+		
+		for (let key of keyMap[objKey[objKey.length - 1]]) {
+			if (config.keyboard.customKeyboard) key = config.keyboard.keys[keysID[key]];
+			ks.sendKeys(key, longPressMode ? 500 - 35 : undefined);
+		}
 		isPlay = false;
 		win.webContents.send("stop-player");
 	}
+
+	// Function of processing events creating installation windows
+	ipcMain.on("openSetting", ()=>{
+		global.winMain = win;
+		createWindowSetting();
+	});
+
+	app.on("second-instance", ()=>{
+		if (win) {
+			if (win.isMinimized()) win.restore();
+			win.focus();
+		}
+	})
+
+	win.once("closed", ()=>{
+		app.quit();
+	})
+}
+
+function createWindowSetting() {
+	if (global.isOpenSetting) return;
+	const win = new BrowserWindow({
+		width: 750,
+		height: 600,
+		resizable: false,
+		backgroundColor: "#0a1930",
+		parent: global.winMain,
+		webPreferences: {
+			nodeIntegration: true,
+			contextIsolation: false
+		}
+	})
+
+	globalShortcut.unregisterAll();
+
+	win.loadFile(path.join(__dirname, 'index', 'setting.html'));
+	global.isOpenSetting = true;
+
+	win.once("closed", ()=>{
+		global.isOpenSetting = false;
+		globalShortcut.register(config.shortcut.pre, () => {
+			global.winMain.webContents.send("btn-prev");
+		})
+		globalShortcut.register(config.shortcut.play, () => {
+			global.winMain.webContents.send("btn-play");
+		})
+		globalShortcut.register(config.shortcut.next, () => {
+			global.winMain.webContents.send("btn-next");
+		})
+	})
 }
 
 app.whenReady().then(() => {
@@ -218,6 +324,8 @@ app.on('window-all-closed', () => {
 		app.quit()
 	}
 })
+
+// Support function
 
 async function downloadUpdate(pathFile, nameFile) {
 	let url = linkUpdate;

@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Sky Auto Piano (Version: 1.1.4)</title>
+    <title>Sky Auto Piano (Version: 1.2.0)</title>
     <!--meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';"-->
     <link rel="stylesheet" type="text/css" href="../style/notie.min.css">
     <link rel="stylesheet" href="../style/style.css">
@@ -30,15 +30,21 @@
     </div>
 
     <div class="btn-add">
-        <input name="addFile" class="add-sheet" id="add-sheet" type="file" accept=".json, .txt, .skysheet" style="display: none" multiple required>
+        <input name="addFile" class="add-sheet" id="add-sheet" type="file" accept=".json, .txt, .skysheet"
+            style="display: none" multiple required>
         <label for="add-sheet" class="">
-            <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" fill="currentColor" class="bi bi-plus btn-add" viewBox="0 0 16 16">
-                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" fill="currentColor"
+                class="bi bi-plus btn-add" viewBox="0 0 16 16">
+                <path
+                    d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
             </svg>
         </label>
     </div>
 
     <div class="footer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-gear-fill" id="btn-setting" viewBox="0 0 16 16">
+            <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z" />
+        </svg>
         <a class="name-playing">* Click on the plus to add sheet</a>
         <input type="range" min="0" max="0" value="0" class="process-bar" id="process-bar">
         <div class="time">
@@ -47,28 +53,36 @@
         </div>
         <div class="control-menu">
             <button class="btn" id="btn-prev">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-skip-start-fill" viewBox="0 0 16 16">
-                    <path d="M4 4a.5.5 0 0 1 1 0v3.248l6.267-3.636c.54-.313 1.232.066 1.232.696v7.384c0 .63-.692 1.01-1.232.697L5 8.753V12a.5.5 0 0 1-1 0z"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                    class="bi bi-skip-start-fill" viewBox="0 0 16 16">
+                    <path
+                        d="M4 4a.5.5 0 0 1 1 0v3.248l6.267-3.636c.54-.313 1.232.066 1.232.696v7.384c0 .63-.692 1.01-1.232.697L5 8.753V12a.5.5 0 0 1-1 0z" />
                 </svg>
-                Prev (Ctrl+Shift+C)
+                Prev (<a id="shortcut-pre">Ctrl+Shift+C</a>)
             </button>
             <button class="btn" id="btn-play">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
-                    <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                    class="bi bi-play-fill" viewBox="0 0 16 16">
+                    <path
+                        d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z" />
                 </svg>
-                Play (Ctrl+Shift+V)
+                Play (<a id="shortcut-play">Ctrl+Shift+V</a>)
             </button>
             <button class="btn" id="btn-next">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-skip-end-fill" viewBox="0 0 16 16">
-                    <path d="M12.5 4a.5.5 0 0 0-1 0v3.248L5.233 3.612C4.693 3.3 4 3.678 4 4.308v7.384c0 .63.692 1.01 1.233.697L11.5 8.753V12a.5.5 0 0 0 1 0z"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                    class="bi bi-skip-end-fill" viewBox="0 0 16 16">
+                    <path
+                        d="M12.5 4a.5.5 0 0 0-1 0v3.248L5.233 3.612C4.693 3.3 4 3.678 4 4.308v7.384c0 .63.692 1.01 1.233.697L11.5 8.753V12a.5.5 0 0 0 1 0z" />
                 </svg>
-                Next (Ctrl+Shift+B)
+                Next (<a id="shortcut-next">Ctrl+Shift+B</a>)
             </button>
         </div>
 
         <div class="btn-loop">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi-loop" viewBox="0 0 16 16">
-                <path d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 0-.384l2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi-loop"
+                viewBox="0 0 16 16">
+                <path
+                    d="M11 5.466V4H5a4 4 0 0 0-3.584 5.777.5.5 0 1 1-.896.446A5 5 0 0 1 5 3h6V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m3.81.086a.5.5 0 0 1 .67.225A5 5 0 0 1 11 13H5v1.466a.25.25 0 0 1-.41.192l-2.36-1.966a.25.25 0 0 1 0-.384l2.36-1.966a.25.25 0 0 1 .41.192V12h6a4 4 0 0 0 3.585-5.777.5.5 0 0 1 .225-.67Z" />
             </svg>
             <input type="range" min="0" max="5" value="1" class="process-bar" id="delay-loop">
             <a id="delay-next-value">Delay next: 1s</a>
@@ -79,19 +93,21 @@
             <input type="number" id="speed-btn" name="speed" min="0.1" max="5" step="0.1" value="1">
         </div>
 
-        
+
         <div class="long-press-btn">
             <input class="switch long-press" type="checkbox" id="switch" name="switch">
             <label for="switch">
                 <span class="switch-x-text">Long-press mode: </span>
                 <span class="switch-x-toggletext">
-                <span class="switch-x-unchecked"><span class="switch-x-hiddenlabel">Unchecked: </span>Off</span>
-                <span class="switch-x-checked"><span class="switch-x-hiddenlabel">Checked: </span>On</span>
+                    <span class="switch-x-unchecked"><span class="switch-x-hiddenlabel">Unchecked: </span>Off</span>
+                    <span class="switch-x-checked"><span class="switch-x-hiddenlabel">Checked: </span>On</span>
                 </span>
             </label>
-        </div>       
+        </div>
     </div>
     <script type="text/javascript" src="../js/notie.js"></script>
-    <script type="text/javascript" src="../js/script.js" ></script>
+    <script type="text/javascript" src="../js/script.js"></script>
 </body>
+
 </html>
+  

@@ -2,6 +2,7 @@
 
 :root {
     --background-color: #172b46;
+    --dark-backround: #05012c;
     --font-color: #aab7d7;
     --hover: #588e97;
 }
@@ -56,8 +57,8 @@ body::-webkit-scrollbar-track {
     border-top: 1px solid #000000;
     perspective: 1000px;
     box-shadow: 0 0 1rem 0 rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
     /* border-radius: 25px; */
 }
 
@@ -109,6 +110,7 @@ body::-webkit-scrollbar-track {
     border-top: 1px solid #000000;
     perspective: 1000px;
     box-shadow: 0 0 1rem 0 rgba(0, 0, 0, 0.2);
+    -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
     color: var(--font-color);
     z-index: 10;
@@ -125,7 +127,7 @@ body::-webkit-scrollbar-track {
     background: var(--font-color);
     outline: none;
     margin: 10px 0;
-    -webkit-appearance: none;
+    appearance: none;
 }
 
 .process-bar::-webkit-slider-thumb {
@@ -271,7 +273,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .long-press-btn .switch+label::before {
-    background-color: #05012c;
+    background-color: var(--dark-backround);
     border-radius: 500px;
     height: 15px;
     margin-right: 8px;
@@ -358,4 +360,109 @@ input[type=number]::-webkit-outer-spin-button {
     -webkit-transform: none;
     transform: none;
     color: var(--hover);
+}
+
+/*Setting Button*/
+
+.footer .bi-gear-fill {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    transition: 0.3s linear;
+}
+
+.footer .bi-gear-fill:hover {
+    color: var(--hover);
+    transform: rotate(0.2turn);
+}
+
+/*Checkbox*/
+.checkbox input[type=checkbox] {
+    height: 0;
+    width: 0;
+    visibility: hidden;
+}
+
+.checkbox label {
+    --size: 50px;
+    cursor: pointer;
+    width: var(--size);
+    height: calc(var(--size) / 2);
+    background: var(--dark-backround);
+    display: block;
+    border-radius: 100px;
+    position: relative;
+}
+
+.checkbox label:after {
+    content: '';
+    position: absolute;
+    top: 6%;
+    left: 2.5%;
+    width: calc(50% - 5%);
+    height: calc(100% - 11%);
+    background: var(--font-color);
+    border-radius: 90px;
+    transition: 0.3s;
+}
+
+.checkbox input:checked+label {
+    background: var(--hover);
+}
+
+.checkbox input:checked+label:after {
+    left: calc(100% - 2.5%);
+    transform: translateX(-100%);
+}
+
+.checkbox label:active:after {
+    width: 55%;
+}
+
+.checkbox label a {
+    position: absolute;
+    text-wrap: nowrap;
+    top: 9%;
+    left: 60px;
+    color: var(--font-color);
+}
+
+/* Tooltip */
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted var(--dark-backround);
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    min-width: 150px;
+    max-width: 1000px;
+    background-color: var(--dark-backround);
+    color: var(--font-color);
+    text-align: center;
+    text-wrap: wrap;
+    border-radius: 6px;
+    padding: 10px 10px;
+    position: absolute;
+    z-index: 1;
+    bottom: 150%;
+    left: 50%;
+    margin-left: -60px;
+}
+
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--dark-backround) transparent transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
 }
