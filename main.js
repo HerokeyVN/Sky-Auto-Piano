@@ -51,9 +51,9 @@ if (!fs.existsSync(dirSetting)) fs.writeFileSync(dirSetting, JSON.stringify({
 var config = JSON.parse(fs.readFileSync(dirSetting));
 
 var devMode = false;
-var longPressMode = config.autoSave ? config.longPressMode:false;
-var speed = config.autoSave ? config.speed:1;
-var delayNext = config.autoSave ? config.delayNext:1;
+var longPressMode = false;
+var speed = 1;
+var delayNext = 1;
 
 if (!devMode) Menu.setApplicationMenu(Menu.buildFromTemplate([]));
 app.setAppUserModelId("Sky Auto Piano");
@@ -228,6 +228,7 @@ function createWindow() {
 
 	// The main program automatically plays music (send pressing keys)
 	async function autoPlay(keyMap) {
+		winLog(win, (delayNext*1000) - 35)
 		let keysID = {"y": 0, "u": 1, "i": 2, "o": 3, "p": 4,
 					  "h": 5, "j": 6, "k": 7, "l": 8, ";": 9,
 					  "n": 10, "m": 11, ",": 12, ".": 13, "/": 14};
@@ -236,23 +237,27 @@ function createWindow() {
 		let lockTime = curPlay + ''; // The variable to determine whether the user will transfer the song while another song is running or not
 
 		for (let i = 1; i < objKey.length; i++) {
-			let delay = objKey[i] - objKey[i - 1];
+			let delay = objKey[i] - objKey[i - 1]; delay = Math.trunc(delay / speed)
+			let delay2 = undefined;
+			if (keyMap[objKey[i]].length == 0) delay2 = (delayNext*1000); // The final note will be extended equal to the length of DelayNext if it is on LongpressMode
 
-			if (!isPlay || lockTime != curPlay) return isPlay = false;
-			console.log(keyMap[objKey[i - 1]], lockTime);
+			if (!isPlay || lockTime != curPlay) {
+				win.webContents.send("stop-player");
+				return isPlay = false;
+			}
+			
 			for (let key of keyMap[objKey[i - 1]]) {
 				if (config.keyboard.customKeyboard) key = config.keyboard.keys[keysID[key]];
-				ks.sendKeys(key, longPressMode ? Math.trunc(delay / speed) - 35 : undefined);
+				ks.sendKeys(key, longPressMode ? (delay2 ? delay2:delay) - 35 : undefined);
 			}
 
-			await new Promise((rev) => setTimeout(rev, Math.trunc(delay / speed)));
+			await new Promise((rev) => setTimeout(rev, delay));
 		}
 		//if (!isPlay) return;
-		//console.log(keyMap[objKey[objKey.length - 1]]);
 		
 		for (let key of keyMap[objKey[objKey.length - 1]]) {
 			if (config.keyboard.customKeyboard) key = config.keyboard.keys[keysID[key]];
-			ks.sendKeys(key, longPressMode ? 500 - 35 : undefined);
+			ks.sendKeys(key, longPressMode ? (delayNext*1000) - 35 : undefined);
 		}
 		isPlay = false;
 		win.webContents.send("stop-player");
@@ -326,6 +331,12 @@ app.on('window-all-closed', () => {
 })
 
 // Support function
+
+function winLog(win, msg) {
+	if (typeof msg == "object") msg = JSON.stringify(msg);
+	msg += "";
+	win.webContents.send("winLog", msg);
+} 
 
 async function downloadUpdate(pathFile, nameFile) {
 	let url = linkUpdate;

@@ -33,6 +33,7 @@ if (config.panel.autoSave) {
     document.getElementById("speed-btn").value = config.panel.speed;
     document.getElementById("switch").checked = config.panel.longPressMode;
     document.getElementById("delay-loop").value = config.panel.delayNext;
+    document.getElementById('delay-next-value').innerHTML = `Delay next: ${config.panel.delayNext}s`;
 }
 
 // Load card
@@ -156,9 +157,6 @@ function printSheet() {
             <a class="bpm-sheet">BPM: ${i.bpm}<br></a>
         </div>
         <div class="menu-btn">
-            <!--svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
-                <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
-            </svg-->
             <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
                 <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5" />
             </svg>
@@ -255,10 +253,10 @@ function btnPlay() {
     document.getElementById('btn-play').innerHTML = isPlay ? `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pause-fill" viewBox="0 0 16 16">
     <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"/>
     </svg>
-    Pause (Shift+V)`: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
+    Pause (<a id="shortcut-play">${config.shortcut.play}</a>)`: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
     <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
     </svg>
-    Play (Shift+V)`;
+    Play (<a id="shortcut-play">${config.shortcut.play}</a>)`;
 }
 
 document.getElementById('btn-play').addEventListener("click", btnPlay);
@@ -276,7 +274,7 @@ ipcRenderer.on("stop-player", (event, data) => {
     document.getElementById('btn-play').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heipkihght="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
     <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
     </svg>
-    Play (Shift+V)`;
+    Play (<a id="shortcut-play">${config.shortcut.play}</a>)`;
     isPlay = false;
     document.getElementById('process-bar').disabled = isPlay ? true : false;
     document.getElementsByClassName('process-bar')[0].value = 0;
@@ -299,7 +297,7 @@ ipcRenderer.on("stop", (event, data) => {
     document.getElementById('btn-play').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heipkihght="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
     <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
     </svg>
-    Play (Shift+V)`;
+    Play (<a id="shortcut-play">${config.shortcut.play}</a>)`;
     isPlay = false;
     document.getElementById('process-bar').disabled = isPlay ? true : false;
 })
@@ -340,7 +338,7 @@ document.getElementsByClassName("bi-loop")[0].addEventListener('click', () => {
 
 document.getElementById('delay-loop').addEventListener("change", (data) => {
     document.getElementById('delay-next-value').innerHTML = `Delay next: ${data.target.value}s`;
-    ipcRenderer.send("changeDelayNext", data.target.value);
+    ipcRenderer.send("changeDelayNext", data.target.value == 0 ? 0.5:data.target.value);
 });
 
 //speed change
@@ -361,6 +359,10 @@ document.getElementById('btn-setting').addEventListener("click", ()=>{
     })
     ipcRenderer.send("openSetting");
 })
+
+ipcRenderer.on('winLog', (event, msg)=>{
+	console.log("[main]", msg);
+});
 
 function sec2min(sec) {
     let res = {
