@@ -242,7 +242,7 @@ function createWindow() {
 			if (keyMap[objKey[i]].length == 0) delay2 = (delayNext*1000); // The final note will be extended equal to the length of DelayNext if it is on LongpressMode
 
 			if (!isPlay || lockTime != curPlay) {
-				win.webContents.send("stop-player");
+				//win.webContents.send("stop-player");
 				return isPlay = false;
 			}
 			
