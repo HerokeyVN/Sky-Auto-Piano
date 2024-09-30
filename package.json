@@ -1,6 +1,6 @@
 {
   "name": "SkyAutoPiano",
-  "version": "1.2.2",
+  "version": "1.2.1",
   "module_version": "0.0.2",
   "description": "Auto play piano for Sky COTL",
   "main": "main.js",
