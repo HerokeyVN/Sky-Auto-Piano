@@ -1,12 +1,5 @@
 // ES6 module import
-import {
-  app,
-  BrowserWindow,
-  globalShortcut,
-  Menu,
-  ipcMain,
-  Notification,
-} from "electron/main";
+import { app, BrowserWindow, globalShortcut, Menu, ipcMain, Notification } from "electron/main";
 import fs from "fs";
 import axios from "axios";
 import path from "node:path";
@@ -25,12 +18,9 @@ if (!gotTheLock) {
 }
 
 // Update info
-const linkUpdate =
-  "https://github.com/HerokeyVN/Sky-Auto-Piano/archive/refs/heads/main.zip";
-const moduleUpdate =
-  "https://raw.githubusercontent.com/HerokeyVN/Temp/main/mdl_SAM/node_modules.zip";
-const packageUpdate =
-  "https://raw.githubusercontent.com/HerokeyVN/Sky-Auto-Piano/main/package.json";
+const linkUpdate = "https://github.com/HerokeyVN/Sky-Auto-Piano/archive/refs/heads/main.zip";
+const moduleUpdate = "https://raw.githubusercontent.com/HerokeyVN/Temp/main/mdl_SAM/node_modules.zip";
+const packageUpdate = "https://raw.githubusercontent.com/HerokeyVN/Sky-Auto-Piano/main/package.json";
 const folderUpdate = "Sky-Auto-Piano-main";
 // Global value
 var isPlay = false;
@@ -51,23 +41,9 @@ const defaultConfig = {
   },
   keyboard: {
     customKeyboard: false,
-    keys: [
-      "y",
-      "u",
-      "i",
-      "o",
-      "p",
-      "h",
-      "j",
-      "k",
-      "l",
-      ";",
-      "n",
-      "m",
-      ",",
-      ".",
-      "/",
-    ],
+    keys = ["y", "u", "i", "o", "p",
+            "h", "j", "k", "l", ";",
+            "n", "m", ",", ".", "/"],
   },
   shortcut: {
     pre: "Ctrl+Shift+C",
@@ -168,10 +144,7 @@ app.setName("Sky Auto Piano");
       await downloadUpdate(pathFile, "update.zip");
       console.log("Update:", "Download the update completed!");
     } catch (error) {
-      console.error(
-        "Update:",
-        "Error generation during the download process: " + error
-      );
+      console.error( "Update:", "Error generation during the download process: " + error );
       return;
     }
 
@@ -235,8 +208,7 @@ app.setName("Sky Auto Piano");
 })();
 
 function createWindow() {
-  const windowBackgroundColor =
-    config.appTheme === "dark" ? "#1B1D1E" : "#0a1930";
+  const windowBackgroundColor = config.appTheme === "dark" ? "#1B1D1E" : "#0a1930";
 
   const win = new BrowserWindow({
     width: 750,
@@ -244,9 +216,6 @@ function createWindow() {
     height: 600,
     minHeight: 200,
     backgroundColor: windowBackgroundColor,
-
-    // transparent: true,
-    // frame: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -343,21 +312,9 @@ function createWindow() {
   async function autoPlay(keyMap) {
     winLog(win, delayNext * 1000 - 35);
     let keysID = {
-      y: 0,
-      u: 1,
-      i: 2,
-      o: 3,
-      p: 4,
-      h: 5,
-      j: 6,
-      k: 7,
-      l: 8,
-      ";": 9,
-      n: 10,
-      m: 11,
-      ",": 12,
-      ".": 13,
-      "/": 14,
+      y: 0, u: 1, i: 2, o: 3, p: 4,
+      h: 5, j: 6, k: 7, l: 8, ";": 9,
+      n: 10, m: 11, ",": 12, ".": 13, "/": 14
     };
     let ks = new Hardware("Sky").keyboard;
     let objKey = Object.keys(keyMap);
