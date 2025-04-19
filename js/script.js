@@ -6,23 +6,9 @@ var config = JSON.parse(
   fs.readFileSync(path.join(__dirname, "..", "config", "config.json"))
 );
 //const notie = require(path.join(__dirname, 'notie.js')); // optional, default = 4, enum: [1, 2, 3, 4, 5, 'success', 'warning', 'error', 'info', 'neutral']
-const keys = [
-  "y",
-  "u",
-  "i",
-  "o",
-  "p",
-  "h",
-  "j",
-  "k",
-  "l",
-  ";",
-  "n",
-  "m",
-  ",",
-  ".",
-  "/",
-];
+const keys = ["y", "u", "i", "o", "p",
+              "h", "j", "k", "l", ";",
+              "n", "m", ",", ".", "/"];
 
 // Read list sheet
 ensureExists(path.join(__dirname, "..", "data"));
@@ -152,10 +138,7 @@ document
 
     let done = 0;
     for (let file of files) {
-      let typeDetect =
-        fs.readFileSync(file.path, { encoding: "utf8" })[0] != "["
-          ? "utf16le"
-          : "utf8";
+      let typeDetect = fs.readFileSync(file.path, { encoding: "utf8" })[0] != "[" ? "utf16le" : "utf8";
       let text = decUTF16toUTF8(
         fs.readFileSync(file.path, { encoding: typeDetect })
       );
@@ -168,7 +151,7 @@ document
         if (files.length == 1) {
           notie.alert({
             type: 3,
-            text: "File Sheet is not in the format. Please check again!",
+            text: "File Sheet is not in the format. Please check again!"
           });
         }
         continue;
@@ -203,9 +186,7 @@ document
     if (files.length > 1)
       notie.alert({
         type: done > 0 ? 1 : 3,
-        text: `Complete import! Success: ${done}. Error: ${
-          files.length - done
-        }`,
+        text: `Complete import! Success: ${done}. Error: ${files.length - done}`,
       });
     else if (done > 0)
       notie.alert({
@@ -232,10 +213,7 @@ function encSheet(json) {
     };
   let tempEnc = {};
   //let fileName = Base64.encode((new Date()).getTime+"")+'.json';
-  let fileName =
-    Base64.encode(
-      random(1, 9999) + (json.name + "").replace(/[^a-zA-Z0-9]/g, "-")
-    ) + ".json";
+  let fileName = Base64.encode(random(1, 9999) + (json.name + "").replace(/[^a-zA-Z0-9]/g, "-")) + ".json";
   for (let j in json.songNotes) {
     let i = json.songNotes[j];
     !tempEnc[i.time] ? (tempEnc[i.time] = []) : "";
@@ -293,13 +271,13 @@ function printSheet() {
     btnPlay[j].onclick = () => {
       //ipcRenderer.send("play", i.keyMap);
       try {
-        !listKeys[j]
-          ? (listKeys[j] = JSON.parse(
+        !listKeys[j] ? (
+          listKeys[j] = JSON.parse(
               fs.readFileSync(path.join(__dirname, "..", "data", i.keyMap), {
                 encoding: "utf8",
               })
-            ))
-          : "";
+          )
+        ) : "";
       } catch (_) {}
 
       updateFooter({ ...listSheet[j], keys: listKeys[j] }, j);
@@ -406,9 +384,7 @@ function btnPlay() {
     isPlay,
   };
   ipcRenderer.send("play", send);
-  document.getElementsByClassName("process-bar")[0].disabled = isPlay
-    ? true
-    : false;
+  document.getElementsByClassName("process-bar")[0].disabled = isPlay ? true : false;
   document.getElementById("btn-play").innerHTML = isPlay
     ? `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pause-fill" viewBox="0 0 16 16">
     <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"/>
@@ -432,9 +408,7 @@ ipcRenderer.on("process-bar", (event, data) => {
   document.getElementsByClassName("live-time")[0].innerHTML = `${min}:${sec}`;
 });
 ipcRenderer.on("stop-player", (event, data) => {
-  document.getElementById(
-    "btn-play"
-  ).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heipkihght="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
+  document.getElementById("btn-play").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heipkihght="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
     <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
     </svg>
     Play (<a id="shortcut-play">${config.shortcut.play}</a>)`;
@@ -457,9 +431,7 @@ ipcRenderer.on("stop-player", (event, data) => {
   }
 });
 ipcRenderer.on("stop", (event, data) => {
-  document.getElementById(
-    "btn-play"
-  ).innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heipkihght="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
+  document.getElementById("btn-play").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heipkihght="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
     <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
     </svg>
     Play (<a id="shortcut-play">${config.shortcut.play}</a>)`;
@@ -490,7 +462,7 @@ document.getElementsByClassName("bi-loop")[0].addEventListener("click", () => {
   if (loopMode == 0) {
     loopMode = 1;
     document.getElementsByClassName("bi-loop")[0].style =
-      "    box-shadow: inset 0 0 15px 0 rgba(256, 256, 256, 0.2), 0 0 15px 0 rgba(256, 256, 256, 0.4); border-radius: 5px; padding: 0 2px;";
+      "box-shadow: inset 0 0 15px 0 rgba(256, 256, 256, 0.2), 0 0 15px 0 rgba(256, 256, 256, 0.4); border-radius: 5px; padding: 0 2px;";
   } else if (loopMode == 1) {
     loopMode = 2;
     document.getElementsByClassName(
@@ -512,8 +484,7 @@ document.getElementById("delay-loop").addEventListener("change", (data) => {
   document.getElementById(
     "delay-next-value"
   ).innerHTML = `Delay next: ${data.target.value}s`;
-  ipcRenderer.send(
-    "changeDelayNext",
+  ipcRenderer.send("changeDelayNext",
     data.target.value == 0 ? 0.5 : data.target.value
   );
 });
