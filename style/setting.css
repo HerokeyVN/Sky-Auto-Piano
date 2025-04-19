@@ -1,83 +1,85 @@
 * {
-    color: var(--font-color);
+  color: var(--font-color);
 }
 
 body {
-    height: 100%;
+  height: 100%;
 }
 
 /*Menu*/
 .menu {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0;
-    left: 0;
-    background: var(--background-color);
-    box-shadow: 0 0 1rem 0 rgba(0, 0, 0, 0.5); 
-    width: 200px;
-    height: -webkit-fill-available;
-    z-index: 1;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: var(--background-color);
+  box-shadow: 0 0 1rem 0 rgba(0, 0, 0, 0.5);
+  width: 200px;
+  height: -webkit-fill-available;
+  z-index: 1;
 }
 
 .menu h1 {
-    display: flex;
-    justify-content: center;
-    margin: 10px;
-    color: var(--font-color);
+  display: flex;
+  justify-content: center;
+  margin: 10px;
+  color: var(--font-color);
 }
 
 .menu h3 {
-    position: relative;
-    display: flex;
-    align-items: center;
-    height: 40px;
-    margin: 0 10px;
-    color: var(--font-color);
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  margin: 0 10px;
+  color: var(--font-color);
 }
 
 .menu h3 a {
-    z-index: 2;
-    transition: 0.3s linear;
+  z-index: 2;
+  transition: 0.3s linear;
 }
 
 .menu h3 span {
-    position: absolute;
-    top: 0;
-    left: -10px;
-    width: 0%;
-    height: 100%;
-    background: var(--font-color);
-    z-index: 1;
-    transition: 0.3s linear;
+  position: absolute;
+  top: 0;
+  left: -10px;
+  width: 0%;
+  height: 100%;
+  background: var(--font-color);
+  z-index: 1;
+  transition: 0.3s linear;
 }
 
-.menu h3:hover a,  .menu .active a {
-    color: var(--hover);
+.menu h3:hover a,
+.menu .active a {
+  color: var(--hover);
 }
 
-.menu h3:hover span, .menu .active span {
-    width: 110%;
+.menu h3:hover span,
+.menu .active span {
+  width: 110%;
 }
 
 .menu .active {
-    background: #ffffff00;
+  background: #ffffff00;
 }
 
 /*Content*/
 
 .content {
-    position: absolute;
-    top: 0;
-    left: 200px;
-    width: -webkit-fill-available;
-    height: 100%;
-    color: #fff;
-    z-index: 0;
+  position: absolute;
+  top: 0;
+  left: 200px;
+  width: -webkit-fill-available;
+  height: 100%;
+  color: #fff;
+  z-index: 0;
 }
 
 .content .tab {
-    display: none;
+  display: none;
 }
 
 /*
@@ -85,8 +87,8 @@ body {
 */
 
 #general {
-    flex-direction: column;
-    padding: 20px 20px;
+  flex-direction: column;
+  padding: 20px 20px;
 }
 
 /*
@@ -94,82 +96,82 @@ body {
 */
 
 #keyboard {
-    flex-direction: column;
+  flex-direction: column;
 }
 
 #keyboard table {
-    display: flex;
-    width: -webkit-fill-available;
-    justify-content: center;
+  display: flex;
+  width: -webkit-fill-available;
+  justify-content: center;
 }
 
 #keyboard tr {
-    display: flex;
+  display: flex;
 }
 
 #keyboard td {
-    display: flex;
-    width: 67px;
-    height: 67px;
-    border-radius: 10px;
-    margin: 10px 10px;
-    padding: 5px 5px;
-    background: rgba(110, 110, 110, 0.2);
-    transition: 0.3s linear;
+  display: flex;
+  width: 67px;
+  height: 67px;
+  border-radius: 10px;
+  margin: 10px 10px;
+  padding: 5px 5px;
+  background: rgba(110, 110, 110, 0.2);
+  transition: 0.3s linear;
 }
 
 #keyboard td:hover {
-    background: rgba(110, 110, 110, 0.4);
+  background: rgba(110, 110, 110, 0.4);
 }
 
 #keyboard table span {
-    display: block;
-    position: relative;
-    margin: 10px 10px;
-    width: 40px;
-    height: 40px;
+  display: block;
+  position: relative;
+  margin: 10px 10px;
+  width: 40px;
+  height: 40px;
 }
 
-#keyboard table span input{
-    position: absolute;
-    width: 100%;
-    top: 32%;
-    left: 4%;
-    color: var(--font-color);
-    font-weight: bold;
-    font-size: large;
-    text-transform: uppercase;
-    text-align: center;
-    background: rgba(0, 0, 0, 0);
-    border: 0;
+#keyboard table span input {
+  position: absolute;
+  width: 100%;
+  top: 32%;
+  left: 4%;
+  color: var(--font-color);
+  font-weight: bold;
+  font-size: large;
+  text-transform: uppercase;
+  text-align: center;
+  background: rgba(0, 0, 0, 0);
+  border: 0;
 }
 
-#keyboard table span input:focus-visible{
-    outline: rgba(0, 0, 0, 0);
+#keyboard table span input:focus-visible {
+  outline: rgba(0, 0, 0, 0);
 }
 
 #keyboard .square:after {
-    position: absolute;
-    display: block;
-    content: "";
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--font-color);
-    transform: rotate(45deg);
+  position: absolute;
+  display: block;
+  content: "";
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--font-color);
+  transform: rotate(45deg);
 }
 
 #keyboard .circle:before {
-    position: absolute;
-    display: block;
-    content: "";
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--font-color);
-    border-radius: 100%;
+  position: absolute;
+  display: block;
+  content: "";
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--font-color);
+  border-radius: 100%;
 }
 
 .nor-setting {
-    padding: 10px 20px;
+  padding: 10px 20px;
 }
 
 /*
@@ -177,40 +179,46 @@ body {
 */
 
 #shortcut {
-    flex-direction: column;
-    padding: 20px 20px;
+  flex-direction: column;
+  padding: 20px 20px;
 }
 
 #shortcut .setting-shell {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
 }
 
 #shortcut .setting-shell input {
-    height: 30px;
-    background: var(--background-color);
-    border: 0;
+  height: 30px;
+  background: var(--background-color);
+  border: 0;
+}
+
+/*update tab*/
+#update {
+  flex-direction: column;
+  padding: 20px 20px;
 }
 
 /*Save setting button*/
 
 .btn-save-setting {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    background: var(--background-color);
-    color: var(--font-color);
-    padding: 15px 15px;
-    border-radius: 100%;
-    transition: 0.1s linear;;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: var(--background-color);
+  color: var(--font-color);
+  padding: 15px 15px;
+  border-radius: 100%;
+  transition: 0.1s linear;
 }
 
 .btn-save-setting:hover {
-    background-color: var(--font-color);
-    color: var(--hover);
+  background-color: var(--font-color);
+  color: var(--hover);
 }
