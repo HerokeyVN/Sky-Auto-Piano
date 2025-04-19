@@ -1,20 +1,27 @@
-# Sky Auto Piano
-<img alt="Static Badge" src="https://img.shields.io/badge/platform-Windows-Green"> <img alt="GitHub package.json version" src="https://img.shields.io/github/package-json/v/HerokeyVN/Sky-Auto-Piano"> <img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/HerokeyVN/Sky-Auto-Piano/total"> <img alt="GitHub License" src="https://img.shields.io/github/license/HerokeyVN/Sky-Auto-Piano">
+# Sky-Auto-Piano (Revamped Fork Edition)
 
+This is a **revamped version** of the original [Sky-Auto-Piano](https://github.com/HerokeyVN/Sky-Auto-Piano) created by [HerokeyVN](https://github.com/HerokeyVN). Special thanks to the original developer for building such a solid foundation.
 
-## Introduction
+This project builds upon the existing SkyAutoPiano app by fixing bugs and adding a few features to enhance the user experience.
 
-Sky Auto Piano is an automatic music playing software for the game Sky. It allows players to enjoy music without having to controls.
-## Installation
+## ✨ What's New in the Revamp
 
-1. Download the installation file from [releases](https://github.com/HerokeyVN/Sky-Auto-Piano/releases/).
-2. Open the file and follow the instructions to install.
+### 1. 🔍 Search Bar Functionality
 
-Instructional videos: [Link](https://youtu.be/OUjYHQyiGhs).
-## Support
+Added a search bar to quickly filter and find specific music sheets, making navigation easier and faster.
 
-If you encounter any issues or have questions, please contact me via email: herokey2018@gmail.com
+### 2. 🌙 Light/Dark Mode Toggle
 
-## License
+A redesigned dark mode UI with the ability to toggle between light and dark themes. Offers users more comfort and visual customization.
 
-This software is distributed under the MIT license. See the LICENSE file for more details.
+### 3. ⚙️ Config & Long Press Bug Fix
+
+Fixed an issue where `Long Press` mode and custom sheet speed (e.g. 0.8x) settings were not being properly applied after restarting the app. The settings now persist and function correctly on relaunch.
+
+### 4. 🗂️ Minimize Window Switch
+
+Added a toggle in the settings to allow the user to minimize the app to the taskbar, offering better window control
+
+## 💡 Disclaimer
+
+This version is a **personal revamp** of the original Sky-Auto-Piano. All credits for the original work go to **HerokeyVN**.
