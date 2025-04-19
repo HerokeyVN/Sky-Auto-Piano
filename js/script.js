@@ -80,9 +80,7 @@ if (config.panel.autoSave) {
   document.getElementById("speed-btn").value = config.panel.speed;
   document.getElementById("switch").checked = config.panel.longPressMode;
   document.getElementById("delay-loop").value = config.panel.delayNext;
-  document.getElementById(
-    "delay-next-value"
-  ).innerHTML = `Delay next: ${config.panel.delayNext}s`;
+  document.getElementById("delay-next-value").innerHTML = `Delay next: ${config.panel.delayNext}s`;
 }
 
 // Load card
