@@ -1,3 +1,11 @@
+/**
+ * Sky Auto Piano - Main Stylesheet
+ * This stylesheet contains all styles for the main application interface
+ */
+
+/* -------------------------------------
+   FONTS AND THEME VARIABLES
+   ------------------------------------- */
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap");
 
 :root {
@@ -6,6 +14,7 @@
   --font-color: #aab7d7;
   --hover: #588e97;
 }
+
 body.dark-mode {
   --background-color: #171717; /* Dark mode background */
   --dark-backround: #05012c; /* Dark mode dark background (as specified) */
@@ -13,11 +22,14 @@ body.dark-mode {
   --hover: #588e97;
 }
 
+/* -------------------------------------
+   GLOBAL STYLES
+   ------------------------------------- */
 * {
   font-family: "Roboto", sans-serif;
 }
 
-/* 
+/* Commented out viewport constraints
 html, body {
     width: 100vh;
     height: 100vh;
@@ -27,6 +39,7 @@ body {
   padding: 10px 20px;
 }
 
+/* Scrollbar styling */
 body::-webkit-scrollbar {
   width: 6px;
   background-color: #071324;
@@ -45,7 +58,9 @@ body::-webkit-scrollbar-track {
   border-radius: 25px;
 }
 
-/*Content*/
+/* -------------------------------------
+   CONTENT AREA AND CARDS
+   ------------------------------------- */
 .content {
   margin-bottom: 150px;
 }
@@ -83,8 +98,9 @@ body::-webkit-scrollbar-track {
   color: var(--font-color);
 }
 
-/* button add */
-
+/* -------------------------------------
+   ADD BUTTON
+   ------------------------------------- */
 .btn-add {
   position: fixed;
   bottom: 5px;
@@ -98,8 +114,9 @@ body::-webkit-scrollbar-track {
   color: var(--hover);
 }
 
-/*Footer*/
-
+/* -------------------------------------
+   FOOTER AND PLAYER CONTROLS
+   ------------------------------------- */
 .footer {
   position: fixed;
   bottom: -10px;
@@ -126,6 +143,7 @@ body::-webkit-scrollbar-track {
   margin-bottom: 15px;
 }
 
+/* Process bar (progress slider) */
 .process-bar {
   width: 90%;
   height: 3px;
@@ -146,6 +164,7 @@ body::-webkit-scrollbar-track {
   cursor: pointer;
 }
 
+/* Time display */
 .time {
   position: relative;
   width: 90%;
@@ -161,8 +180,9 @@ body::-webkit-scrollbar-track {
   right: 0;
 }
 
-/*Control*/
-
+/* -------------------------------------
+   CONTROL BUTTONS
+   ------------------------------------- */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -188,8 +208,9 @@ body::-webkit-scrollbar-track {
   color: var(--font-color);
 }
 
-/*Button loop*/
-
+/* -------------------------------------
+   LOOP CONTROLS
+   ------------------------------------- */
 .btn-loop {
   position: absolute;
   left: 30px;
@@ -214,8 +235,9 @@ body::-webkit-scrollbar-track {
   font-size: 10px;
 }
 
-/*Speed*/
-
+/* -------------------------------------
+   SPEED CONTROLS
+   ------------------------------------- */
 .speed {
   position: absolute;
   right: 25px;
@@ -240,8 +262,9 @@ input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
 }
 
-/*Long press button*/
-
+/* -------------------------------------
+   LONG PRESS TOGGLE
+   ------------------------------------- */
 .long-press-btn {
   position: absolute;
   bottom: 60px;
@@ -370,8 +393,10 @@ input[type="number"]::-webkit-outer-spin-button {
   color: var(--hover);
 }
 
-/*Setting Button*/
-
+/* -------------------------------------
+   UTILITY ICONS AND BUTTONS
+   ------------------------------------- */
+/* Settings button */
 .footer .bi-gear-fill {
   position: absolute;
   top: 10px;
@@ -384,7 +409,7 @@ input[type="number"]::-webkit-outer-spin-button {
   transform: rotate(0.2turn);
 }
 
-/*light mode */
+/* Theme toggle buttons */
 .footer .bi-light-fill,
 .footer .bi-dark-fill {
   position: absolute;
@@ -462,8 +487,9 @@ body.dark-mode .bi-light-fill {
   color: var(--font-color);
 }
 
-/* Tooltip */
-
+/* -------------------------------------
+   TOOLTIPS
+   ------------------------------------- */
 .tooltip {
   position: relative;
   display: inline-block;
@@ -502,6 +528,9 @@ body.dark-mode .bi-light-fill {
   visibility: visible;
 }
 
+/* -------------------------------------
+   SEARCH BAR
+   ------------------------------------- */
 .search-container {
   position: sticky;
   top: 10px;
@@ -540,6 +569,9 @@ body.dark-mode .bi-light-fill {
   pointer-events: none;
 }
 
+/* -------------------------------------
+   NOTIFICATIONS
+   ------------------------------------- */
 .notie-container {
   z-index: 9999 !important;
 }

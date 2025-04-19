@@ -1,19 +1,42 @@
+/**
+ * Sky Auto Piano - Renderer Process
+ * This script handles the user interface interactions, sheet management,
+ * and communication with the main process for auto-play functionality.
+ */
+
+// -------------------------------------
+// IMPORTS AND SETUP
+// -------------------------------------
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
 const path = require("path");
 const { Base64 } = require("js-base64");
-var config = JSON.parse(
+
+// -------------------------------------
+// CONFIGURATION AND CONSTANTS
+// -------------------------------------
+// Load application configuration
+const config = JSON.parse(
   fs.readFileSync(path.join(__dirname, "..", "config", "config.json"))
 );
-//const notie = require(path.join(__dirname, 'notie.js')); // optional, default = 4, enum: [1, 2, 3, 4, 5, 'success', 'warning', 'error', 'info', 'neutral']
-const keys = ["y", "u", "i", "o", "p",
-              "h", "j", "k", "l", ";",
-              "n", "m", ",", ".", "/"];
 
-// Read list sheet
+// Piano key mapping (corresponds to the in-game keyboard layout)
+const keys = [
+  "y", "u", "i", "o", "p",
+  "h", "j", "k", "l", ";",
+  "n", "m", ",", ".", "/"
+];
+
+// -------------------------------------
+// DATA INITIALIZATION
+// -------------------------------------
+// Ensure data directory exists
 ensureExists(path.join(__dirname, "..", "data"));
+
+// Load sheet music list
+let listSheet = [];
 try {
-  var listSheet = JSON.parse(
+  listSheet = JSON.parse(
     fs.readFileSync(path.join(__dirname, "..", "data", "listSheet.json"), {
       encoding: "utf8",
     })
@@ -24,25 +47,29 @@ try {
     JSON.stringify([], null, 4),
     { mode: 0o666 }
   );
-  listSheet = [];
 }
 
-var listKeys = [];
-var playing = 0;
-var isPlay = false;
-var maxPCB = 0;
-var loopMode = 0;
+// Application state variables
+let listKeys = [];  // Cached key maps for sheets
+let playing = 0;    // Current playing sheet index
+let isPlay = false; // Playback state
+let maxPCB = 0;     // Maximum process bar value
+let loopMode = 0;   // Loop mode (0: off, 1: playlist, 2: single)
 
-// Load Footer
+// -------------------------------------
+// UI INITIALIZATION
+// -------------------------------------
+// Initialize UI on document load
 document.addEventListener("DOMContentLoaded", () => {
+  // Theme management
   const themeToggleButtonLight = document.getElementById("btn-lightmode");
   const themeToggleButtonDark = document.getElementById("btn-darkmode");
   const body = document.body;
-  const { ipcRenderer } = require("electron");
 
   const lightModeBgColor = "#0a1930";
   const darkModeBgColor = "#1B1D1E";
 
+  // Apply theme to UI
   const applyTheme = (theme) => {
     if (theme === "dark") {
       body.classList.add("dark-mode");
@@ -54,12 +81,15 @@ document.addEventListener("DOMContentLoaded", () => {
     ipcRenderer.send("set-theme", theme);
   };
 
+  // Toggle between light and dark themes
   const toggleTheme = () => {
     const isDarkMode = body.classList.contains("dark-mode");
     const newTheme = isDarkMode ? "light" : "dark";
     localStorage.setItem("theme", newTheme);
     applyTheme(newTheme);
   };
+
+  // Set up theme toggle buttons
   if (themeToggleButtonLight) {
     themeToggleButtonLight.addEventListener("click", toggleTheme);
   }
@@ -67,15 +97,21 @@ document.addEventListener("DOMContentLoaded", () => {
     themeToggleButtonDark.addEventListener("click", toggleTheme);
   }
 
+  // Apply saved theme or default
   const savedTheme = localStorage.getItem("theme");
   const initialTheme = savedTheme ? savedTheme : "light";
   applyTheme(initialTheme);
 });
 
+// -------------------------------------
+// UI SETUP
+// -------------------------------------
+// Initialize shortcut display
 document.getElementById("shortcut-pre").innerHTML = config.shortcut.pre;
 document.getElementById("shortcut-play").innerHTML = config.shortcut.play;
 document.getElementById("shortcut-next").innerHTML = config.shortcut.next;
 
+// Apply saved panel settings
 if (config.panel.autoSave) {
   document.getElementById("speed-btn").value = config.panel.speed;
   document.getElementById("switch").checked = config.panel.longPressMode;
@@ -83,15 +119,14 @@ if (config.panel.autoSave) {
   document.getElementById("delay-next-value").innerHTML = `Delay next: ${config.panel.delayNext}s`;
 }
 
-// Load card
-
+// Load and display sheet list
 printSheet();
 
+// Configure search functionality
 const searchBar = document.getElementById("search-bar");
 const contentContainer = document.querySelector(".content");
 
 if (searchBar && contentContainer) {
-  // Make sure elements exist
   searchBar.addEventListener("input", () => {
     const searchTerm = searchBar.value.toLowerCase().trim();
     const cards = contentContainer.querySelectorAll(".card");
@@ -100,7 +135,7 @@ if (searchBar && contentContainer) {
       if (index < listSheet.length) {
         const sheetData = listSheet[index];
         const sheetName = sheetData.name.toLowerCase();
-        const authorName = (sheetData.author || "").toLowerCase(); // Handle potential missing author
+        const authorName = (sheetData.author || "").toLowerCase();
 
         const isMatch =
           sheetName.includes(searchTerm) || authorName.includes(searchTerm);
@@ -115,20 +150,23 @@ if (searchBar && contentContainer) {
   console.error("Search bar or content container element not found!");
 }
 
+// Load the first sheet if available
 if (listSheet.length > 0) {
-  !listKeys[0]
-    ? (listKeys[0] = JSON.parse(
-        fs.readFileSync(
-          path.join(__dirname, "..", "data", listSheet[0].keyMap),
-          { encoding: "utf8" }
-        )
-      ))
-    : "";
-
+  if (!listKeys[0]) {
+    listKeys[0] = JSON.parse(
+      fs.readFileSync(
+        path.join(__dirname, "..", "data", listSheet[0].keyMap),
+        { encoding: "utf8" }
+      )
+    );
+  }
   updateFooter({ ...listSheet[0], keys: listKeys[0] }, 0);
 }
 
-// Add sheet
+// -------------------------------------
+// SHEET MANAGEMENT
+// -------------------------------------
+// Add sheet event handler
 document
   .getElementsByClassName("btn-add")[0]
   .addEventListener("change", (event) => {
@@ -136,11 +174,13 @@ document
 
     let done = 0;
     for (let file of files) {
+      // Detect file encoding
       let typeDetect = fs.readFileSync(file.path, { encoding: "utf8" })[0] != "[" ? "utf16le" : "utf8";
       let text = decUTF16toUTF8(
         fs.readFileSync(file.path, { encoding: typeDetect })
       );
 
+      // Parse sheet file
       let json;
       try {
         if (text[0] != "[") throw new Error();
@@ -155,6 +195,7 @@ document
         continue;
       }
 
+      // Process and encode sheet
       let res;
       try {
         res = encSheet(json);
@@ -168,10 +209,12 @@ document
         }
         continue;
       }
+      
       if (!res) {
         done++;
         continue;
       }
+      
       if (files.length == 1) {
         notie.alert({
           type: 3,
@@ -179,8 +222,10 @@ document
         });
       }
     }
+    
     printSheet();
 
+    // Show import results notification
     if (files.length > 1)
       notie.alert({
         type: done > 0 ? 1 : 3,
@@ -193,25 +238,37 @@ document
       });
   });
 
+/**
+ * Encodes sheet music data and saves it to a file
+ * @param {Object} json - Sheet music data in JSON format
+ * @returns {Object|undefined} Error object or undefined on success
+ */
 function encSheet(json) {
+  // Check if sheet is already encrypted
   if (json.isEncrypted)
     return {
       errCode: 1,
       msg: "Sheet has been encrypted!",
     };
+  
+  // Validate sheet format
   if (!json.songNotes)
     return {
       errCode: 2,
       msg: "The sheet file is not valid, please try again with another file!",
     };
+  
   if (typeof json.songNotes[0] != "object")
     return {
       errCode: 1,
       msg: "Sheet has been encrypted!",
     };
+  
+  // Create encoded keymap
   let tempEnc = {};
-  //let fileName = Base64.encode((new Date()).getTime+"")+'.json';
   let fileName = Base64.encode(random(1, 9999) + (json.name + "").replace(/[^a-zA-Z0-9]/g, "-")) + ".json";
+  
+  // Convert song notes to keymap format
   for (let j in json.songNotes) {
     let i = json.songNotes[j];
     !tempEnc[i.time] ? (tempEnc[i.time] = []) : "";
@@ -219,13 +276,17 @@ function encSheet(json) {
   }
 
   let temp = Object.keys(tempEnc);
+  // Add end marker
   tempEnc[(Math.trunc(Number(temp[temp.length - 1]) / 1000) + 1) * 1000] = [];
 
+  // Save keymap file
   fs.writeFileSync(
     path.join(__dirname, "..", "data", fileName),
     JSON.stringify(!tempEnc["0"] ? { 0: [], ...tempEnc } : tempEnc),
     { mode: 0o666 }
   );
+  
+  // Update sheet list
   listSheet.push({
     name: json.name,
     author: json.author,
@@ -233,6 +294,7 @@ function encSheet(json) {
     bpm: json.bpm,
     keyMap: fileName,
   });
+  
   fs.writeFileSync(
     path.join(__dirname, "..", "data", "listSheet.json"),
     JSON.stringify(listSheet, null, 4),
@@ -240,12 +302,19 @@ function encSheet(json) {
   );
 }
 
+/**
+ * Generates a random integer between min and max (inclusive)
+ */
 function random(min, max) {
   return Math.floor(Math.random() * (max - min + 2)) + min;
 }
 
+/**
+ * Renders the sheet list in the UI
+ */
 function printSheet() {
   document.getElementsByClassName("content")[0].innerHTML = "";
+  
   for (let i of listSheet) {
     document.getElementsByClassName("content")[0].innerHTML += `
         <div class="card">
@@ -263,24 +332,25 @@ function printSheet() {
     </div>`;
   }
 
+  // Set up click handlers for each sheet
   for (let j in listSheet) {
     let i = listSheet[j];
     let btnPlay = document.getElementsByClassName("card");
     btnPlay[j].onclick = () => {
-      //ipcRenderer.send("play", i.keyMap);
       try {
-        !listKeys[j] ? (
+        if (!listKeys[j]) {
           listKeys[j] = JSON.parse(
-              fs.readFileSync(path.join(__dirname, "..", "data", i.keyMap), {
-                encoding: "utf8",
-              })
-          )
-        ) : "";
+            fs.readFileSync(path.join(__dirname, "..", "data", i.keyMap), {
+              encoding: "utf8",
+            })
+          );
+        }
       } catch (_) {}
 
       updateFooter({ ...listSheet[j], keys: listKeys[j] }, j);
     };
 
+    // Set up delete handlers
     let btndel = document.getElementsByClassName("bi-trash3");
     btndel[j].onclick = () => {
       fs.unlinkSync(path.join(__dirname, "..", "data", listSheet[j].keyMap));
@@ -296,42 +366,64 @@ function printSheet() {
   }
 }
 
+/**
+ * Updates the footer area with sheet information
+ * @param {Object} info - Sheet information
+ * @param {number} id - Sheet index
+ */
 function updateFooter(info, id) {
   playing = id;
   let delayMap = Object.keys(info.keys);
+  
+  // Set up progress bar
   document.getElementsByClassName("process-bar")[0].max = Math.trunc(
     Number(delayMap[delayMap.length - 1]) / 1000
   );
   maxPCB = Math.trunc(Number(delayMap[delayMap.length - 1]) / 1000);
+  
+  // Update UI elements
   document.getElementsByClassName("name-playing")[0].innerHTML = info.name;
   document.getElementsByClassName("process-bar")[0].value = 0;
   document.getElementsByClassName("live-time")[0].innerHTML = `00:00`;
 
+  // Calculate and display total time
   let totalMin = Math.trunc(
     Number(delayMap[delayMap.length - 1]) / (60 * 1000)
   );
-  totalMin < 10 ? (totalMin = "0" + (totalMin + "")) : "";
+  totalMin = totalMin < 10 ? "0" + totalMin : totalMin;
+  
   let totalSec =
     Math.trunc(Number(delayMap[delayMap.length - 1]) / 1000) - totalMin * 60;
-  totalSec < 10 ? (totalSec = "0" + (totalSec + "")) : "";
+  totalSec = totalSec < 10 ? "0" + totalSec : totalSec;
+  
   document.getElementsByClassName(
     "total-time"
   )[0].innerHTML = `${totalMin}:${totalSec}`;
 }
 
+// -------------------------------------
+// PLAYBACK CONTROL
+// -------------------------------------
+/**
+ * Navigate to the previous sheet
+ */
 function btnPrev() {
   if (playing - 1 < 0) playing = listSheet.length - 1;
   else playing--;
-  !listKeys[playing]
-    ? (listKeys[playing] = JSON.parse(
-        fs.readFileSync(
-          path.join(__dirname, "..", "data", listSheet[playing].keyMap),
-          { encoding: "utf8" }
-        )
-      ))
-    : "";
+  
+  // Load sheet if not already loaded
+  if (!listKeys[playing]) {
+    listKeys[playing] = JSON.parse(
+      fs.readFileSync(
+        path.join(__dirname, "..", "data", listSheet[playing].keyMap),
+        { encoding: "utf8" }
+      )
+    );
+  }
+  
   updateFooter({ ...listSheet[playing], keys: listKeys[playing] }, playing);
 
+  // Restart playback if playing
   if (isPlay) {
     btnPlay();
     document.getElementsByClassName("process-bar")[0].value = 0;
@@ -342,22 +434,30 @@ function btnPrev() {
   }
 }
 
+// Set up event listeners for previous button
 document.getElementById("btn-prev").addEventListener("click", btnPrev);
 ipcRenderer.on("btn-prev", btnPrev);
 
+/**
+ * Navigate to the next sheet
+ */
 function btnNext() {
   if (playing + 1 >= listSheet.length) playing = 0;
   else playing++;
-  !listKeys[playing]
-    ? (listKeys[playing] = JSON.parse(
-        fs.readFileSync(
-          path.join(__dirname, "..", "data", listSheet[playing].keyMap),
-          { encoding: "utf8" }
-        )
-      ))
-    : "";
+  
+  // Load sheet if not already loaded
+  if (!listKeys[playing]) {
+    listKeys[playing] = JSON.parse(
+      fs.readFileSync(
+        path.join(__dirname, "..", "data", listSheet[playing].keyMap),
+        { encoding: "utf8" }
+      )
+    );
+  }
+  
   updateFooter({ ...listSheet[playing], keys: listKeys[playing] }, playing);
 
+  // Restart playback if playing
   if (isPlay) {
     btnPlay();
     document.getElementsByClassName("process-bar")[0].value = 0;
@@ -367,11 +467,18 @@ function btnNext() {
     setTimeout(btnPlay, delay * 1000);
   }
 }
+
+// Set up event listeners for next button
 document.getElementById("btn-next").addEventListener("click", btnNext);
 ipcRenderer.on("btn-next", btnNext);
 
+/**
+ * Toggle playback state
+ */
 function btnPlay() {
-  isPlay = isPlay ? false : true;
+  isPlay = !isPlay;
+  
+  // Prepare data to send to main process
   let send = {
     keys: sec2array(
       Number(document.getElementsByClassName("process-bar")[0].value),
@@ -381,11 +488,15 @@ function btnPlay() {
     lockTime: new Date().getTime() + "",
     isPlay,
   };
+  
+  // Send playback command to main process
   ipcRenderer.send("play", send);
-  document.getElementsByClassName("process-bar")[0].disabled = isPlay ? true : false;
+  
+  // Update UI
+  document.getElementsByClassName("process-bar")[0].disabled = isPlay;
   document.getElementById("btn-play").innerHTML = isPlay
     ? `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pause-fill" viewBox="0 0 16 16">
-    <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5"/>
+    <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1.5-1.5m5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1.5-1.5"/>
     </svg>
     Pause (<a id="shortcut-play">${config.shortcut.play}</a>)`
     : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
@@ -394,27 +505,37 @@ function btnPlay() {
     Play (<a id="shortcut-play">${config.shortcut.play}</a>)`;
 }
 
+// Set up event listeners for play button
 document.getElementById("btn-play").addEventListener("click", btnPlay);
 ipcRenderer.on("btn-play", btnPlay);
 
+// -------------------------------------
+// IPC EVENT LISTENERS
+// -------------------------------------
+// Update progress bar from main process
 ipcRenderer.on("process-bar", (event, data) => {
   document.getElementsByClassName("process-bar")[0].value = data;
-  //console.log(data);
   let s2m = sec2min(Number(data));
-  let min = s2m.min < 10 ? "0" + (s2m.min + "") : s2m.min;
-  let sec = s2m.sec < 10 ? "0" + (s2m.sec + "") : s2m.sec;
+  let min = s2m.min < 10 ? "0" + s2m.min : s2m.min;
+  let sec = s2m.sec < 10 ? "0" + s2m.sec : s2m.sec;
   document.getElementsByClassName("live-time")[0].innerHTML = `${min}:${sec}`;
 });
+
+// Handle playback completion
 ipcRenderer.on("stop-player", (event, data) => {
+  // Reset UI to initial state
   document.getElementById("btn-play").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heipkihght="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
     <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
     </svg>
     Play (<a id="shortcut-play">${config.shortcut.play}</a>)`;
   isPlay = false;
-  document.getElementById("process-bar").disabled = isPlay ? true : false;
+  document.getElementById("process-bar").disabled = false;
   document.getElementsByClassName("process-bar")[0].value = 0;
   document.getElementsByClassName("live-time")[0].innerHTML = "00:00";
+  
+  // Handle loop modes
   if (loopMode == 1) {
+    // Next sheet loop
     btnNext();
     let delay = document.getElementById("delay-loop").value;
     delay = delay == 0 ? 0.5 : delay;
@@ -422,52 +543,60 @@ ipcRenderer.on("stop-player", (event, data) => {
     return;
   }
   if (loopMode == 2) {
+    // Current sheet loop
     let delay = document.getElementById("delay-loop").value;
     delay = delay == 0 ? 0.5 : delay;
     setTimeout(btnPlay, delay * 1000);
     return;
   }
 });
+
+// Handle external stop command
 ipcRenderer.on("stop", (event, data) => {
   document.getElementById("btn-play").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heipkihght="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
     <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
     </svg>
     Play (<a id="shortcut-play">${config.shortcut.play}</a>)`;
   isPlay = false;
-  document.getElementById("process-bar").disabled = isPlay ? true : false;
+  document.getElementById("process-bar").disabled = false;
 });
 
+// Process bar manual change handler
 document.getElementById("process-bar").addEventListener("change", (data) => {
   document.getElementsByClassName("process-bar")[0].max = maxPCB;
 
   let s2m = sec2min(Number(data.target.value));
-  let min = s2m.min < 10 ? "0" + (s2m.min + "") : s2m.min;
-  let sec = s2m.sec < 10 ? "0" + (s2m.sec + "") : s2m.sec;
+  let min = s2m.min < 10 ? "0" + s2m.min : s2m.min;
+  let sec = s2m.sec < 10 ? "0" + s2m.sec : s2m.sec;
   document.getElementsByClassName("live-time")[0].innerHTML = `${min}:${sec}`;
 });
 
-// long-press button
-
+// -------------------------------------
+// SETTINGS HANDLERS
+// -------------------------------------
+// Long-press mode toggle
 document
   .getElementsByClassName("long-press")[0]
   .addEventListener("click", (data) => {
     ipcRenderer.send("longPressMode", data.target.checked);
   });
 
-// loop button
-
+// Loop mode button handler
 document.getElementsByClassName("bi-loop")[0].addEventListener("click", () => {
   if (loopMode == 0) {
+    // Enable playlist loop
     loopMode = 1;
     document.getElementsByClassName("bi-loop")[0].style =
       "box-shadow: inset 0 0 15px 0 rgba(256, 256, 256, 0.2), 0 0 15px 0 rgba(256, 256, 256, 0.4); border-radius: 5px; padding: 0 2px;";
   } else if (loopMode == 1) {
+    // Enable single song loop
     loopMode = 2;
     document.getElementsByClassName(
       "bi-loop"
     )[0].innerHTML = `<path d="M11 4v1.466a.25.25 0 0 0 .41.192l2.36-1.966a.25.25 0 0 0 0-.384l-2.36-1.966a.25.25 0 0 0-.41.192V3H5a5 5 0 0 0-4.48 7.223.5.5 0 0 0 .896-.446A4 4 0 0 1 5 4zm4.48 1.777a.5.5 0 0 0-.896.446A4 4 0 0 1 11 12H5.001v-1.466a.25.25 0 0 0-.41-.192l-2.36 1.966a.25.25 0 0 0 0 .384l2.36 1.966a.25.25 0 0 0 .41-.192V13h6a5 5 0 0 0 4.48-7.223Z"/>
         <path d="M9 5.5a.5.5 0 0 0-.854-.354l-1.75 1.75a.5.5 0 1 0 .708.708L8 6.707V10.5a.5.5 0 0 0 1 0z"/>`;
   } else if (loopMode == 2) {
+    // Disable looping
     loopMode = 0;
     document.getElementsByClassName("bi-loop")[0].style = "";
     document.getElementsByClassName(
@@ -476,8 +605,7 @@ document.getElementsByClassName("bi-loop")[0].addEventListener("click", () => {
   }
 });
 
-//delay loop
-
+// Delay next setting handler
 document.getElementById("delay-loop").addEventListener("change", (data) => {
   document.getElementById(
     "delay-next-value"
@@ -487,19 +615,18 @@ document.getElementById("delay-loop").addEventListener("change", (data) => {
   );
 });
 
-//speed change
-
+// Speed change handler
 document.getElementById("speed-btn").addEventListener("change", (data) => {
+  // Validate input
   if (Number(data.target.value) < Number(data.target.min))
     data.target.value = data.target.min;
   if (Number(data.target.value) > Number(data.target.max))
     data.target.value = data.target.max;
-  console.log(data.target.value);
+  
   ipcRenderer.send("changeSpeed", data.target.value);
 });
 
-// Button Setting
-
+// Settings button handler
 document.getElementById("btn-setting").addEventListener("click", () => {
   notie.alert({
     type: 2,
@@ -508,10 +635,19 @@ document.getElementById("btn-setting").addEventListener("click", () => {
   ipcRenderer.send("openSetting");
 });
 
+// Console log from main process
 ipcRenderer.on("winLog", (event, msg) => {
   console.log("[main]", msg);
 });
 
+// -------------------------------------
+// UTILITY FUNCTIONS
+// -------------------------------------
+/**
+ * Convert seconds to minutes and seconds
+ * @param {number} sec - Time in seconds
+ * @returns {Object} Object with min and sec properties
+ */
 function sec2min(sec) {
   let res = {
     min: Math.trunc(sec / 60),
@@ -520,15 +656,25 @@ function sec2min(sec) {
   return res;
 }
 
+/**
+ * Get subset of array from a specific time point
+ * @param {number} sec - Starting time in seconds
+ * @param {Object} arr - Array of note timings
+ * @returns {Object} Filtered array
+ */
 function sec2array(sec, arr) {
   let res = { ...arr };
   for (let i in arr) {
     if (Number(i) < sec * 1000) delete res[i];
   }
-
   return res;
 }
 
+/**
+ * Convert UTF-16 encoded string to UTF-8
+ * @param {string} str - UTF-16 string
+ * @returns {string} UTF-8 string
+ */
 function decUTF16toUTF8(str) {
   const utf16leArray = new Uint16Array(str.length);
   for (let i = 0; i < str.length; i++) {
@@ -546,6 +692,11 @@ function decUTF16toUTF8(str) {
   return utf8String;
 }
 
+/**
+ * Ensure directory exists, create if it doesn't
+ * @param {string} path - Directory path
+ * @param {number} mask - Permission mask
+ */
 function ensureExists(path, mask) {
   if (typeof mask != "number") {
     mask = 0o777;

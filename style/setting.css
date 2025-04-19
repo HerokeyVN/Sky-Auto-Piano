@@ -1,3 +1,11 @@
+/**
+ * Sky Auto Piano - Settings Page Stylesheet
+ * Contains all styles specific to the settings dialog
+ */
+
+/* -------------------------------------
+   GLOBAL STYLES
+   ------------------------------------- */
 * {
   color: var(--font-color);
 }
@@ -6,7 +14,9 @@ body {
   height: 100%;
 }
 
-/*Menu*/
+/* -------------------------------------
+   NAVIGATION MENU
+   ------------------------------------- */
 .menu {
   display: flex;
   flex-direction: column;
@@ -66,8 +76,9 @@ body {
   background: #ffffff00;
 }
 
-/*Content*/
-
+/* -------------------------------------
+   MAIN CONTENT AREA
+   ------------------------------------- */
 .content {
   position: absolute;
   top: 0;
@@ -82,19 +93,17 @@ body {
   display: none;
 }
 
-/*
-    General Tab
-*/
-
+/* -------------------------------------
+   GENERAL TAB
+   ------------------------------------- */
 #general {
   flex-direction: column;
   padding: 20px 20px;
 }
 
-/*
-    Keyboard Tab
-*/
-
+/* -------------------------------------
+   KEYBOARD TAB
+   ------------------------------------- */
 #keyboard {
   flex-direction: column;
 }
@@ -124,6 +133,7 @@ body {
   background: rgba(110, 110, 110, 0.4);
 }
 
+/* Key visual styling */
 #keyboard table span {
   display: block;
   position: relative;
@@ -150,6 +160,7 @@ body {
   outline: rgba(0, 0, 0, 0);
 }
 
+/* Key shape indicators */
 #keyboard .square:after {
   position: absolute;
   display: block;
@@ -174,10 +185,9 @@ body {
   padding: 10px 20px;
 }
 
-/*
-    Shortcut Tab
-*/
-
+/* -------------------------------------
+   SHORTCUT TAB
+   ------------------------------------- */
 #shortcut {
   flex-direction: column;
   padding: 20px 20px;
@@ -196,14 +206,17 @@ body {
   border: 0;
 }
 
-/*update tab*/
+/* -------------------------------------
+   UPDATE TAB
+   ------------------------------------- */
 #update {
   flex-direction: column;
   padding: 20px 20px;
 }
 
-/*Save setting button*/
-
+/* -------------------------------------
+   SAVE BUTTON
+   ------------------------------------- */
 .btn-save-setting {
   display: flex;
   align-items: center;
