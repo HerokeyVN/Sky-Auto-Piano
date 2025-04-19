@@ -29,7 +29,7 @@ Sky Auto Piano is an automatic music playing software for the game Sky. It allow
 To build Sky Auto Piano from source:
 
 1. **Prerequisites:**
-   - [Node.js](https://nodejs.org/) (version 14 or later)
+   - [Node.js](https://nodejs.org/) (version 16 or later)
    - [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
 
 2. **Clone the repository:**
