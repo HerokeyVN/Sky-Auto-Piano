@@ -11,6 +11,7 @@ const { ipcRenderer } = require("electron");
 const fs = require("fs");
 const path = require("path");
 const dirSetting = path.join(__dirname, "..", "config", "config.json");
+const packageJson = require(path.join(__dirname, "..", "package.json"));
 
 // Load current configuration
 var config = JSON.parse(fs.readFileSync(dirSetting));
@@ -23,6 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	const lightModeBgColor = "#0a1930";
 	const darkModeBgColor = "#1B1D1E";
 
+	// Fetch version information
+	document.getElementById("app-version").textContent = `Version: ${packageJson.version}`;
 	/**
 	 * Apply theme to the settings window
 	 * @param {string} theme - 'light' or 'dark' theme name
