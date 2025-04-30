@@ -62,19 +62,19 @@
             <path
                 d="M7.79417 2.5C4.87417 3.67333 2.5 6.21917 2.5 9.55833C2.5 11.6646 3.33671 13.6846 4.82606 15.1739C6.31541 16.6633 8.33541 17.5 10.4417 17.5C13.7808 17.5 16.3267 15.1258 17.5 12.2058C6.80833 14.2208 6.78333 6.78333 7.79417 2.5Z" />
         </svg>
-        
+
         <!-- Currently playing music sheet display -->
         <a class="name-playing">* Click on the plus to add sheet</a>
-        
+
         <!-- Progress bar for currently playing song -->
         <input type="range" min="0" max="0" value="0" class="process-bar" id="process-bar">
-        
+
         <!-- Time display for current playback -->
         <div class="time">
             <a class="live-time">00:00</a>
             <a class="total-time">00:00</a>
         </div>
-        
+
         <!-- Music playback control buttons -->
         <div class="control-menu">
             <!-- Previous track button -->
@@ -86,7 +86,7 @@
                 </svg>
                 Prev (<a id="shortcut-pre">Ctrl+Shift+C</a>)
             </button>
-            
+
             <!-- Play/Pause button -->
             <button class="btn" id="btn-play">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
@@ -96,7 +96,7 @@
                 </svg>
                 Play (<a id="shortcut-play">Ctrl+Shift+V</a>)
             </button>
-            
+
             <!-- Next track button -->
             <button class="btn" id="btn-next">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
@@ -137,10 +137,33 @@
             </label>
         </div>
     </div>
-    
+
     <!-- JavaScript dependencies -->
     <script type="text/javascript" src="../js/notie.js"></script>
     <script type="text/javascript" src="../js/script.js"></script>
+
+    <!-- Update Prompt Dialog -->
+    <div id="update-prompt" class="update-prompt">
+        <div class="update-prompt-content">
+            <div class="update-header">
+                <h2>What's New!</h2>
+                <div class="version-info">
+                    <span id="current-version"></span>
+                </div>
+            </div>
+
+            <div class="changelog">
+                <h3>Changes in this version:</h3>
+                <div class="changelog-content" id="changelog-content">
+                    <!-- Changelog items will be inserted here dynamically -->
+                </div>
+            </div>
+
+            <div class="update-prompt-buttons">
+                <button id="close-changelog-btn" class="update-btn primary">Got it!</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
