@@ -122,6 +122,8 @@ document.getElementById("switch-custom-keyboard").checked =
 document.getElementById("pre-shortcut-setting").value = config.shortcut.pre;
 document.getElementById("play-shortcut-setting").value = config.shortcut.play;
 document.getElementById("next-shortcut-setting").value = config.shortcut.next;
+document.getElementById("increase-speed-shortcut-setting").value = config.shortcut.increaseSpeed;
+document.getElementById("decrease-speed-shortcut-setting").value = config.shortcut.decreaseSpeed;
 
 // Update settings
 document.getElementById("switch-block-update").checked =
@@ -257,10 +259,49 @@ ipcRenderer.on('update-status', (event, data) => {
  * Allows capturing keyboard combinations and formatting them
  */
 let keyup = true;
+
+// Map of key codes to keysender format
+const keyMap = {
+	"Numpad0": "num0",
+	"Numpad1": "num1",
+	"Numpad2": "num2",
+	"Numpad3": "num3",
+	"Numpad4": "num4",
+	"Numpad5": "num5",
+	"Numpad6": "num6",
+	"Numpad7": "num7",
+	"Numpad8": "num8",
+	"Numpad9": "num9",
+	"NumpadAdd": "numadd",
+	"NumpadSubtract": "numsub",
+	"NumpadMultiply": "nummult",
+	"NumpadDivide": "numdiv",
+	"NumpadDecimal": "numdec",
+	"NumpadComma": "numcomma",
+	"Control": "ctrl",
+	"Alt": "alt",
+	"Shift": "shift",
+	"Meta": "win"
+};
+
+// Function to convert shortcut to keysender format
+function convertToKeysenderFormat(shortcut) {
+	return shortcut.split("+").map(key => {
+		// Check if it's a special key that needs mapping
+		if (keyMap[key]) {
+			return keyMap[key];
+		}
+		// For regular keys, just return lowercase
+		return key.toLowerCase();
+	}).join("+");
+}
+
 for (let id of [
 	"pre-shortcut-setting",
 	"play-shortcut-setting",
 	"next-shortcut-setting",
+	"increase-speed-shortcut-setting",
+	"decrease-speed-shortcut-setting",
 ]) {
 	// Handle key release - format the shortcut string
 	document.getElementById(id).addEventListener("keyup", (data) => {
@@ -287,10 +328,12 @@ for (let id of [
 			keyup = false;
 		}
 
-		let key = data.key;
+		let key = data.code; // Use code instead of key to detect numpad keys
 		// Format special keys
-		if (data.key == "Control") key = "Ctrl";
-		if (data.key.length == 1) key = data.key.toUpperCase();
+		if (data.code === "ControlLeft" || data.code === "ControlRight") key = "Control";
+		if (data.code === "AltLeft" || data.code === "AltRight") key = "Alt";
+		if (data.code === "ShiftLeft" || data.code === "ShiftRight") key = "Shift";
+		if (data.code === "MetaLeft" || data.code === "MetaRight") key = "Meta";
 
 		// Avoid duplicates in combination
 		if (dom.value.split("+").indexOf(key) != -1) return;
@@ -319,9 +362,11 @@ document.getElementById("btn-save-setting").addEventListener("click", () => {
 
 	// Save and validate shortcut settings
 	let arrShortcut = [];
-	config.shortcut.pre = document.getElementById("pre-shortcut-setting").value;
-	config.shortcut.play = document.getElementById("play-shortcut-setting").value;
-	config.shortcut.next = document.getElementById("next-shortcut-setting").value;
+	config.shortcut.pre = convertToKeysenderFormat(document.getElementById("pre-shortcut-setting").value);
+	config.shortcut.play = convertToKeysenderFormat(document.getElementById("play-shortcut-setting").value);
+	config.shortcut.next = convertToKeysenderFormat(document.getElementById("next-shortcut-setting").value);
+	config.shortcut.increaseSpeed = convertToKeysenderFormat(document.getElementById("increase-speed-shortcut-setting").value);
+	config.shortcut.decreaseSpeed = convertToKeysenderFormat(document.getElementById("decrease-speed-shortcut-setting").value);
 
 	// Check for duplicate shortcuts
 	for (let key in config.shortcut) {
