@@ -60,7 +60,7 @@ const defaultConfig = {
 		longPressMode: false,
 		speed: 1,
 		delayNext: 1,
-		autoSave: false,
+		autoSave: true,
 		minimizeOnPlay: true,
 	},
 	keyboard: {
@@ -72,9 +72,11 @@ const defaultConfig = {
 		],
 	},
 	shortcut: {
-		pre: "Ctrl+Shift+C",
-		play: "Ctrl+Shift+V",
-		next: "Ctrl+Shift+B",
+		pre: "ctrl+shift+c",
+		play: "ctrl+shift+v",
+		next: "ctrl+shift+b",
+		increaseSpeed: "numadd",      // Changed from num+ to numadd
+		decreaseSpeed: "numsub",      // Changed from num- to numsub
 	},
 	update: {
 		blockUpdate: false,
@@ -132,7 +134,14 @@ if (config.panel.autoSave) {
 	longPressMode = config.panel.longPressMode;
 	speed = config.panel.speed;
 	delayNext = config.panel.delayNext;
+} else {
+	// Load speed from config even if autoSave is off
+	speed = config.panel.speed;
 }
+
+// Round speed to one decimal place
+speed = Math.round(speed * 10) / 10;
+config.panel.speed = speed;
 
 // -------------------------------------
 // APPLICATION INITIALIZATION
@@ -365,6 +374,18 @@ function createWindow() {
 	});
 	globalShortcut.register(config.shortcut.next, () => {
 		win.webContents.send("btn-next");
+	});
+	globalShortcut.register(config.shortcut.increaseSpeed, () => {
+		speed = Math.min(5, Math.round((speed + 0.1) * 10) / 10);
+		config.panel.speed = speed;
+		fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
+		win.webContents.send("speed-changed", speed);
+	});
+	globalShortcut.register(config.shortcut.decreaseSpeed, () => {
+		speed = Math.max(0.1, Math.round((speed - 0.1) * 10) / 10);
+		config.panel.speed = speed;
+		fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
+		win.webContents.send("speed-changed", speed);
 	});
 
 	// The main program automatically plays music (send pressing keys)
