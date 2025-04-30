@@ -75,14 +75,37 @@ const defaultConfig = {
 		pre: "ctrl+shift+c",
 		play: "ctrl+shift+v",
 		next: "ctrl+shift+b",
-		increaseSpeed: "numadd",      // Changed from num+ to numadd
-		decreaseSpeed: "numsub",      // Changed from num- to numsub
+		increaseSpeed: "numadd",
+		decreaseSpeed: "numsub",
 	},
 	update: {
 		blockUpdate: false,
 	},
 	appTheme: "light",
 };
+
+// Function to update config with missing values
+function updateConfigWithDefaults(currentConfig, defaultConfig) {
+	let updated = false;
+	
+	// Helper function to recursively check and update objects
+	function updateObject(current, defaults, path = '') {
+		for (const key in defaults) {
+			const currentPath = path ? `${path}.${key}` : key;
+			
+			if (!(key in current)) {
+				current[key] = defaults[key];
+				updated = true;
+				console.log(`Added missing config value: ${currentPath}`);
+			} else if (typeof defaults[key] === 'object' && !Array.isArray(defaults[key])) {
+				updateObject(current[key], defaults[key], currentPath);
+			}
+		}
+	}
+	
+	updateObject(currentConfig, defaultConfig);
+	return updated;
+}
 
 let config;
 try {
@@ -91,28 +114,11 @@ try {
 		config = defaultConfig;
 	} else {
 		config = JSON.parse(fs.readFileSync(dirSetting));
-		let updated = false;
-		if (config.appTheme === undefined) {
-			config.appTheme = defaultConfig.appTheme;
-			updated = true;
-		}
-		if (config.panel === undefined) {
-			config.panel = defaultConfig.panel;
-			updated = true;
-		} else if (config.panel.minimizeOnPlay === undefined) {
-			config.panel.minimizeOnPlay = defaultConfig.panel.minimizeOnPlay;
-			updated = true;
-		}
-		if (config.update === undefined) {
-			config.update = defaultConfig.update;
-			updated = true;
-		} else if (config.update.blockUpdate === undefined) {
-			config.update.blockUpdate = defaultConfig.update.blockUpdate;
-			updated = true;
-		}
-
-		if (updated) {
+		
+		// Update config with any missing values
+		if (updateConfigWithDefaults(config, defaultConfig)) {
 			fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
+			console.log("Config file updated with missing values");
 		}
 	}
 } catch (error) {
