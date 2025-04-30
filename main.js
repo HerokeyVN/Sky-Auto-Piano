@@ -36,11 +36,11 @@ if (!gotTheLock) {
 // -------------------------------------
 // Update information and endpoints
 const linkUpdate =
-	"https://github.com/Syntaxerror406/SkyAutoPianoRevamp/archive/refs/heads/main.zip";
+	"https://github.com/HerokeyVN/Sky-Auto-Piano/archive/refs/heads/main.zip";
 const moduleUpdate =
 	"https://raw.githubusercontent.com/HerokeyVN/Temp/main/mdl_SAM/node_modules.zip";
 const packageUpdate =
-	"https://raw.githubusercontent.com/Syntaxerror406/SkyAutoPianoRevamp/main/package.json";
+	"https://raw.githubusercontent.com/HerokeyVN/Sky-Auto-Piano/main/package.json";
 const folderUpdate = "Sky-Auto-Piano-main";
 
 // Global application state variables
@@ -264,6 +264,24 @@ function createWindow() {
 	});
 
 	win.loadFile(path.join(__dirname, "index", "index.html"));
+
+	// Check for post-update changelog
+	const updateInfoPath = path.join(__dirname, "config", "update-info.json");
+	if (fs.existsSync(updateInfoPath)) {
+		try {
+			const updateInfo = JSON.parse(fs.readFileSync(updateInfoPath));
+			if (updateInfo.showChangelog) {
+				// Wait for window to load before showing changelog
+				win.webContents.on('did-finish-load', () => {
+					win.webContents.send('show-post-update-changelog', {
+						version: updateInfo.newVersion
+					});
+				});
+			}
+		} catch (error) {
+			console.error("Error reading update info:", error);
+		}
+	}
 
 	// Send notification when update is done
 	if (updatedNoti) {
