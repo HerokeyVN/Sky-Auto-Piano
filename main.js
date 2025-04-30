@@ -567,3 +567,37 @@ function ensureExists(path, mask) {
 		};
 	}
 }
+
+ipcMain.on("changeSetting", () => {
+	config = JSON.parse(fs.readFileSync(dirSetting));
+});
+
+// -------------------------------------
+// UPDATE CHECK HANDLER
+// -------------------------------------
+// Handle the update check request from the renderer process
+// This function checks if a new version is available by comparing local and remote versions
+ipcMain.on("check-update", async (event) => {
+	try {
+		// Read the local package.json to get current version
+		let pkgLocal = JSON.parse(
+			fs.readFileSync(path.join(__dirname, "package.json"))
+		);
+		let vern = pkgLocal.version;
+
+		// Fetch the remote package.json to get latest version
+		var pkgUpdate = (await axios.get(packageUpdate)).data;
+		var verg = pkgUpdate.version;
+
+		// Send response back to renderer with update availability
+		event.reply("update-check-response", {
+			available: vern !== verg
+		});
+	} catch (e) {
+		// If there's an error (e.g., network issue), log it and notify the user
+		console.error("Update:", e, "Failed to connect to the server!");
+		event.reply("update-check-response", {
+			available: false
+		});
+	}
+});
