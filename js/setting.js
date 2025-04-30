@@ -306,17 +306,15 @@ for (let id of [
 	// Handle key release - format the shortcut string
 	document.getElementById(id).addEventListener("keyup", (data) => {
 		let dom = document.getElementById(id);
-		dom.value = dom.value
-			.split("+")
-			.sort((a, b) => {
-				// Sort modifier keys first, then regular keys
-				if (a.length == 1 && b.length > 1) return 1;
-				if (b.length == 1 && a.length > 1) return -1;
-				if (a < b) return -1;
-				if (a > b) return 1;
-				return 0;
-			})
-			.join("+");
+		// Remove any duplicate keys while preserving order
+		let keys = dom.value.split("+");
+		let uniqueKeys = [];
+		for (let key of keys) {
+			if (!uniqueKeys.includes(key)) {
+				uniqueKeys.push(key);
+			}
+		}
+		dom.value = uniqueKeys.join("+");
 		keyup = true;
 	});
 
@@ -330,10 +328,15 @@ for (let id of [
 
 		let key = data.code; // Use code instead of key to detect numpad keys
 		// Format special keys
-		if (data.code === "ControlLeft" || data.code === "ControlRight") key = "Control";
+		if (data.code === "ControlLeft" || data.code === "ControlRight") key = "Ctrl";
 		if (data.code === "AltLeft" || data.code === "AltRight") key = "Alt";
 		if (data.code === "ShiftLeft" || data.code === "ShiftRight") key = "Shift";
-		if (data.code === "MetaLeft" || data.code === "MetaRight") key = "Meta";
+		if (data.code === "MetaLeft" || data.code === "MetaRight") key = "Win";
+		
+		// Remove 'Key' prefix from regular keys
+		if (key.startsWith("Key")) {
+			key = key.substring(3);
+		}
 
 		// Avoid duplicates in combination
 		if (dom.value.split("+").indexOf(key) != -1) return;
