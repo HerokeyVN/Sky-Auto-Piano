@@ -7,14 +7,29 @@
 // -------------------------------------
 // IMPORTS AND SETUP
 // -------------------------------------
-const { ipcRenderer } = require("electron");
+const { ipcRenderer, shell } = require("electron");
 const fs = require("fs");
 const path = require("path");
 const dirSetting = path.join(__dirname, "..", "config", "config.json");
 const packageJson = require(path.join(__dirname, "..", "package.json"));
+const marked = require('marked');
 
 // Load current configuration
 var config = JSON.parse(fs.readFileSync(dirSetting));
+
+// Configure marked to open links in external browser
+marked.setOptions({
+	renderer: new marked.Renderer()
+});
+
+// Handle external links
+document.addEventListener('click', (event) => {
+	const target = event.target.closest('a');
+	if (target && target.href && target.href.startsWith('http')) {
+		event.preventDefault();
+		shell.openExternal(target.href);
+	}
+});
 
 // -------------------------------------
 // THEME MANAGEMENT
@@ -121,11 +136,31 @@ document.getElementById("check-update-btn").addEventListener("click", () => {
 	ipcRenderer.send("check-update");
 });
 
+// Function to fetch changelog from GitHub
+async function fetchChangelog(version) {
+	try {
+		const response = await fetch(`https://api.github.com/repos/HerokeyVN/Sky-Auto-Piano/releases/tags/v${version}`);
+		const data = await response.json();
+		return data.body;
+	} catch (error) {
+		console.error('Error fetching changelog:', error);
+		return null;
+	}
+}
+
+// Function to parse markdown changelog to HTML
+function parseChangelog(markdown) {
+	const changelogHTML = marked.parse(markdown);
+	return `<div class="changelog-content">${changelogHTML}</div>`;
+}
+
 // Listen for the response from the main process about update availability
-ipcRenderer.on("update-check-response", (event, data) => {
+ipcRenderer.on("update-check-response", async (event, data) => {
 	const messageElement = document.getElementById('update-message');
 	const updatePrompt = document.getElementById('update-prompt');
 	const updateVersion = document.getElementById('update-version');
+	const currentVersion = document.getElementById('current-version');
+	const changelogContent = document.getElementById('changelog-content');
 	
 	// Remove any existing classes and clear any existing timeouts
 	messageElement.classList.remove('show', 'success', 'error');
@@ -143,13 +178,22 @@ ipcRenderer.on("update-check-response", (event, data) => {
 		}
 
 		if (data.available) {
-			// Show update prompt
-			updateVersion.textContent = `v${data.latestVersion}`;
+			// Show update prompt with versions
+			currentVersion.textContent = data.currentVersion;
+			updateVersion.textContent = data.latestVersion;
+			
+			// Fetch and display changelog
+			const changelog = await fetchChangelog(data.latestVersion);
+			if (changelog) {
+				changelogContent.innerHTML = parseChangelog(changelog);
+			} else {
+				changelogContent.innerHTML = '<p class="error">Failed to load changelog</p>';
+			}
+
 			updatePrompt.classList.add('show');
 			
 			// Handle update now button
 			document.getElementById('update-now-btn').addEventListener('click', () => {
-				const updatePrompt = document.getElementById('update-prompt');
 				const updateNowBtn = document.getElementById('update-now-btn');
 				const updateLaterBtn = document.getElementById('update-later-btn');
 				
@@ -325,3 +369,64 @@ function getTab(dom) {
 	let htmlDOM = dom.outerHTML.replaceAll(" ", "");
 	return htmlDOM.split('tab="')[1].split('"')[0];
 }
+
+// Function to show changelog dialog
+async function showChangelog(version) {
+	const updatePrompt = document.getElementById('update-prompt');
+	const currentVersion = document.getElementById('current-version');
+	const updateVersion = document.getElementById('update-version');
+	const changelogContent = document.getElementById('changelog-content');
+
+	try {
+		// Fetch and display changelog
+		const changelog = await fetchChangelog(version);
+		if (changelog) {
+			// Update version display
+			currentVersion.textContent = version;
+			updateVersion.style.display = 'none'; // Hide the arrow and new version for post-update display
+			
+			// Update title and content
+			const titleElement = updatePrompt.querySelector('h2');
+			titleElement.textContent = 'What\'s New';
+			
+			// Display changelog
+			changelogContent.innerHTML = parseChangelog(changelog);
+			
+			// Update buttons
+			const buttonsContainer = updatePrompt.querySelector('.update-prompt-buttons');
+			buttonsContainer.innerHTML = '<button id="close-changelog-btn" class="update-btn primary">Got it!</button>';
+			
+			// Show the dialog
+			updatePrompt.classList.add('show');
+			
+			// Handle close button
+			document.getElementById('close-changelog-btn').addEventListener('click', () => {
+				updatePrompt.classList.remove('show');
+				// Mark changelog as viewed
+				const updateInfoPath = path.join(__dirname, '..', 'config', 'update-info.json');
+				if (fs.existsSync(updateInfoPath)) {
+					const updateInfo = JSON.parse(fs.readFileSync(updateInfoPath));
+					updateInfo.showChangelog = false;
+					fs.writeFileSync(updateInfoPath, JSON.stringify(updateInfo, null, 2));
+				}
+			});
+		}
+	} catch (error) {
+		console.error('Error showing changelog:', error);
+	}
+}
+
+// Check for post-update changelog on page load
+document.addEventListener('DOMContentLoaded', () => {
+	const updateInfoPath = path.join(__dirname, '..', 'config', 'update-info.json');
+	if (fs.existsSync(updateInfoPath)) {
+		try {
+			const updateInfo = JSON.parse(fs.readFileSync(updateInfoPath));
+			if (updateInfo.showChangelog) {
+				showChangelog(updateInfo.newVersion);
+			}
+		} catch (error) {
+			console.error('Error reading update info:', error);
+		}
+	}
+});
