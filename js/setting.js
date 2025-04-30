@@ -122,9 +122,10 @@ document.getElementById("check-update-btn").addEventListener("click", () => {
 });
 
 // Listen for the response from the main process about update availability
-// This handler receives the result of the update check and shows appropriate notification
 ipcRenderer.on("update-check-response", (event, data) => {
 	const messageElement = document.getElementById('update-message');
+	const updatePrompt = document.getElementById('update-prompt');
+	const updateVersion = document.getElementById('update-version');
 	
 	// Remove any existing classes and clear any existing timeouts
 	messageElement.classList.remove('show', 'success', 'error');
@@ -141,10 +142,32 @@ ipcRenderer.on("update-check-response", (event, data) => {
 			console.log(`Version Check: Current v${data.currentVersion} | Latest v${data.latestVersion}`);
 		}
 
-		messageElement.classList.add('success', 'show');
 		if (data.available) {
-			messageElement.textContent = `A new update is available! (v${data.latestVersion})`;
+			// Show update prompt
+			updateVersion.textContent = `v${data.latestVersion}`;
+			updatePrompt.classList.add('show');
+			
+			// Handle update now button
+			document.getElementById('update-now-btn').addEventListener('click', () => {
+				const updatePrompt = document.getElementById('update-prompt');
+				const updateNowBtn = document.getElementById('update-now-btn');
+				const updateLaterBtn = document.getElementById('update-later-btn');
+				
+				// Disable buttons and show loading state
+				updateNowBtn.disabled = true;
+				updateLaterBtn.disabled = true;
+				updateNowBtn.innerHTML = '<svg class="spinner" viewBox="0 0 50 50"><circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle></svg> Updating...';
+				
+				// Send update request to main process
+				ipcRenderer.send('start-update');
+			});
+			
+			// Handle later button
+			document.getElementById('update-later-btn').addEventListener('click', () => {
+				updatePrompt.classList.remove('show');
+			});
 		} else {
+			messageElement.classList.add('success', 'show');
 			messageElement.textContent = `You are using the latest version! (v${data.currentVersion})`;
 		}
 	}
@@ -153,6 +176,33 @@ ipcRenderer.on("update-check-response", (event, data) => {
 	window.fadeTimeout = setTimeout(() => {
 		messageElement.classList.remove('show');
 	}, 3000);
+});
+
+// Listen for update status from main process
+ipcRenderer.on('update-status', (event, data) => {
+	const updatePrompt = document.getElementById('update-prompt');
+	const updateNowBtn = document.getElementById('update-now-btn');
+	const updateLaterBtn = document.getElementById('update-later-btn');
+	
+	if (data.success) {
+		// Update successful - prompt will be closed by the app restart
+		updatePrompt.classList.remove('show');
+	} else {
+		// Update failed - show error and re-enable buttons
+		updateNowBtn.disabled = false;
+		updateLaterBtn.disabled = false;
+		updateNowBtn.textContent = 'Update Now';
+		
+		// Show error message
+		const messageElement = document.getElementById('update-message');
+		messageElement.textContent = data.error || 'Update failed. Please try again later.';
+		messageElement.classList.add('error', 'show');
+		
+		// Hide error message after 3 seconds
+		setTimeout(() => {
+			messageElement.classList.remove('show');
+		}, 3000);
+	}
 });
 
 // -------------------------------------
