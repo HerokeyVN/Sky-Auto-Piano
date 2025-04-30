@@ -325,27 +325,154 @@ body {
     background: var(--background-color);
     padding: 30px;
     border-radius: 10px;
-    text-align: center;
-    max-width: 400px;
+    text-align: left;
+    max-width: 500px;
     width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
-.update-prompt h2 {
-    margin: 0 0 15px 0;
+.update-header {
+    margin-bottom: 20px;
+}
+
+.update-header h2 {
+    margin: 0 0 10px 0;
     color: var(--font-color);
 }
 
-.update-prompt p {
-    margin: 0 0 25px 0;
+.version-info {
+    font-size: 1.2em;
     color: var(--font-color);
     opacity: 0.8;
+}
+
+.changelog {
+    margin: 20px 0;
+    padding: 15px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.changelog h3 {
+    margin: 0 0 15px 0;
+    font-size: 1.1em;
+    color: var(--font-color);
+}
+
+.changelog-content {
+    color: var(--font-color);
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
+.changelog-content h1,
+.changelog-content h2,
+.changelog-content h3 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+}
+
+.changelog-content h1 {
+    font-size: 1.5em;
+}
+
+.changelog-content h2 {
+    font-size: 1.3em;
+}
+
+.changelog-content h3 {
+    font-size: 1.1em;
+}
+
+.changelog-content ul,
+.changelog-content ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+}
+
+.changelog-content li {
+    margin: 0.3em 0;
+}
+
+.changelog-content p {
+    margin: 0.5em 0;
+}
+
+.changelog-content code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.changelog-content pre {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1em;
+    border-radius: 5px;
+    overflow-x: auto;
+}
+
+.changelog-content pre code {
+    background: none;
+    padding: 0;
+}
+
+.changelog-content a {
+    color: #58a6ff;
+    text-decoration: none;
+}
+
+.changelog-content a:hover {
+    text-decoration: underline;
+}
+
+.changelog-content .error {
+    color: #e74c3c;
+    text-align: center;
+    padding: 1em;
+}
+
+.changelog-item {
+    margin-bottom: 15px;
+}
+
+.changelog-item .title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.changelog-item .title svg {
+    width: 16px;
+    height: 16px;
+}
+
+.changelog-item .details {
+    margin-left: 24px;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
+
+.changelog-item .details li {
+    margin: 5px 0;
+    list-style-type: none;
+    position: relative;
+}
+
+.changelog-item .details li::before {
+    content: "-";
+    position: absolute;
+    left: -15px;
 }
 
 .update-prompt-buttons {
     display: flex;
     gap: 15px;
-    justify-content: center;
+    justify-content: flex-end;
+    margin-top: 20px;
 }
 
 .update-btn {
@@ -419,4 +546,43 @@ body {
     opacity: 0.7;
     cursor: not-allowed;
     transform: none !important;
+}
+
+/* -------------------------------------
+   POST-UPDATE CHANGELOG
+   ------------------------------------- */
+.update-prompt.post-update .version-info {
+    justify-content: center;
+    font-size: 1.4em;
+    margin-bottom: 1em;
+}
+
+.update-prompt.post-update h2 {
+    text-align: center;
+    margin-bottom: 1.5em;
+}
+
+.update-prompt.post-update .update-prompt-buttons {
+    justify-content: center;
+    margin-top: 2em;
+}
+
+.update-prompt.post-update .close-changelog-btn {
+    min-width: 120px;
+}
+
+/* Fade in animation for changelog */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.update-prompt.show {
+    animation: fadeIn 0.3s ease-out;
 }
