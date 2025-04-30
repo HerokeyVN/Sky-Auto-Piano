@@ -133,6 +133,9 @@ if (config.panel.autoSave) {
   document.getElementById("switch").checked = config.panel.longPressMode;
   document.getElementById("delay-loop").value = config.panel.delayNext;
   document.getElementById("delay-next-value").innerHTML = `Delay next: ${config.panel.delayNext}s`;
+} else {
+  // Load speed from config even if autoSave is off
+  document.getElementById("speed-btn").value = config.panel.speed;
 }
 
 // Load and display sheet list
@@ -537,6 +540,11 @@ ipcRenderer.on("process-bar", (event, data) => {
   document.getElementsByClassName("live-time")[0].innerHTML = `${min}:${sec}`;
 });
 
+// Handle speed change events
+ipcRenderer.on("speed-changed", (event, newSpeed) => {
+  document.getElementById("speed-btn").value = newSpeed;
+});
+
 // Handle playback completion
 ipcRenderer.on("stop-player", (event, data) => {
   // Reset UI to initial state
@@ -639,7 +647,11 @@ document.getElementById("speed-btn").addEventListener("change", (data) => {
   if (Number(data.target.value) > Number(data.target.max))
     data.target.value = data.target.max;
   
-  ipcRenderer.send("changeSpeed", data.target.value);
+  // Round to one decimal place
+  const roundedSpeed = Math.round(Number(data.target.value) * 10) / 10;
+  data.target.value = roundedSpeed;
+  
+  ipcRenderer.send("changeSpeed", roundedSpeed);
 });
 
 // Settings button handler
