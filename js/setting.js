@@ -124,19 +124,35 @@ document.getElementById("check-update-btn").addEventListener("click", () => {
 // Listen for the response from the main process about update availability
 // This handler receives the result of the update check and shows appropriate notification
 ipcRenderer.on("update-check-response", (event, data) => {
-	if (data.available) {
-		// If an update is available, show a success notification (green)
-		notie.alert({
-			type: 1,
-			text: "A new update is available! The update will be downloaded automatically.",
-		});
-	} else {
-		// If no update is available, show a success notification (green)
-		notie.alert({
-			type: 1,
-			text: "You are using the latest version!",
-		});
+	const messageElement = document.getElementById('update-message');
+	
+	// Remove any existing classes and clear any existing timeouts
+	messageElement.classList.remove('show', 'success', 'error');
+	if (window.fadeTimeout) {
+		clearTimeout(window.fadeTimeout);
 	}
+	
+	if (data.error) {
+		console.log("Update Check: Failed to connect to update server");
+		messageElement.textContent = "Failed to check for updates. Please check your internet connection.";
+		messageElement.classList.add('error', 'show');
+	} else {
+		if (data.currentVersion && data.latestVersion) {
+			console.log(`Version Check: Current v${data.currentVersion} | Latest v${data.latestVersion}`);
+		}
+
+		messageElement.classList.add('success', 'show');
+		if (data.available) {
+			messageElement.textContent = `A new update is available! (v${data.latestVersion})`;
+		} else {
+			messageElement.textContent = `You are using the latest version! (v${data.currentVersion})`;
+		}
+	}
+
+	// Set timeout to remove the show class after 3 seconds
+	window.fadeTimeout = setTimeout(() => {
+		messageElement.classList.remove('show');
+	}, 3000);
 });
 
 // -------------------------------------

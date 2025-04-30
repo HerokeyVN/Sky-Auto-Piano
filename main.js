@@ -589,15 +589,20 @@ ipcMain.on("check-update", async (event) => {
 		var pkgUpdate = (await axios.get(packageUpdate)).data;
 		var verg = pkgUpdate.version;
 
-		// Send response back to renderer with update availability
+		console.log("Update Check:", `Current version: ${vern}, Latest version: ${verg}`);
+
+		// Send response back to renderer with update availability and versions
 		event.reply("update-check-response", {
-			available: vern !== verg
+			available: vern !== verg,
+			currentVersion: vern,
+			latestVersion: verg
 		});
 	} catch (e) {
 		// If there's an error (e.g., network issue), log it and notify the user
 		console.error("Update:", e, "Failed to connect to the server!");
 		event.reply("update-check-response", {
-			available: false
+			available: false,
+			error: true
 		});
 	}
 });
