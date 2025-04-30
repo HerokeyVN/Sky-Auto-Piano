@@ -214,6 +214,38 @@ body {
   padding: 20px 20px;
 }
 
+.update-check {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.check-update-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--background-color);
+  color: var(--font-color);
+  border: 1px solid var(--font-color);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s linear;
+}
+
+.check-update-btn:hover {
+  background: var(--font-color);
+  color: var(--hover);
+}
+
+.check-update-btn svg {
+  transition: 0.3s linear;
+}
+
+.check-update-btn:hover svg {
+  transform: rotate(180deg);
+}
+
 /* -------------------------------------
    SAVE BUTTON
    ------------------------------------- */

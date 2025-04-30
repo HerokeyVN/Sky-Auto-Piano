@@ -113,6 +113,33 @@ document.getElementById("switch-block-update").checked =
 	config.update?.blockUpdate ?? false;
 
 // -------------------------------------
+// UPDATE CHECK FUNCTIONALITY
+// -------------------------------------
+// Add click event listener to the "Check for Updates" button
+// When clicked, it sends a message to the main process to check for updates
+document.getElementById("check-update-btn").addEventListener("click", () => {
+	ipcRenderer.send("check-update");
+});
+
+// Listen for the response from the main process about update availability
+// This handler receives the result of the update check and shows appropriate notification
+ipcRenderer.on("update-check-response", (event, data) => {
+	if (data.available) {
+		// If an update is available, show a success notification (green)
+		notie.alert({
+			type: 1,
+			text: "A new update is available! The update will be downloaded automatically.",
+		});
+	} else {
+		// If no update is available, show a success notification (green)
+		notie.alert({
+			type: 1,
+			text: "You are using the latest version!",
+		});
+	}
+});
+
+// -------------------------------------
 // EVENT HANDLERS
 // -------------------------------------
 /**
