@@ -214,6 +214,36 @@ body {
   padding: 20px 20px;
 }
 
+.update-status {
+  margin: 20px 0;
+  text-align: center;
+  min-height: 30px;
+}
+
+.update-message {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.5s ease;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.update-message.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.update-message.success {
+  background: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+.update-message.error {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+}
+
 .update-check {
   margin-top: 20px;
   display: flex;
@@ -234,8 +264,10 @@ body {
 }
 
 .check-update-btn:hover {
-  background: var(--font-color);
-  color: var(--hover);
+  background: var(--font-color);  
+  color: var(--background-color); 
+  transform: scale(1.05);       
+  box-shadow: 0 0 10px rgba(var(--font-color), 0.3);
 }
 
 .check-update-btn svg {
@@ -244,6 +276,7 @@ body {
 
 .check-update-btn:hover svg {
   transform: rotate(180deg);
+  fill: var(--background-color);
 }
 
 /* -------------------------------------
