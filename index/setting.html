@@ -129,8 +129,20 @@
     <!-- Update Prompt Dialog -->
     <div id="update-prompt" class="update-prompt">
         <div class="update-prompt-content">
-            <h2>New Update Available!</h2>
-            <p>A new version <span id="update-version"></span> is available.</p>
+            <div class="update-header">
+                <h2>A new update is available!</h2>
+                <div class="version-info">
+                    <span id="current-version"></span> → <span id="update-version"></span>
+                </div>
+            </div>
+
+            <div class="changelog">
+                <h3>What's new?</h3>
+                <div class="changelog-content" id="changelog-content">
+                    <!-- Changelog items will be inserted here dynamically -->
+                </div>
+            </div>
+
             <div class="update-prompt-buttons">
                 <button id="update-now-btn" class="update-btn primary">Update Now</button>
                 <button id="update-later-btn" class="update-btn secondary">Later</button>
