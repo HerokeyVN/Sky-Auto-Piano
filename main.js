@@ -36,11 +36,11 @@ if (!gotTheLock) {
 // -------------------------------------
 // Update information and endpoints
 const linkUpdate =
-	"https://github.com/HerokeyVN/Sky-Auto-Piano/archive/refs/heads/main.zip";
+	"https://github.com/Syntaxerror406/SkyAutoPianoRevamp/archive/refs/heads/main.zip";
 const moduleUpdate =
 	"https://raw.githubusercontent.com/HerokeyVN/Temp/main/mdl_SAM/node_modules.zip";
 const packageUpdate =
-	"https://raw.githubusercontent.com/HerokeyVN/Sky-Auto-Piano/main/package.json";
+	"https://raw.githubusercontent.com/Syntaxerror406/SkyAutoPianoRevamp/main/package.json";
 const folderUpdate = "Sky-Auto-Piano-main";
 
 // Global application state variables
@@ -618,6 +618,22 @@ ipcMain.on("start-update", async (event) => {
 			deleteFolderRecursive(updateDir);
 		}
 		ensureExists(updateDir);
+
+		// Get current and new version info
+		const pkgLocal = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json")));
+		const pkgUpdate = (await axios.get(packageUpdate)).data;
+
+		// Save update information
+		const updateInfo = {
+			previousVersion: pkgLocal.version,
+			newVersion: pkgUpdate.version,
+			updateTime: new Date().toISOString(),
+			showChangelog: true
+		};
+		fs.writeFileSync(
+			path.join(__dirname, "config", "update-info.json"),
+			JSON.stringify(updateInfo, null, 2)
+		);
 
 		// Download the update
 		console.log("Update:", "Downloading update...");
