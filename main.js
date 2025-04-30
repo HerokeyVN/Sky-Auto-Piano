@@ -606,3 +606,71 @@ ipcMain.on("check-update", async (event) => {
 		});
 	}
 });
+
+// Handle update request from renderer
+ipcMain.on("start-update", async (event) => {
+	try {
+		console.log("Update:", "Starting update process...");
+		
+		// Create update directory if it doesn't exist
+		const updateDir = path.join(__dirname, "update");
+		if (fs.existsSync(updateDir)) {
+			deleteFolderRecursive(updateDir);
+		}
+		ensureExists(updateDir);
+
+		// Download the update
+		console.log("Update:", "Downloading update...");
+		await downloadUpdate(updateDir, "update.zip");
+		
+		// Extract the update
+		console.log("Update:", "Extracting update...");
+		await extractZip(path.join(updateDir, "update.zip"), updateDir);
+		fs.unlinkSync(path.join(updateDir, "update.zip"));
+
+		// Copy files to main directory
+		console.log("Update:", "Installing update...");
+		const except = ["data"]; // Folders to ignore during update
+		const listFile = fs.readdirSync(path.join(updateDir, folderUpdate));
+		
+		for (let file of listFile) {
+			if (except.indexOf(file) === -1) {
+				const sourcePath = path.join(updateDir, folderUpdate, file);
+				const targetPath = path.join(__dirname, file);
+				
+				if (!fs.lstatSync(sourcePath).isFile()) {
+					copyFolder(sourcePath, targetPath);
+				} else {
+					fs.copyFileSync(sourcePath, targetPath);
+				}
+			}
+		}
+
+		// Clean up
+		deleteFolderRecursive(path.join(updateDir, folderUpdate));
+		console.log("Update:", "Update completed successfully!");
+
+		// Notify user and restart
+		const notification = new Notification({
+			title: "Update Complete",
+			body: "The update has been installed. The application will now restart.",
+			icon: path.join(__dirname, "icon", "Icon9.ico"),
+		});
+
+		notification.on("click", () => {
+			app.relaunch();
+			app.quit();
+		});
+
+		notification.show();
+		
+		// Send success message to renderer
+		event.reply("update-status", { success: true });
+	} catch (error) {
+		console.error("Update:", "Error during update process:", error);
+		event.reply("update-status", { 
+			success: false, 
+			error: "Failed to complete update. Please try again later." 
+		});
+	}
+});
