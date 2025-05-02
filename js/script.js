@@ -795,3 +795,34 @@ ipcRenderer.on('show-post-update-changelog', async (event, data) => {
         console.error('Error showing changelog:', error);
     }
 });
+
+// -------------------------------------
+// UPDATE NOTIFICATION HANDLERS
+// -------------------------------------
+// Handle update notifications from the main process
+ipcRenderer.on("show-update-notification", (event, data) => {
+    const { title, message, type } = data;
+    
+    const displayMessage = title ? `<b>${title}</b><br>${message}` : message;
+    
+    notie.alert({
+        type: type, // 1=success, 2=warning, 3=error, 4=info
+        text: displayMessage,
+        stay: type === 3,
+        time: 5
+    });
+});
+
+// Handle update progress from main process
+ipcRenderer.on("update-progress", (event, data) => {
+    const { progress, type } = data;
+    
+    if (progress % 10 === 0 || progress === 100) {
+        const moduleType = type === 'core' ? 'application' : 'module';
+        notie.alert({
+            type: 4,
+            text: `Downloading ${moduleType} update: ${progress}% complete`,
+            time: 3
+        });
+    }
+});
