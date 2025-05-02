@@ -290,7 +290,18 @@ const keyMap = {
 	"arrowleft": "Left",
 	"arrowup": "Up",
 	"arrowright": "Right",
-	"arrowdown": "Down"
+	"arrowdown": "Down",
+	"backquote": "`",
+	"backslash": "\\",
+	"semicolon": ";",
+	"quote": "'",
+	"comma": ",",
+	"period": ".",
+	"slash": "/",
+	"minus": "-",
+	"equal": "=",
+	"bracketleft": "[",
+	"bracketright": "]"
 };
 
 // Function to convert shortcut to keysender format
@@ -347,6 +358,10 @@ for (let id of [
 		// Remove 'Key' prefix from regular keys
 		if (key.startsWith("Key")) {
 			key = key.substring(3);
+		}
+		// Remove 'Digit' prefix from digit keys
+		if (key.startsWith("Digit")) {
+			key = key.substring(5);
 		}
 
 		// Avoid duplicates in combination
