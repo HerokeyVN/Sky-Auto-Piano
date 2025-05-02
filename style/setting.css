@@ -6,232 +6,584 @@
 /* -------------------------------------
    GLOBAL STYLES
    ------------------------------------- */
-* {
-  color: var(--font-color);
-}
-
-body {
-  height: 100%;
-}
-
-/* -------------------------------------
-   NAVIGATION MENU
-   ------------------------------------- */
-.menu {
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: 0;
-  left: 0;
-  background: var(--background-color);
-  box-shadow: 0 0 1rem 0 rgba(0, 0, 0, 0.5);
-  width: 200px;
-  height: -webkit-fill-available;
-  z-index: 1;
-}
-
-.menu h1 {
-  display: flex;
-  justify-content: center;
-  margin: 10px;
-  color: var(--font-color);
-}
-
-.menu h3 {
-  position: relative;
-  display: flex;
-  align-items: center;
-  height: 40px;
-  margin: 0 10px;
-  color: var(--font-color);
-}
-
-.menu h3 a {
-  z-index: 2;
-  transition: 0.3s linear;
-}
-
-.menu h3 span {
-  position: absolute;
-  top: 0;
-  left: -10px;
-  width: 0%;
-  height: 100%;
-  background: var(--font-color);
-  z-index: 1;
-  transition: 0.3s linear;
-}
-
-.menu h3:hover a,
-.menu .active a {
-  color: var(--hover);
-}
-
-.menu h3:hover span,
-.menu .active span {
-  width: 110%;
-}
-
-.menu .active {
-  background: #ffffff00;
-}
-
-/* -------------------------------------
-   MAIN CONTENT AREA
-   ------------------------------------- */
-.content {
-  position: absolute;
-  top: 0;
-  left: 200px;
-  width: -webkit-fill-available;
-  height: 100%;
-  color: #fff;
-  z-index: 0;
-}
-
-.content .tab {
-  display: none;
-}
-
-/* -------------------------------------
-   GENERAL TAB
-   ------------------------------------- */
-#general {
-  flex-direction: column;
-  padding: 20px 20px;
-}
-
-/* -------------------------------------
-   KEYBOARD TAB
-   ------------------------------------- */
-#keyboard {
-  flex-direction: column;
-}
-
-#keyboard table {
-  display: flex;
-  width: -webkit-fill-available;
-  justify-content: center;
-}
-
-#keyboard tr {
-  display: flex;
-}
-
-#keyboard td {
-  display: flex;
-  width: 67px;
-  height: 67px;
-  border-radius: 10px;
-  margin: 10px 10px;
-  padding: 5px 5px;
-  background: rgba(110, 110, 110, 0.2);
-  transition: 0.3s linear;
-}
-
-#keyboard td:hover {
-  background: rgba(110, 110, 110, 0.4);
-}
-
-/* Key visual styling */
-#keyboard table span {
-  display: block;
-  position: relative;
-  margin: 10px 10px;
-  width: 40px;
-  height: 40px;
-}
-
-#keyboard table span input {
-  position: absolute;
-  width: 100%;
-  top: 32%;
-  left: 4%;
-  color: var(--font-color);
-  font-weight: bold;
-  font-size: large;
-  text-transform: uppercase;
-  text-align: center;
-  background: rgba(0, 0, 0, 0);
-  border: 0;
-}
-
-#keyboard table span input:focus-visible {
-  outline: rgba(0, 0, 0, 0);
-}
-
-/* Key shape indicators */
-#keyboard .square:after {
-  position: absolute;
-  display: block;
-  content: "";
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--font-color);
-  transform: rotate(45deg);
-}
-
-#keyboard .circle:before {
-  position: absolute;
-  display: block;
-  content: "";
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--font-color);
-  border-radius: 100%;
-}
-
-.nor-setting {
-  padding: 10px 20px;
-}
-
-/* -------------------------------------
-   SHORTCUT TAB
-   ------------------------------------- */
-#shortcut {
-  flex-direction: column;
-  padding: 20px 20px;
-}
-
-#shortcut .setting-shell {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 10px;
-}
-
-#shortcut .setting-shell input {
-  height: 30px;
-  background: var(--background-color);
-  border: 0;
-}
-
-/* -------------------------------------
-   UPDATE TAB
-   ------------------------------------- */
-#update {
-  flex-direction: column;
-  padding: 20px 20px;
-}
-
-/* -------------------------------------
-   SAVE BUTTON
-   ------------------------------------- */
-.btn-save-setting {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  background: var(--background-color);
-  color: var(--font-color);
-  padding: 15px 15px;
-  border-radius: 100%;
-  transition: 0.1s linear;
-}
-
-.btn-save-setting:hover {
-  background-color: var(--font-color);
-  color: var(--hover);
-}
+   * {
+    color: var(--font-color);
+  }
+  
+  body {
+    height: 100%;
+  }
+  
+  /* -------------------------------------
+     NAVIGATION MENU
+     ------------------------------------- */
+  .menu {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: var(--background-color);
+    box-shadow: 0 0 1rem 0 rgba(0, 0, 0, 0.5);
+    width: 200px;
+    height: -webkit-fill-available;
+    z-index: 1;
+  }
+  
+  .menu h1 {
+    display: flex;
+    justify-content: center;
+    margin: 10px;
+    color: var(--font-color);
+  }
+  
+  .menu h3 {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 40px;
+    margin: 0 10px;
+    color: var(--font-color);
+  }
+  
+  .menu h3 a {
+    z-index: 2;
+    transition: 0.3s linear;
+  }
+  
+  .menu h3 span {
+    position: absolute;
+    top: 0;
+    left: -10px;
+    width: 0%;
+    height: 100%;
+    background: var(--font-color);
+    z-index: 1;
+    transition: 0.3s linear;
+  }
+  
+  .menu h3:hover a,
+  .menu .active a {
+    color: var(--hover);
+  }
+  
+  .menu h3:hover span,
+  .menu .active span {
+    width: 110%;
+  }
+  
+  .menu .active {
+    background: #ffffff00;
+  }
+  
+  /* -------------------------------------
+     MAIN CONTENT AREA
+     ------------------------------------- */
+  .content {
+    position: absolute;
+    top: 0;
+    left: 200px;
+    width: -webkit-fill-available;
+    height: 100%;
+    color: #fff;
+    z-index: 0;
+  }
+  
+  .content .tab {
+    display: none;
+  }
+  
+  /* -------------------------------------
+     GENERAL TAB
+     ------------------------------------- */
+  #general {
+    flex-direction: column;
+    padding: 20px 20px;
+  }
+  
+  /* -------------------------------------
+     KEYBOARD TAB
+     ------------------------------------- */
+  #keyboard {
+    flex-direction: column;
+  }
+  
+  #keyboard table {
+    display: flex;
+    width: -webkit-fill-available;
+    justify-content: center;
+  }
+  
+  #keyboard tr {
+    display: flex;
+  }
+  
+  #keyboard td {
+    display: flex;
+    width: 67px;
+    height: 67px;
+    border-radius: 10px;
+    margin: 10px 10px;
+    padding: 5px 5px;
+    background: rgba(110, 110, 110, 0.2);
+    transition: 0.3s linear;
+  }
+  
+  #keyboard td:hover {
+    background: rgba(110, 110, 110, 0.4);
+  }
+  
+  /* Key visual styling */
+  #keyboard table span {
+    display: block;
+    position: relative;
+    margin: 10px 10px;
+    width: 40px;
+    height: 40px;
+  }
+  
+  #keyboard table span input {
+    position: absolute;
+    width: 100%;
+    top: 32%;
+    left: 4%;
+    color: var(--font-color);
+    font-weight: bold;
+    font-size: large;
+    text-transform: uppercase;
+    text-align: center;
+    background: rgba(0, 0, 0, 0);
+    border: 0;
+  }
+  
+  #keyboard table span input:focus-visible {
+    outline: rgba(0, 0, 0, 0);
+  }
+  
+  /* Key shape indicators */
+  #keyboard .square:after {
+    position: absolute;
+    display: block;
+    content: "";
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--font-color);
+    transform: rotate(45deg);
+  }
+  
+  #keyboard .circle:before {
+    position: absolute;
+    display: block;
+    content: "";
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--font-color);
+    border-radius: 100%;
+  }
+  
+  .nor-setting {
+    padding: 10px 20px;
+  }
+  
+  /* -------------------------------------
+     SHORTCUT TAB
+     ------------------------------------- */
+  #shortcut {
+    flex-direction: column;
+    padding: 20px 20px;
+  }
+  
+  #shortcut .setting-shell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+  }
+  
+  #shortcut .setting-shell input {
+    height: 30px;
+    background: var(--background-color);
+    border: 0;
+  }
+  
+  /* -------------------------------------
+     UPDATE TAB
+     ------------------------------------- */
+  #update {
+    flex-direction: column;
+    padding: 20px 20px;
+  }
+  
+  .update-status {
+    margin: 20px 0;
+    text-align: center;
+    min-height: 30px;
+  }
+  
+  .update-message {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: all 0.5s ease;
+    opacity: 0;
+    visibility: hidden;
+  }
+  
+  .update-message.show {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .update-message.success {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+  }
+  
+  .update-message.error {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+  }
+  
+  .update-check {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .check-update-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--background-color);
+    color: var(--font-color);
+    border: 1px solid var(--font-color);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s linear;
+  }
+  
+  .check-update-btn:hover {
+    background: var(--font-color);  
+    color: var(--background-color); 
+    transform: scale(1.05);       
+    box-shadow: 0 0 10px rgba(var(--font-color), 0.3);
+  }
+  
+  .check-update-btn svg {
+    transition: 0.3s linear;
+  }
+  
+  .check-update-btn:hover svg {
+    transform: rotate(180deg);
+    fill: var(--background-color);
+  }
+  
+  /* -------------------------------------
+     SAVE BUTTON
+     ------------------------------------- */
+  .btn-save-setting {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--background-color);
+    color: var(--font-color);
+    padding: 15px 15px;
+    border-radius: 100%;
+    transition: 0.1s linear;
+  }
+  
+  .btn-save-setting:hover {
+    background-color: var(--font-color);
+    color: var(--hover);
+  }
+  
+  /* -------------------------------------
+     UPDATE PROMPT DIALOG
+     ------------------------------------- */
+  .update-prompt {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+  }
+  
+  .update-prompt.show {
+      display: flex;
+  }
+  
+  .update-prompt-content {
+      background: var(--background-color);
+      padding: 30px;
+      border-radius: 10px;
+      text-align: left;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  }
+  
+  .update-header {
+      margin-bottom: 20px;
+  }
+  
+  .update-header h2 {
+      margin: 0 0 10px 0;
+      color: var(--font-color);
+  }
+  
+  .version-info {
+      font-size: 1.2em;
+      color: var(--font-color);
+      opacity: 0.8;
+  }
+  
+  .changelog {
+      margin: 20px 0;
+      padding: 15px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .changelog h3 {
+      margin: 0 0 15px 0;
+      font-size: 1.1em;
+      color: var(--font-color);
+  }
+  
+  .changelog-content {
+      color: var(--font-color);
+      font-size: 0.9em;
+      line-height: 1.5;
+  }
+  
+  .changelog-content h1,
+  .changelog-content h2,
+  .changelog-content h3 {
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+  }
+  
+  .changelog-content h1 {
+      font-size: 1.5em;
+  }
+  
+  .changelog-content h2 {
+      font-size: 1.3em;
+  }
+  
+  .changelog-content h3 {
+      font-size: 1.1em;
+  }
+  
+  .changelog-content ul,
+  .changelog-content ol {
+      margin: 0.5em 0;
+      padding-left: 1.5em;
+  }
+  
+  .changelog-content li {
+      margin: 0.3em 0;
+  }
+  
+  .changelog-content p {
+      margin: 0.5em 0;
+  }
+  
+  .changelog-content code {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.2em 0.4em;
+      border-radius: 3px;
+      font-family: monospace;
+  }
+  
+  .changelog-content pre {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 1em;
+      border-radius: 5px;
+      overflow-x: auto;
+  }
+  
+  .changelog-content pre code {
+      background: none;
+      padding: 0;
+  }
+  
+  .changelog-content a {
+      color: #58a6ff;
+      text-decoration: none;
+  }
+  
+  .changelog-content a:hover {
+      text-decoration: underline;
+  }
+  
+  .changelog-content .error {
+      color: #e74c3c;
+      text-align: center;
+      padding: 1em;
+  }
+  
+  .changelog-item {
+      margin-bottom: 15px;
+  }
+  
+  .changelog-item .title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+  }
+  
+  .changelog-item .title svg {
+      width: 16px;
+      height: 16px;
+  }
+  
+  .changelog-item .details {
+      margin-left: 24px;
+      font-size: 0.9em;
+      opacity: 0.8;
+  }
+  
+  .changelog-item .details li {
+      margin: 5px 0;
+      list-style-type: none;
+      position: relative;
+  }
+  
+  .changelog-item .details li::before {
+      content: "-";
+      position: absolute;
+      left: -15px;
+  }
+  
+  .update-prompt-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: flex-end;
+      margin-top: 20px;
+  }
+  
+  .update-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s linear;
+  }
+  
+  .update-btn.primary {
+      background: var(--font-color);
+      color: var(--background-color);
+  }
+  
+  .update-btn.primary:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(var(--font-color), 0.3);
+  }
+  
+  .update-btn.secondary {
+      background: transparent;
+      border: 1px solid var(--font-color);
+      color: var(--font-color);
+  }
+  
+  .update-btn.secondary:hover {
+      background: rgba(var(--font-color), 0.1);
+      transform: scale(1.05);
+  }
+  
+  /* Loading Spinner */
+  .spinner {
+      animation: rotate 2s linear infinite;
+      width: 20px;
+      height: 20px;
+      margin-right: 8px;
+      vertical-align: middle;
+  }
+  
+  .spinner .path {
+      stroke: currentColor;
+      stroke-linecap: round;
+      animation: dash 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes rotate {
+      100% {
+          transform: rotate(360deg);
+      }
+  }
+  
+  @keyframes dash {
+      0% {
+          stroke-dasharray: 1, 150;
+          stroke-dashoffset: 0;
+      }
+      50% {
+          stroke-dasharray: 90, 150;
+          stroke-dashoffset: -35;
+      }
+      100% {
+          stroke-dasharray: 90, 150;
+          stroke-dashoffset: -124;
+      }
+  }
+  
+  /* Disabled button state */
+  .update-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none !important;
+  }
+  
+  /* -------------------------------------
+     POST-UPDATE CHANGELOG
+     ------------------------------------- */
+  .update-prompt.post-update .version-info {
+      justify-content: center;
+      font-size: 1.4em;
+      margin-bottom: 1em;
+  }
+  
+  .update-prompt.post-update h2 {
+      text-align: center;
+      margin-bottom: 1.5em;
+  }
+  
+  .update-prompt.post-update .update-prompt-buttons {
+      justify-content: center;
+      margin-top: 2em;
+  }
+  
+  .update-prompt.post-update .close-changelog-btn {
+      min-width: 120px;
+  }
+  
+  /* Fade in animation for changelog */
+  @keyframes fadeIn {
+      from {
+          opacity: 0;
+          transform: translateY(-20px);
+      }
+      to {
+          opacity: 1;
+          transform: translateY(0);
+      }
+  }
+  
+  .update-prompt.show {
+      animation: fadeIn 0.3s ease-out;
+  }
+  

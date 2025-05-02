@@ -3,7 +3,7 @@
  * This is the main Electron process that handles application lifecycle,
  * window management, updates, and auto-play functionality.
  */
-
+const devMode = false;
 // -------------------------------------
 // IMPORTS AND SETUP
 // -------------------------------------
@@ -60,7 +60,7 @@ const defaultConfig = {
 		longPressMode: false,
 		speed: 1,
 		delayNext: 1,
-		autoSave: false,
+		autoSave: true,
 		minimizeOnPlay: true,
 	},
 	keyboard: {
@@ -75,12 +75,37 @@ const defaultConfig = {
 		pre: "Ctrl+Shift+C",
 		play: "Ctrl+Shift+V",
 		next: "Ctrl+Shift+B",
+		increaseSpeed: "Ctrl+Up",
+		decreaseSpeed: "Ctrl+Down",
 	},
 	update: {
 		blockUpdate: false,
 	},
 	appTheme: "light",
 };
+
+// Function to update config with missing values
+function updateConfigWithDefaults(currentConfig, defaultConfig) {
+	let updated = false;
+	
+	// Helper function to recursively check and update objects
+	function updateObject(current, defaults, path = '') {
+		for (const key in defaults) {
+			const currentPath = path ? `${path}.${key}` : key;
+			
+			if (!(key in current)) {
+				current[key] = defaults[key];
+				updated = true;
+				console.log(`Added missing config value: ${currentPath}`);
+			} else if (typeof defaults[key] === 'object' && !Array.isArray(defaults[key])) {
+				updateObject(current[key], defaults[key], currentPath);
+			}
+		}
+	}
+	
+	updateObject(currentConfig, defaultConfig);
+	return updated;
+}
 
 let config;
 try {
@@ -89,28 +114,11 @@ try {
 		config = defaultConfig;
 	} else {
 		config = JSON.parse(fs.readFileSync(dirSetting));
-		let updated = false;
-		if (config.appTheme === undefined) {
-			config.appTheme = defaultConfig.appTheme;
-			updated = true;
-		}
-		if (config.panel === undefined) {
-			config.panel = defaultConfig.panel;
-			updated = true;
-		} else if (config.panel.minimizeOnPlay === undefined) {
-			config.panel.minimizeOnPlay = defaultConfig.panel.minimizeOnPlay;
-			updated = true;
-		}
-		if (config.update === undefined) {
-			config.update = defaultConfig.update;
-			updated = true;
-		} else if (config.update.blockUpdate === undefined) {
-			config.update.blockUpdate = defaultConfig.update.blockUpdate;
-			updated = true;
-		}
-
-		if (updated) {
+		
+		// Update config with any missing values
+		if (updateConfigWithDefaults(config, defaultConfig)) {
 			fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
+			console.log("Config file updated with missing values");
 		}
 	}
 } catch (error) {
@@ -123,7 +131,6 @@ try {
 	}
 }
 
-var devMode = false;
 var longPressMode = defaultConfig.panel.longPressMode;
 var speed = defaultConfig.panel.speed;
 var delayNext = defaultConfig.panel.delayNext;
@@ -132,7 +139,14 @@ if (config.panel.autoSave) {
 	longPressMode = config.panel.longPressMode;
 	speed = config.panel.speed;
 	delayNext = config.panel.delayNext;
+} else {
+	// Load speed from config even if autoSave is off
+	speed = config.panel.speed;
 }
+
+// Round speed to one decimal place
+speed = Math.round(speed * 10) / 10;
+config.panel.speed = speed;
 
 // -------------------------------------
 // APPLICATION INITIALIZATION
@@ -140,6 +154,7 @@ if (config.panel.autoSave) {
 if (!devMode) Menu.setApplicationMenu(Menu.buildFromTemplate([]));
 app.setAppUserModelId("Sky Auto Piano");
 app.setName("Sky Auto Piano");
+
 
 (async () => {
 	if (config.update?.blockUpdate === true) {
@@ -164,17 +179,42 @@ app.setName("Sky Auto Piano");
 		deleteFolderRecursive(path.join(__dirname, "update"));
 	}
 
+	let pathFile = path.join(__dirname, "update");
+
+	// Install support module
+	if (pkgUpdate.module_version != pkgLocal.module_version) {
+		try {
+			console.log("Update:", "Start downloading support module...");
+			await downloadUpdate(__dirname, "node_modules.zip", moduleUpdate);
+		} catch (error) {
+			console.error(
+				"Update:",
+				"Error generation during the download process: " + error
+			);
+			return;
+		}
+		console.log("Update:", "Start extracting the support module...");
+		try {
+			await extractZip(path.join(__dirname, "node_modules.zip"), __dirname);
+			await new Promise((resolve) => setTimeout(resolve, 1000)); // Ensure the node_modules folder is closed before deleting
+
+			fs.unlinkSync(path.join(__dirname, "node_modules.zip"));
+			console.log("Update:", "Complete the support module update...");
+		} catch (error) {
+			fs.unlinkSync(path.join(__dirname, "node_modules.zip"));
+			console.error("Update:", error);
+			return;
+		}
+	}
+
+	// Install the software core
 	if (vern != verg) {
 		console.warn(
 			"Update:",
 			"The new update has been discovered. Proceed to download the imported version..."
 		);
-		let pathFile = path.join(__dirname, "update");
+
 		try {
-			if (pkgUpdate.module_version != pkgLocal.module_version) {
-				console.log("Update:", "Start downloading support module...");
-				await downloadUpdate(__dirname, "node_modules.zip");
-			}
 			// Download the software core
 			console.log("Update:", "Start downloading the software core...");
 			await downloadUpdate(pathFile, "update.zip");
@@ -186,21 +226,7 @@ app.setName("Sky Auto Piano");
 			);
 			return;
 		}
-
-		// Extract the support module
-		if (pkgUpdate.module_version != pkgLocal.module_version) {
-			console.log("Update:", "Start extracting the support module...");
-			try {
-				await extractZip(path.join(__dirname, "node_modules.zip"), __dirname);
-				fs.unlinkSync(path.join(__dirname, "node_modules.zip"));
-				console.log("Update:", "Complete the support module update...");
-			} catch (error) {
-				fs.unlinkSync(path.join(__dirname, "node_modules.zip"));
-				console.error("Update:", error);
-				return;
-			}
-		}
-
+		
 		// Extract the software core
 		console.log("Update:", "Start extracting the software core...");
 		try {
@@ -264,6 +290,24 @@ function createWindow() {
 	});
 
 	win.loadFile(path.join(__dirname, "index", "index.html"));
+
+	// Check for post-update changelog
+	const updateInfoPath = path.join(__dirname, "config", "update-info.json");
+	if (fs.existsSync(updateInfoPath)) {
+		try {
+			const updateInfo = JSON.parse(fs.readFileSync(updateInfoPath));
+			if (updateInfo.showChangelog) {
+				// Wait for window to load before showing changelog
+				win.webContents.on('did-finish-load', () => {
+					win.webContents.send('show-post-update-changelog', {
+						version: updateInfo.newVersion
+					});
+				});
+			}
+		} catch (error) {
+			console.error("Error reading update info:", error);
+		}
+	}
 
 	// Send notification when update is done
 	if (updatedNoti) {
@@ -347,6 +391,18 @@ function createWindow() {
 	});
 	globalShortcut.register(config.shortcut.next, () => {
 		win.webContents.send("btn-next");
+	});
+	globalShortcut.register(config.shortcut.increaseSpeed, () => {
+		speed = Math.min(5, Math.round((speed + 0.1) * 10) / 10);
+		config.panel.speed = speed;
+		fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
+		win.webContents.send("speed-changed", speed);
+	});
+	globalShortcut.register(config.shortcut.decreaseSpeed, () => {
+		speed = Math.max(0.1, Math.round((speed - 0.1) * 10) / 10);
+		config.panel.speed = speed;
+		fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
+		win.webContents.send("speed-changed", speed);
 	});
 
 	// The main program automatically plays music (send pressing keys)
@@ -471,9 +527,7 @@ function winLog(win, msg) {
 	win.webContents.send("winLog", msg);
 }
 
-async function downloadUpdate(pathFile, nameFile) {
-	let url = linkUpdate;
-
+async function downloadUpdate(pathFile, nameFile, url = linkUpdate) {
 	ensureExists(pathFile);
 
 	try {
@@ -567,3 +621,126 @@ function ensureExists(path, mask) {
 		};
 	}
 }
+
+ipcMain.on("changeSetting", () => {
+	config = JSON.parse(fs.readFileSync(dirSetting));
+});
+
+// -------------------------------------
+// UPDATE CHECK HANDLER
+// -------------------------------------
+// Handle the update check request from the renderer process
+// This function checks if a new version is available by comparing local and remote versions
+ipcMain.on("check-update", async (event) => {
+	try {
+		// Read the local package.json to get current version
+		let pkgLocal = JSON.parse(
+			fs.readFileSync(path.join(__dirname, "package.json"))
+		);
+		let vern = pkgLocal.version;
+
+		// Fetch the remote package.json to get latest version
+		var pkgUpdate = (await axios.get(packageUpdate)).data;
+		var verg = pkgUpdate.version;
+
+		console.log("Update Check:", `Current version: ${vern}, Latest version: ${verg}`);
+
+		// Send response back to renderer with update availability and versions
+		event.reply("update-check-response", {
+			available: vern !== verg,
+			currentVersion: vern,
+			latestVersion: verg
+		});
+	} catch (e) {
+		// If there's an error (e.g., network issue), log it and notify the user
+		console.error("Update:", e, "Failed to connect to the server!");
+		event.reply("update-check-response", {
+			available: false,
+			error: true
+		});
+	}
+});
+
+// Handle update request from renderer
+ipcMain.on("start-update", async (event) => {
+	try {
+		console.log("Update:", "Starting update process...");
+		
+		// Create update directory if it doesn't exist
+		const updateDir = path.join(__dirname, "update");
+		if (fs.existsSync(updateDir)) {
+			deleteFolderRecursive(updateDir);
+		}
+		ensureExists(updateDir);
+
+		// Get current and new version info
+		const pkgLocal = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json")));
+		const pkgUpdate = (await axios.get(packageUpdate)).data;
+
+		// Save update information
+		const updateInfo = {
+			previousVersion: pkgLocal.version,
+			newVersion: pkgUpdate.version,
+			updateTime: new Date().toISOString(),
+			showChangelog: true
+		};
+		fs.writeFileSync(
+			path.join(__dirname, "config", "update-info.json"),
+			JSON.stringify(updateInfo, null, 2)
+		);
+
+		// Download the update
+		console.log("Update:", "Downloading update...");
+		await downloadUpdate(updateDir, "update.zip");
+		
+		// Extract the update
+		console.log("Update:", "Extracting update...");
+		await extractZip(path.join(updateDir, "update.zip"), updateDir);
+		fs.unlinkSync(path.join(updateDir, "update.zip"));
+
+		// Copy files to main directory
+		console.log("Update:", "Installing update...");
+		const except = ["data"]; // Folders to ignore during update
+		const listFile = fs.readdirSync(path.join(updateDir, folderUpdate));
+		
+		for (let file of listFile) {
+			if (except.indexOf(file) === -1) {
+				const sourcePath = path.join(updateDir, folderUpdate, file);
+				const targetPath = path.join(__dirname, file);
+				
+				if (!fs.lstatSync(sourcePath).isFile()) {
+					copyFolder(sourcePath, targetPath);
+				} else {
+					fs.copyFileSync(sourcePath, targetPath);
+				}
+			}
+		}
+
+		// Clean up
+		deleteFolderRecursive(path.join(updateDir, folderUpdate));
+		console.log("Update:", "Update completed successfully!");
+
+		// Notify user and restart
+		const notification = new Notification({
+			title: "Update Complete",
+			body: "The update has been installed. The application will now restart.",
+			icon: path.join(__dirname, "icon", "Icon9.ico"),
+		});
+
+		notification.on("click", () => {
+			app.relaunch();
+			app.quit();
+		});
+
+		notification.show();
+		
+		// Send success message to renderer
+		event.reply("update-status", { success: true });
+	} catch (error) {
+		console.error("Update:", "Error during update process:", error);
+		event.reply("update-status", { 
+			success: false, 
+			error: "Failed to complete update. Please try again later." 
+		});
+	}
+});

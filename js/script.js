@@ -7,10 +7,11 @@
 // -------------------------------------
 // IMPORTS AND SETUP
 // -------------------------------------
-const { ipcRenderer } = require("electron");
+const { ipcRenderer, shell } = require("electron");
 const fs = require("fs");
 const path = require("path");
 const { Base64 } = require("js-base64");
+const marked = require("marked");
 
 // -------------------------------------
 // CONFIGURATION AND CONSTANTS
@@ -20,12 +21,27 @@ const config = JSON.parse(
   fs.readFileSync(path.join(__dirname, "..", "config", "config.json"))
 );
 
+// Configure marked to open links in external browser
+marked.setOptions({
+	renderer: new marked.Renderer()
+});
+
+// Handle external links
+document.addEventListener('click', (event) => {
+	const target = event.target.closest('a');
+	if (target && target.href && target.href.startsWith('http')) {
+		event.preventDefault();
+		shell.openExternal(target.href);
+	}
+});
+
 // Piano key mapping (corresponds to the in-game keyboard layout)
 const keys = [
   "y", "u", "i", "o", "p",
   "h", "j", "k", "l", ";",
   "n", "m", ",", ".", "/"
 ];
+
 
 // -------------------------------------
 // DATA INITIALIZATION
@@ -117,6 +133,9 @@ if (config.panel.autoSave) {
   document.getElementById("switch").checked = config.panel.longPressMode;
   document.getElementById("delay-loop").value = config.panel.delayNext;
   document.getElementById("delay-next-value").innerHTML = `Delay next: ${config.panel.delayNext}s`;
+} else {
+  // Load speed from config even if autoSave is off
+  document.getElementById("speed-btn").value = config.panel.speed;
 }
 
 // Load and display sheet list
@@ -521,6 +540,11 @@ ipcRenderer.on("process-bar", (event, data) => {
   document.getElementsByClassName("live-time")[0].innerHTML = `${min}:${sec}`;
 });
 
+// Handle speed change events
+ipcRenderer.on("speed-changed", (event, newSpeed) => {
+  document.getElementById("speed-btn").value = newSpeed;
+});
+
 // Handle playback completion
 ipcRenderer.on("stop-player", (event, data) => {
   // Reset UI to initial state
@@ -623,7 +647,11 @@ document.getElementById("speed-btn").addEventListener("change", (data) => {
   if (Number(data.target.value) > Number(data.target.max))
     data.target.value = data.target.max;
   
-  ipcRenderer.send("changeSpeed", data.target.value);
+  // Round to one decimal place
+  const roundedSpeed = Math.round(Number(data.target.value) * 10) / 10;
+  data.target.value = roundedSpeed;
+  
+  ipcRenderer.send("changeSpeed", roundedSpeed);
 });
 
 // Settings button handler
@@ -713,3 +741,57 @@ function ensureExists(path, mask) {
     };
   }
 }
+
+// Function to fetch changelog from GitHub
+async function fetchChangelog(version) {
+    try {
+        const response = await fetch(`https://api.github.com/repos/HerokeyVN/Sky-Auto-Piano/releases/tags/v${version}`);
+        const data = await response.json();
+        return data.body;
+    } catch (error) {
+        console.error('Error fetching changelog:', error);
+        return null;
+    }
+}
+
+// Function to parse markdown changelog to HTML
+function parseChangelog(markdown) {
+    const changelogHTML = marked.parse(markdown);
+    return `<div class="changelog-content">${changelogHTML}</div>`;
+}
+
+// Handle post-update changelog display
+ipcRenderer.on('show-post-update-changelog', async (event, data) => {
+    const updatePrompt = document.getElementById('update-prompt');
+    const currentVersion = document.getElementById('current-version');
+    const changelogContent = document.getElementById('changelog-content');
+
+    try {
+        // Fetch and display changelog
+        const changelog = await fetchChangelog(data.version);
+        if (changelog) {
+            // Update version display
+            currentVersion.textContent = `Version ${data.version}`;
+            
+            // Display changelog
+            changelogContent.innerHTML = parseChangelog(changelog);
+            
+            // Show the dialog
+            updatePrompt.classList.add('show');
+            
+            // Handle close button
+            document.getElementById('close-changelog-btn').addEventListener('click', () => {
+                updatePrompt.classList.remove('show');
+                // Mark changelog as viewed
+                const updateInfoPath = path.join(__dirname, '..', 'config', 'update-info.json');
+                if (fs.existsSync(updateInfoPath)) {
+                    const updateInfo = JSON.parse(fs.readFileSync(updateInfoPath));
+                    updateInfo.showChangelog = false;
+                    fs.writeFileSync(updateInfoPath, JSON.stringify(updateInfo, null, 2));
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error showing changelog:', error);
+    }
+});
