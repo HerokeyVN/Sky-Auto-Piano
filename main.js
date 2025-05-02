@@ -3,7 +3,7 @@
  * This is the main Electron process that handles application lifecycle,
  * window management, updates, and auto-play functionality.
  */
-
+const devMode = false;
 // -------------------------------------
 // IMPORTS AND SETUP
 // -------------------------------------
@@ -72,11 +72,11 @@ const defaultConfig = {
 		],
 	},
 	shortcut: {
-		pre: "ctrl+shift+c",
-		play: "ctrl+shift+v",
-		next: "ctrl+shift+b",
-		increaseSpeed: "numadd",
-		decreaseSpeed: "numsub",
+		pre: "Ctrl+Shift+C",
+		play: "Ctrl+Shift+V",
+		next: "Ctrl+Shift+B",
+		increaseSpeed: "Ctrl+Up",
+		decreaseSpeed: "Ctrl+Down",
 	},
 	update: {
 		blockUpdate: false,
@@ -131,7 +131,6 @@ try {
 	}
 }
 
-var devMode = false;
 var longPressMode = defaultConfig.panel.longPressMode;
 var speed = defaultConfig.panel.speed;
 var delayNext = defaultConfig.panel.delayNext;
@@ -156,6 +155,7 @@ if (!devMode) Menu.setApplicationMenu(Menu.buildFromTemplate([]));
 app.setAppUserModelId("Sky Auto Piano");
 app.setName("Sky Auto Piano");
 
+
 (async () => {
 	if (config.update?.blockUpdate === true) {
 		console.log("Update: Update checking is blocked by user setting.");
@@ -179,17 +179,42 @@ app.setName("Sky Auto Piano");
 		deleteFolderRecursive(path.join(__dirname, "update"));
 	}
 
+	let pathFile = path.join(__dirname, "update");
+
+	// Install support module
+	if (pkgUpdate.module_version != pkgLocal.module_version) {
+		try {
+			console.log("Update:", "Start downloading support module...");
+			await downloadUpdate(__dirname, "node_modules.zip", moduleUpdate);
+		} catch (error) {
+			console.error(
+				"Update:",
+				"Error generation during the download process: " + error
+			);
+			return;
+		}
+		console.log("Update:", "Start extracting the support module...");
+		try {
+			await extractZip(path.join(__dirname, "node_modules.zip"), __dirname);
+			await new Promise((resolve) => setTimeout(resolve, 1000)); // Ensure the node_modules folder is closed before deleting
+
+			fs.unlinkSync(path.join(__dirname, "node_modules.zip"));
+			console.log("Update:", "Complete the support module update...");
+		} catch (error) {
+			fs.unlinkSync(path.join(__dirname, "node_modules.zip"));
+			console.error("Update:", error);
+			return;
+		}
+	}
+
+	// Install the software core
 	if (vern != verg) {
 		console.warn(
 			"Update:",
 			"The new update has been discovered. Proceed to download the imported version..."
 		);
-		let pathFile = path.join(__dirname, "update");
+
 		try {
-			if (pkgUpdate.module_version != pkgLocal.module_version) {
-				console.log("Update:", "Start downloading support module...");
-				await downloadUpdate(__dirname, "node_modules.zip");
-			}
 			// Download the software core
 			console.log("Update:", "Start downloading the software core...");
 			await downloadUpdate(pathFile, "update.zip");
@@ -201,21 +226,7 @@ app.setName("Sky Auto Piano");
 			);
 			return;
 		}
-
-		// Extract the support module
-		if (pkgUpdate.module_version != pkgLocal.module_version) {
-			console.log("Update:", "Start extracting the support module...");
-			try {
-				await extractZip(path.join(__dirname, "node_modules.zip"), __dirname);
-				fs.unlinkSync(path.join(__dirname, "node_modules.zip"));
-				console.log("Update:", "Complete the support module update...");
-			} catch (error) {
-				fs.unlinkSync(path.join(__dirname, "node_modules.zip"));
-				console.error("Update:", error);
-				return;
-			}
-		}
-
+		
 		// Extract the software core
 		console.log("Update:", "Start extracting the software core...");
 		try {
@@ -516,9 +527,7 @@ function winLog(win, msg) {
 	win.webContents.send("winLog", msg);
 }
 
-async function downloadUpdate(pathFile, nameFile) {
-	let url = linkUpdate;
-
+async function downloadUpdate(pathFile, nameFile, url = linkUpdate) {
 	ensureExists(pathFile);
 
 	try {
