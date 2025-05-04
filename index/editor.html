@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sheet Editor</title>
+
+    <link rel="stylesheet" href="../style/editor.css">
+</head>
+<body>
+    <div class="editor-container">
+        <div class="music-grid">
+            <div class="grid-boxes">
+                <!-- Grid boxes will be generated dynamically -->
+            </div>
+        </div>
+
+        <div class="bottom-container">
+            <div class="music-info">
+                <div class="editable-container">
+                    <div class="editable-field" data-field="name">
+                        <span class="field-value">Song Name</span>
+                    </div>
+                    <div class="editable-field" data-field="author">
+                        <span class="field-label">Author: </span><span class="field-value">Unknown</span>
+                    </div>
+                    <div class="editable-field" data-field="transcribedBy">
+                        <span class="field-label">Transcribed by: </span><span class="field-value">Unknown</span>
+                    </div>
+                    <div class="editable-field" data-field="bpm">
+                        <span class="field-label">BPM: </span><span class="field-value">120</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="keyboard">
+                <table>
+                    <tr>
+                        <td><span class="square"><input type="button" value="Y" data-key="y"></span></td>
+                        <td><span class="square"><input type="button" value="U" data-key="u"></span></td>
+                        <td><span class="square"><input type="button" value="I" data-key="i"></span></td>
+                        <td><span class="square"><input type="button" value="O" data-key="o"></span></td>
+                        <td><span class="square"><input type="button" value="P" data-key="p"></span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="circle"><input type="button" value="H" data-key="h"></span></td>
+                        <td><span class="circle"><input type="button" value="J" data-key="j"></span></td>
+                        <td><span class="circle"><input type="button" value="K" data-key="k"></span></td>
+                        <td><span class="circle"><input type="button" value="L" data-key="l"></span></td>
+                        <td><span class="circle"><input type="button" value=";" data-key=";"></span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="square"><input type="button" value="N" data-key="n"></span></td>
+                        <td><span class="square"><input type="button" value="M" data-key="m"></span></td>
+                        <td><span class="square"><input type="button" value="," data-key=","></span></td>
+                        <td><span class="square"><input type="button" value="." data-key="."></span></td>
+                        <td><span class="square"><input type="button" value="/" data-key="/"></span></td>
+                    </tr>
+                </table>
+                <div class="edit-buttons">
+                    <button class="save-btn">Save</button>
+                    <button class="cancel-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../js/editor.js"></script>
+</body>
+</html>

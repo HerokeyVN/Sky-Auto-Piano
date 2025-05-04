@@ -415,6 +415,28 @@ function createWindow() {
 		createWindowSetting();
 	});
 
+	// Open Sheet Editor window
+	ipcMain.on("openSheetEditor", (event, args) => {
+		const windowBackgroundColor = config.appTheme === "dark" ? "#1B1D1E" : "#0a1930";
+		const editorWin = new BrowserWindow({
+			width: 800,
+			height: 600,
+			resizable: false,
+			maximizable: false,
+			backgroundColor: windowBackgroundColor,
+			parent: win,
+			webPreferences: {
+				nodeIntegration: true,
+				contextIsolation: false,
+			},
+		});
+		editorWin.loadFile(path.join(__dirname, "index", "editor.html"), {
+			query: {
+				sheetIndex: args.sheetIndex
+			}
+		});
+	});
+
 	app.on("second-instance", () => {
 		if (win) {
 			if (win.isMinimized()) win.restore();
@@ -942,3 +964,32 @@ function ensureExists(path, mask) {
 		};
 	}
 }
+
+// Handle sheet list updates from editor
+ipcMain.on('update-sheet-list', (event, { index, data }) => {
+    try {
+        // Update the sheet list in memory
+        const listSheet = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'listSheet.json'), 'utf8'));
+        listSheet[index] = data;
+        fs.writeFileSync(path.join(__dirname, 'data', 'listSheet.json'), JSON.stringify(listSheet, null, 4));
+
+        // Notify the main window to update its display
+        if (global.mainWindow && !global.mainWindow.isDestroyed()) {
+            global.mainWindow.webContents.send('sheet-list-updated', { index, data });
+        }
+    } catch (error) {
+        console.error('Error updating sheet list:', error);
+    }
+});
+
+// Handle keymap updates from editor
+ipcMain.on('keymap-updated', (event, { index }) => {
+    try {
+        // Notify the main window to update its keymap data
+        if (global.mainWindow && !global.mainWindow.isDestroyed()) {
+            global.mainWindow.webContents.send('keymap-updated', { index });
+        }
+    } catch (error) {
+        console.error('Error handling keymap update:', error);
+    }
+});
