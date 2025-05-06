@@ -839,12 +839,9 @@ ipcRenderer.on("update-progress", (event, data) => {
     }
 });
 
-// Listen for sheet list updates from editor window
 ipcRenderer.on('sheet-list-updated', (event, { index, data }) => {
-    // Update the sheet in memory
     listSheet[index] = data;
     
-    // Update the display
     const cards = document.getElementsByClassName("card");
     if (cards[index]) {
         const card = cards[index];
@@ -854,9 +851,7 @@ ipcRenderer.on('sheet-list-updated', (event, { index, data }) => {
         card.querySelector('.bpm-sheet').textContent = `BPM: ${data.bpm || ''}`;
     }
 
-    // If this is the currently playing sheet, update the footer
     if (playing === index) {
-        // Reload the keymap data
         try {
             listKeys[index] = JSON.parse(
                 fs.readFileSync(path.join(__dirname, '..', 'data', data.keyMap), {
@@ -870,9 +865,7 @@ ipcRenderer.on('sheet-list-updated', (event, { index, data }) => {
     }
 });
 
-// Add new handler for keymap updates
 ipcRenderer.on('keymap-updated', (event, { index }) => {
-    // Reload the keymap data
     try {
         listKeys[index] = JSON.parse(
             fs.readFileSync(path.join(__dirname, '..', 'data', listSheet[index].keyMap), {
@@ -880,7 +873,6 @@ ipcRenderer.on('keymap-updated', (event, { index }) => {
             })
         );
         
-        // If this is the currently playing sheet, update the footer
         if (playing === index) {
             updateFooter({ ...listSheet[index], keys: listKeys[index] }, index);
         }
