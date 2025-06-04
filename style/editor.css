@@ -1,9 +1,30 @@
 :root {
+    /* Dark theme (default) */
     --font-color: #a8b2d1;
     --bg-color: #1a1b26;
     --grid-color: rgba(110, 110, 110, 0.2);
     --dot-size: 3px;
     --dot-color: rgba(255, 255, 255, 0.3);
+    --hover-color: rgba(110, 110, 110, 0.3);
+    --active-color: rgba(110, 110, 110, 0.4);
+    --edit-bg: rgba(0, 0, 0, 0.2);
+    --border-color: #a8b2d1;
+    --success-color: #4CAF50;
+    --error-color: #f44336;
+}
+
+/* Light theme */
+[data-theme="light"] {
+    --font-color: #2c3e50;
+    --bg-color: #f5f6fa;
+    --grid-color: rgba(44, 62, 80, 0.1);
+    --dot-color: rgba(44, 62, 80, 0.2);
+    --hover-color: rgba(44, 62, 80, 0.15);
+    --active-color: rgba(44, 62, 80, 0.25);
+    --edit-bg: rgba(44, 62, 80, 0.1);
+    --border-color: #2c3e50;
+    --success-color: #27ae60;
+    --error-color: #e74c3c;
 }
 
 body {
@@ -70,6 +91,7 @@ body {
     opacity: 0;
     transform: scale(0.8);
     animation: popIn 0.2s ease forwards;
+    transition: background-color 0.2s ease;
 }
 
 @keyframes popIn {
@@ -113,8 +135,12 @@ body {
     background-color: rgba(255, 255, 255, 0.8);
 }
 
+.grid-box:hover {
+    background: var(--hover-color);
+}
+
 .grid-box.active {
-    background: rgba(110, 110, 110, 0.4);
+    background: var(--active-color);
 }
 
 .timestamp {
@@ -188,11 +214,11 @@ body {
 }
 
 .field-value.editing {
-    border: 1px solid var(--font-color);
+    border: 1px solid var(--border-color);
     padding: 2px 4px;
     border-radius: 3px;
     outline: none;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--edit-bg);
     min-width: 30px;
 }
 
@@ -230,11 +256,11 @@ body {
 }
 
 #keyboard td:hover {
-    background: rgba(110, 110, 110, 0.3);
+    background: var(--hover-color);
 }
 
 #keyboard td.active {
-    background: rgba(110, 110, 110, 0.4);
+    background: var(--active-color);
 }
 
 #keyboard td.active span {
@@ -350,11 +376,6 @@ body {
     }
 }
 
-/* Add hover effect for grid boxes */
-.grid-box:hover {
-    background: rgba(110, 110, 110, 0.3);
-}
-
 .edit-buttons {
     position: absolute;
     right: -180px;
@@ -380,21 +401,23 @@ body {
 }
 
 .save-btn {
-    background-color: #4CAF50;
+    background-color: var(--success-color);
     color: white;
 }
 
 .save-btn:hover {
-    background-color: #45a049;
+    background-color: var(--success-color);
+    opacity: 0.9;
 }
 
 .cancel-btn {
-    background-color: #f44336;
+    background-color: var(--error-color);
     color: white;
 }
 
 .cancel-btn:hover {
-    background-color: #da190b;
+    background-color: var(--error-color);
+    opacity: 0.9;
 }
 
 .info-lines {
@@ -408,4 +431,78 @@ body {
     color: var(--font-color);
     opacity: 0.8;
     font-size: 14px;
+}
+
+.export-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 18px;
+}
+
+.export-controls #export-btn {
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 12px 32px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+    letter-spacing: 0.5px;
+    outline: none;
+}
+
+.export-controls #export-btn:hover, .export-controls #export-btn:focus {
+    transform: translateY(-2px) scale(1.03);
+}
+
+.export-btn-top {
+    position: absolute;
+    top: 20px;
+    right: 32px;
+    padding: 8px 20px;
+    font-size: 15px;
+    background: #f5f6fa;
+    border: 0.2px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, border 0.15s;
+    font-weight: 500;
+    z-index: 200;
+}
+.export-btn-top:hover, .export-btn-top:focus {
+    background: #e6eaf3;
+    border-color: #b3b8c2;
+}
+
+.export-btn-inline {
+    background: #f5f6fa;
+    border-radius: 4px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-left: 0px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border 0.15s;
+}
+.export-btn-inline:hover, .export-btn-inline:focus {
+    background: #e6eaf3;
+}
+
+.export-button-bottom-right {
+    position: fixed;
+    bottom: 47px;
+    right: 43px;
+    padding: 10px 24px;
+    font-size: 15px;
+    background: #f5f6fa;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border 0.15s;
+    font-weight: 500;
+    z-index: 200; 
+}
+.export-button-bottom-right:hover, .export-button-bottom-right:focus {
+    background: #e6eaf3;
 }

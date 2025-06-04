@@ -308,9 +308,12 @@ function encSheet(json) {
   // Update sheet list
   listSheet.push({
     name: json.name,
-    author: json.author,
-    transcribedBy: json.transcribedBy,
+    author: json.author || 'Unknown',
+    transcribedBy: json.transcribedBy || 'Unknown',
     bpm: json.bpm,
+    bitsPerPage: json.bitsPerPage,
+    pitchLevel: json.pitchLevel,
+    isComposed: json.isComposed,
     keyMap: fileName,
   });
   

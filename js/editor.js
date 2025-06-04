@@ -16,6 +16,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const sheetIndex = urlParams.get('sheetIndex');
 
+    // Load and apply theme
+    function loadTheme() {
+        try {
+            const config = JSON.parse(
+                fs.readFileSync(path.join(__dirname, '..', 'config', 'config.json'), {
+                    encoding: 'utf8',
+                })
+            );
+            document.documentElement.setAttribute('data-theme', config.appTheme || 'dark');
+        } catch (error) {
+            console.error('Error loading theme:', error);
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    }
+
+    ipcRenderer.on('theme-changed', (event, theme) => {
+        document.documentElement.setAttribute('data-theme', theme);
+    });
+
+    // Initial theme load
+    loadTheme();
+
     // Load sheet data
     let sheetData = null;
     if (sheetIndex !== null) {
@@ -36,19 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
             }
             
-            // Update field values with sheet data
             updateFieldValues(sheetData);
-            
             // Generate grid boxes
             generateGridBoxes(keyMapData);
-            
             // Initialize grid with keymap data
             initializeGrid(keyMapData);
-            
-            // Update gridBoxes reference after generation
             gridBoxes = document.querySelectorAll('.grid-box');
-            
-            // Add event listeners to grid boxes
             setupGridEventListeners();
         } catch (error) {
             console.error('Error loading sheet data:', error);
@@ -79,7 +94,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const gridContainer = document.querySelector('.grid-boxes');
         const timestamps = Object.keys(keyMapData).sort((a, b) => parseInt(a) - parseInt(b));
         
-        // Clear existing grid boxes
         gridContainer.innerHTML = '';
         
         // Create a box for every timestamp in the keymap
@@ -90,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const gridBox = document.createElement('div');
             gridBox.className = 'grid-box';
             gridBox.setAttribute('data-time', timeMs);
-            // Add animation delay based on index
             gridBox.style.animationDelay = `${index * 0.05}s`;
             
             // Create grid dots
@@ -102,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const timestamp = document.createElement('div');
             timestamp.className = 'timestamp';
-            // Show time in seconds with milliseconds
             const seconds = Math.floor(parseInt(timeMs) / 1000);
             const ms = parseInt(timeMs) % 1000;
             timestamp.textContent = `${seconds}.${ms.toString().padStart(3, '0')}s`;
@@ -120,14 +132,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const gridBoxes = document.querySelectorAll('.grid-box');
         
         gridBoxes.forEach((box) => {
-            // Clear existing keys
             const dots = box.querySelectorAll('div');
             dots.forEach(dot => dot.setAttribute('data-key', ''));
-
-            // Get exact timestamp for this grid box
             const timeMs = box.getAttribute('data-time');
-            
-            // Update grid box with key data if it exists
             if (keyMapData[timeMs] && keyMapData[timeMs].length > 0) {
                 keyMapData[timeMs].forEach(key => {
                     const keyIndex = getKeyIndex(key);
@@ -171,7 +178,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 { mode: 0o666 }
             );
 
-            // Notify the main window to update its keymap data
             ipcRenderer.send('keymap-updated', {
                 index: parseInt(sheetIndex)
             });
@@ -236,7 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Add these new functions
     function clearKeyboardHighlights() {
         keyboardKeys.forEach(key => {
             key.classList.remove('active');
@@ -312,7 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const buttons = document.querySelector('#keyboard .edit-buttons');
         buttons.classList.add('visible');
 
-        // Select text content for easy editing
         const range = document.createRange();
         range.selectNodeContents(valueSpan);
         const selection = window.getSelection();
@@ -328,7 +332,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const valueSpan = field.querySelector('.field-value');
         let newValue = valueSpan.textContent.trim();
 
-        // Validate BPM to be a number
         if (fieldType === 'bpm') {
             const bpmValue = parseInt(newValue);
             if (isNaN(bpmValue) || bpmValue <= 0) {
@@ -337,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cancelEditing();
                 return;
             }
-            newValue = bpmValue; // Store as integer, not string
+            newValue = bpmValue;
         }
 
         // Update the sheet data
@@ -354,13 +357,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update the specific sheet
             listSheet[sheetIndex] = sheetData;
 
-            // Save back to file
             fs.writeFileSync(
                 path.join(__dirname, '..', 'data', 'listSheet.json'),
                 JSON.stringify(listSheet, null, 4)
             );
 
-            // Notify the main window to update its display
             ipcRenderer.send('update-sheet-list', {
                 index: parseInt(sheetIndex),
                 data: sheetData
@@ -386,7 +387,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.removeChild(successMessage);
             }, 2000);
 
-            // End editing mode
             endEditing();
         } catch (error) {
             console.error('Error saving sheet data:', error);
@@ -492,7 +492,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Only process if it's a valid key and we have an active grid
         if (validKeys[key] && currentActiveGrid && !e.ctrlKey && !e.altKey && !e.metaKey) {
             e.preventDefault(); // Prevent default key behavior
 
@@ -524,7 +523,6 @@ document.addEventListener('DOMContentLoaded', () => {
             updateGridBox(currentActiveGrid, keyMapData[timeMs]);
             hasUnsavedChanges = true;
 
-            // Visual feedback for the keyboard key
             if (keyElement) {
                 keyElement.classList.add('pressed');
                 setTimeout(() => {
@@ -534,7 +532,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Add keyboard key release handler for visual feedback
     document.addEventListener('keyup', (e) => {
         const key = e.key.toLowerCase();
         if (validKeys[key]) {
@@ -544,4 +541,73 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // Add export logic
+    function getOriginalSheetFormat(sheetData, keyMapData) {
+        // Map keyMapData back to songNotes array
+        const keyOrder = ['y', 'u', 'i', 'o', 'p', 'h', 'j', 'k', 'l', ';', 'n', 'm', ',', '.', '/'];
+        let songNotes = [];
+        if (keyMapData) {
+            Object.keys(keyMapData).forEach(time => {
+                keyMapData[time].forEach(key => {
+                    const keyIndex = keyOrder.indexOf(key);
+                    if (keyIndex !== -1) {
+                        songNotes.push({ time: Number(time), key: `1Key${keyIndex}` });
+                    }
+                });
+            });
+            songNotes.sort((a, b) => a.time - b.time || a.key.localeCompare(b.key));
+        }
+        // Compose the original format object
+        return [{
+            name: sheetData.name || 'Untitled',
+            author: sheetData.author || 'Unknown',
+            transcribedBy: sheetData.transcribedBy || 'Unknown',
+            isComposed: sheetData.isComposed || true,
+            bpm: sheetData.bpm || 120,
+            bitsPerPage: sheetData.bitsPerPage,
+            pitchLevel: sheetData.pitchLevel,
+            isEncrypted: false,
+            songNotes
+        }];
+    }
+
+    // Use Electron's dialog to save file
+    async function triggerSaveDialog(defaultName, contentObj) {
+        // Ask main process to show save dialog
+        const { filePath, canceled } = await ipcRenderer.invoke('show-export-dialog', {
+            defaultPath: defaultName,
+            filters: [
+                { name: 'Text File', extensions: ['txt'] },
+                { name: 'JSON File', extensions: ['json'] },
+                { name: 'SkySheet File', extensions: ['skysheet'] },
+            ]
+        });
+        if (canceled || !filePath) return;
+        // Determine format from extension
+        let ext = filePath.split('.').pop().toLowerCase();
+        let content = '';
+        if (ext === 'txt') {
+            content = JSON.stringify(contentObj);
+        } else if (ext === 'json' || ext === 'skysheet') {
+            content = JSON.stringify(contentObj, null, 4);
+        } else {
+            content = JSON.stringify(contentObj, null, 4);
+        }
+        await ipcRenderer.invoke('save-exported-file', { filePath, content });
+    }
+
+    // Add event listener for export button
+    const exportBtn = document.querySelector('.export-button-bottom-right');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', async () => {
+            if (!sheetData || !keyMapData) {
+                alert('No sheet loaded to export.');
+                return;
+            }
+            const originalFormat = getOriginalSheetFormat(sheetData, keyMapData);
+            let defaultName = (sheetData.name || 'Sheet') + '.txt';
+            await triggerSaveDialog(defaultName, originalFormat);
+        });
+    }
 }); 

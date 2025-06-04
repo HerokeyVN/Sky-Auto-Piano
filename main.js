@@ -16,6 +16,7 @@ import path from "node:path";
 import { Hardware } from "keysender";
 import { fileURLToPath } from "url";
 import AdmZip from "adm-zip";
+import { dialog } from 'electron';
 
 // Convert ES module paths to file paths
 const __filename = fileURLToPath(import.meta.url);
@@ -287,6 +288,10 @@ function createWindow() {
 				try {
 					fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
 					console.log(`App theme saved: ${theme}`);
+					
+					if (global.editorWindow && !global.editorWindow.isDestroyed()) {
+						global.editorWindow.webContents.send('theme-changed', theme);
+					}
 				} catch (error) {
 					console.error("Failed to save theme preference:", error);
 				}
@@ -434,6 +439,11 @@ function createWindow() {
 			query: {
 				sheetIndex: args.sheetIndex
 			}
+		});
+		global.editorWindow = editorWin;
+
+		editorWin.webContents.on('did-finish-load', () => {
+			editorWin.webContents.send('theme-changed', config.appTheme);
 		});
 	});
 
@@ -991,5 +1001,20 @@ ipcMain.on('keymap-updated', (event, { index }) => {
         }
     } catch (error) {
         console.error('Error handling keymap update:', error);
+    }
+});
+
+// Add IPC handlers for export dialog and file saving
+ipcMain.handle('show-export-dialog', async (event, options) => {
+    const win = BrowserWindow.getFocusedWindow();
+    const result = await dialog.showSaveDialog(win, options);
+    return result;
+});
+ipcMain.handle('save-exported-file', async (event, { filePath, content }) => {
+    try {
+        fs.writeFileSync(filePath, content, { encoding: 'utf8' });
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
     }
 });
