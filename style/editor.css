@@ -1,0 +1,508 @@
+:root {
+    /* Dark theme (default) */
+    --font-color: #a8b2d1;
+    --bg-color: #1a1b26;
+    --grid-color: rgba(110, 110, 110, 0.2);
+    --dot-size: 3px;
+    --dot-color: rgba(255, 255, 255, 0.3);
+    --hover-color: rgba(110, 110, 110, 0.3);
+    --active-color: rgba(110, 110, 110, 0.4);
+    --edit-bg: rgba(0, 0, 0, 0.2);
+    --border-color: #a8b2d1;
+    --success-color: #4CAF50;
+    --error-color: #f44336;
+}
+
+/* Light theme */
+[data-theme="light"] {
+    --font-color: #2c3e50;
+    --bg-color: #f5f6fa;
+    --grid-color: rgba(44, 62, 80, 0.1);
+    --dot-color: rgba(44, 62, 80, 0.2);
+    --hover-color: rgba(44, 62, 80, 0.15);
+    --active-color: rgba(44, 62, 80, 0.25);
+    --edit-bg: rgba(44, 62, 80, 0.1);
+    --border-color: #2c3e50;
+    --success-color: #27ae60;
+    --error-color: #e74c3c;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--bg-color);
+    color: var(--font-color);
+    font-family: Arial, sans-serif;
+}
+
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 15px;
+    box-sizing: border-box;
+    overflow: hidden; /* Prevent container scroll */
+}
+
+.music-grid {
+    flex: 1;
+    padding: 10px;
+    margin-bottom: 20px;
+    overflow-y: auto; /* Enable vertical scrolling */
+    min-height: 0; /* Allows grid to shrink if needed */
+    padding-bottom: 250px; /* Adjust this value based on your bottom container height */
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    &::-webkit-scrollbar {
+        display: none;
+    }
+    scrollbar-width: none; 
+}
+
+.grid-boxes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, auto);
+    gap: 15px;
+    padding: 5px;
+}
+
+.grid-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.grid-box {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: var(--grid-color);
+    border-radius: 8px;
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 10px;
+    box-sizing: border-box;
+    gap: 3px;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(0.8);
+    animation: popIn 0.2s ease forwards;
+    transition: background-color 0.2s ease;
+}
+
+@keyframes popIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.grid-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+.grid-box > div {
+    width: var(--dot-size);
+    height: var(--dot-size);
+    background-color: var(--dot-color);
+    border-radius: 50%;
+    margin: auto;
+    transition: all 0.2s ease;
+}
+
+.grid-box > div[data-key]:not([data-key=""]) {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+.grid-box:hover {
+    background: var(--hover-color);
+}
+
+.grid-box.active {
+    background: var(--active-color);
+}
+
+.timestamp {
+    font-size: 11px;
+    color: var(--font-color);
+    text-align: center;
+}
+
+.bottom-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--bg-color);
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    z-index: 100;
+}
+
+.music-info {
+    position: absolute;
+    left: 20px;
+    bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.editable-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.editable-field {
+    font-size: 13px;
+    color: var(--font-color);
+    white-space: nowrap;
+    position: relative;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.editable-field:hover {
+    background-color: rgba(110, 110, 110, 0.1);
+}
+
+.editable-field.editing {
+    background-color: rgba(110, 110, 110, 0.3);
+}
+
+.field-label {
+    color: var(--font-color);
+    user-select: none;
+    cursor: default;
+}
+
+.field-value {
+    display: inline-block;
+    min-width: 50px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+}
+
+.field-value:hover {
+    background-color: rgba(110, 110, 110, 0.2);
+}
+
+.field-value.editing {
+    border: 1px solid var(--border-color);
+    padding: 2px 4px;
+    border-radius: 3px;
+    outline: none;
+    background: var(--edit-bg);
+    min-width: 30px;
+}
+
+#keyboard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+#keyboard table {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+#keyboard tr {
+    display: flex;
+    gap: 6px;
+}
+
+#keyboard td {
+    display: flex;
+    width: 65px;
+    height: 65px;
+    border-radius: 8px;
+    margin: 4px;
+    padding: 6px;
+    background: var(--grid-color);
+    transition: 0.3s linear;
+    cursor: pointer;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+#keyboard td:hover {
+    background: var(--hover-color);
+}
+
+#keyboard td.active {
+    background: var(--active-color);
+}
+
+#keyboard td.active span {
+    background: transparent;
+}
+
+#keyboard td.active input {
+    color: #ffffff;
+}
+
+/* Key visual styling */
+#keyboard table span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 45px;
+    height: 45px;
+}
+
+#keyboard table span input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--font-color);
+    font-weight: bold;
+    font-size: 16px;
+    text-transform: uppercase;
+    text-align: center;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    user-select: none;
+    z-index: 2;
+}
+
+#keyboard table span input:focus-visible {
+    outline: none;
+}
+
+/* Key shape indicators */
+#keyboard .square:after {
+    position: absolute;
+    display: block;
+    content: "";
+    width: 45px;
+    height: 45px;
+    border: 2px solid var(--font-color);
+    transform: translate(-50%, -50%) rotate(45deg);
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
+}
+
+#keyboard .circle:before {
+    position: absolute;
+    display: block;
+    content: "";
+    width: 45px;
+    height: 45px;
+    border: 2px solid var(--font-color);
+    border-radius: 100%;
+    transform: translate(-50%, -50%);
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
+}
+
+/* Media query for smaller heights */
+@media screen and (max-height: 600px) {
+    .music-grid {
+        margin-bottom: 10px;
+    }
+    
+    .bottom-container {
+        padding-bottom: 10px;
+    }
+    
+    .music-info {
+        bottom: 25px;
+        gap: 6px;
+    }
+    
+    .editable-field {
+        font-size: 12px;
+    }
+    
+    #keyboard {
+        transform: scale(0.9);
+    }
+}
+
+/* Media query for smaller widths */
+@media screen and (max-width: 800px) {
+    .editor-container {
+        padding: 10px;
+    }
+    
+    .grid-boxes {
+        gap: 10px;
+    }
+    
+    .music-info {
+        left: 15px;
+    }
+    
+    #keyboard td {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+.edit-buttons {
+    position: absolute;
+    right: -180px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    gap: 8px;
+    flex-direction: column;
+}
+
+.edit-buttons.visible {
+    display: inline-flex;
+}
+
+.edit-buttons button {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+    width: 100px;
+}
+
+.save-btn {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.save-btn:hover {
+    background-color: var(--success-color);
+    opacity: 0.9;
+}
+
+.cancel-btn {
+    background-color: var(--error-color);
+    color: white;
+}
+
+.cancel-btn:hover {
+    background-color: var(--error-color);
+    opacity: 0.9;
+}
+
+.info-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.info-lines div {
+    color: var(--font-color);
+    opacity: 0.8;
+    font-size: 14px;
+}
+
+.export-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 18px;
+}
+
+.export-controls #export-btn {
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 12px 32px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+    letter-spacing: 0.5px;
+    outline: none;
+}
+
+.export-controls #export-btn:hover, .export-controls #export-btn:focus {
+    transform: translateY(-2px) scale(1.03);
+}
+
+.export-btn-top {
+    position: absolute;
+    top: 20px;
+    right: 32px;
+    padding: 8px 20px;
+    font-size: 15px;
+    background: #f5f6fa;
+    border: 0.2px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, border 0.15s;
+    font-weight: 500;
+    z-index: 200;
+}
+.export-btn-top:hover, .export-btn-top:focus {
+    background: #e6eaf3;
+    border-color: #b3b8c2;
+}
+
+.export-btn-inline {
+    background: #f5f6fa;
+    border-radius: 4px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-left: 0px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border 0.15s;
+}
+.export-btn-inline:hover, .export-btn-inline:focus {
+    background: #e6eaf3;
+}
+
+.export-button-bottom-right {
+    position: fixed;
+    bottom: 47px;
+    right: 43px;
+    padding: 10px 24px;
+    font-size: 15px;
+    background: #f5f6fa;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border 0.15s;
+    font-weight: 500;
+    z-index: 200; 
+}
+.export-button-bottom-right:hover, .export-button-bottom-right:focus {
+    background: #e6eaf3;
+}

@@ -16,6 +16,7 @@ import path from "node:path";
 import { Hardware } from "keysender";
 import { fileURLToPath } from "url";
 import AdmZip from "adm-zip";
+import { dialog } from 'electron';
 
 // Convert ES module paths to file paths
 const __filename = fileURLToPath(import.meta.url);
@@ -287,6 +288,10 @@ function createWindow() {
 				try {
 					fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
 					console.log(`App theme saved: ${theme}`);
+					
+					if (global.editorWindow && !global.editorWindow.isDestroyed()) {
+						global.editorWindow.webContents.send('theme-changed', theme);
+					}
 				} catch (error) {
 					console.error("Failed to save theme preference:", error);
 				}
@@ -413,6 +418,33 @@ function createWindow() {
 	ipcMain.on("openSetting", () => {
 		global.winMain = win;
 		createWindowSetting();
+	});
+
+	// Open Sheet Editor window
+	ipcMain.on("openSheetEditor", (event, args) => {
+		const windowBackgroundColor = config.appTheme === "dark" ? "#1B1D1E" : "#0a1930";
+		const editorWin = new BrowserWindow({
+			width: 800,
+			height: 600,
+			resizable: false,
+			maximizable: false,
+			backgroundColor: windowBackgroundColor,
+			parent: win,
+			webPreferences: {
+				nodeIntegration: true,
+				contextIsolation: false,
+			},
+		});
+		editorWin.loadFile(path.join(__dirname, "index", "editor.html"), {
+			query: {
+				sheetIndex: args.sheetIndex
+			}
+		});
+		global.editorWindow = editorWin;
+
+		editorWin.webContents.on('did-finish-load', () => {
+			editorWin.webContents.send('theme-changed', config.appTheme);
+		});
 	});
 
 	app.on("second-instance", () => {
@@ -942,3 +974,47 @@ function ensureExists(path, mask) {
 		};
 	}
 }
+
+// Handle sheet list updates from editor
+ipcMain.on('update-sheet-list', (event, { index, data }) => {
+    try {
+        // Update the sheet list in memory
+        const listSheet = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'listSheet.json'), 'utf8'));
+        listSheet[index] = data;
+        fs.writeFileSync(path.join(__dirname, 'data', 'listSheet.json'), JSON.stringify(listSheet, null, 4));
+
+        // Notify the main window to update its display
+        if (global.mainWindow && !global.mainWindow.isDestroyed()) {
+            global.mainWindow.webContents.send('sheet-list-updated', { index, data });
+        }
+    } catch (error) {
+        console.error('Error updating sheet list:', error);
+    }
+});
+
+// Handle keymap updates from editor
+ipcMain.on('keymap-updated', (event, { index }) => {
+    try {
+        // Notify the main window to update its keymap data
+        if (global.mainWindow && !global.mainWindow.isDestroyed()) {
+            global.mainWindow.webContents.send('keymap-updated', { index });
+        }
+    } catch (error) {
+        console.error('Error handling keymap update:', error);
+    }
+});
+
+// Add IPC handlers for export dialog and file saving
+ipcMain.handle('show-export-dialog', async (event, options) => {
+    const win = BrowserWindow.getFocusedWindow();
+    const result = await dialog.showSaveDialog(win, options);
+    return result;
+});
+ipcMain.handle('save-exported-file', async (event, { filePath, content }) => {
+    try {
+        fs.writeFileSync(filePath, content, { encoding: 'utf8' });
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
