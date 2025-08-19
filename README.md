@@ -52,14 +52,7 @@ To build Sky Auto Piano from source:
    yarn build
    ```
 
-5. **Package the application:**
-   ```bash
-   npm run package
-   # or
-   yarn package
-   ```
-
-The packaged application will be available in the `dist` directory.
+The packaged application will be available in the `SkyAutoPiano-win32-x64` directory.
 
 ## 🧪 Testing
 

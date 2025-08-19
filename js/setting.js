@@ -41,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// Fetch version information
 	document.getElementById("app-version").textContent = `Version: ${packageJson.version}`;
+	
 	/**
 	 * Apply theme to the settings window
 	 * @param {string} theme - 'light' or 'dark' theme name
@@ -62,80 +63,90 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // -------------------------------------
-// TAB NAVIGATION
+// MODERN TAB NAVIGATION
 // -------------------------------------
-const menu = document.getElementsByClassName("menu")[0].childNodes;
-var listTab = [];
+document.addEventListener('DOMContentLoaded', () => {
+	const navItems = document.querySelectorAll('.nav-item');
+	const tabContents = document.querySelectorAll('.tab-content');
 
-// Show the default active tab
-document.getElementById(
-	getTab(document.querySelector(".menu .active"))
-).style.display = "flex";
+	// Show the default active tab
+	const activeTab = document.querySelector('.nav-item.active');
+	if (activeTab) {
+		const tabId = activeTab.getAttribute('data-tab');
+		showTab(tabId);
+	}
 
-// Build list of available tabs
-for (let dom of menu) {
-	if (dom.nodeName != "H3") continue;
-	listTab.push(getTab(dom));
-}
-
-// Set up tab switching functionality
-for (let dom of menu) {
-	if (dom.nodeName != "H3") continue;
-	dom.addEventListener("click", (data) => {
-		// Remove active class from all tabs
-		for (let item of menu) {
-			if (item.nodeName != "H3") continue;
-			item.classList.remove("active");
-		}
-
-		// Handle clicking on either H3 or child span
-		let target = data.target.parentNode;
-		if (data.target.nodeName == "H3") target = data.target;
-
-		// Set new active tab
-		target.classList.add("active");
-
-		// Show selected tab content, hide others
-		listTab.map((tab) => {
-			document.getElementById(tab).style = undefined;
-			document.getElementById(getTab(target)).style.display = "flex";
+	// Set up tab switching functionality
+	navItems.forEach(item => {
+		item.addEventListener('click', (e) => {
+			e.preventDefault();
+			
+			// Remove active class from all nav items
+			navItems.forEach(nav => nav.classList.remove('active'));
+			
+			// Add active class to clicked item
+			item.classList.add('active');
+			
+			// Show corresponding tab
+			const tabId = item.getAttribute('data-tab');
+			showTab(tabId);
 		});
 	});
-}
+
+	/**
+	 * Show the specified tab and hide others
+	 * @param {string} tabId - ID of the tab to show
+	 */
+	function showTab(tabId) {
+		// Hide all tab contents
+		tabContents.forEach(content => {
+			content.classList.remove('active');
+		});
+		
+		// Show the selected tab
+		const targetTab = document.getElementById(tabId);
+		if (targetTab) {
+			targetTab.classList.add('active');
+		}
+	}
+});
 
 // -------------------------------------
 // LOAD SETTINGS
 // -------------------------------------
-// General settings
-document.getElementById("switch-save-setting").checked = config.panel.autoSave;
-document.getElementById("switch-minimize-on-play").checked = config.panel.minimizeOnPlay;
+document.addEventListener('DOMContentLoaded', () => {
+	// General settings
+	document.getElementById("switch-save-setting").checked = config.panel.autoSave;
+	document.getElementById("switch-minimize-on-play").checked = config.panel.minimizeOnPlay;
 
-// Keyboard settings
-let i = 0;
-for (let dom of document.getElementsByClassName("keys")) {
-	dom.value = config.keyboard.keys[i++];
-}
-document.getElementById("switch-custom-keyboard").checked =
-	config.keyboard.customKeyboard;
+	// Keyboard settings
+	let i = 0;
+	for (let dom of document.getElementsByClassName("keys")) {
+		dom.value = config.keyboard.keys[i++];
+	}
+	document.getElementById("switch-custom-keyboard").checked =
+		config.keyboard.customKeyboard;
 
-// Shortcut settings
-document.getElementById("pre-shortcut-setting").value = config.shortcut.pre;
-document.getElementById("play-shortcut-setting").value = config.shortcut.play;
-document.getElementById("next-shortcut-setting").value = config.shortcut.next;
-document.getElementById("increase-speed-shortcut-setting").value = config.shortcut.increaseSpeed;
-document.getElementById("decrease-speed-shortcut-setting").value = config.shortcut.decreaseSpeed;
+	// Shortcut settings
+	document.getElementById("pre-shortcut-setting").value = config.shortcut.pre;
+	document.getElementById("play-shortcut-setting").value = config.shortcut.play;
+	document.getElementById("next-shortcut-setting").value = config.shortcut.next;
+	document.getElementById("increase-speed-shortcut-setting").value = config.shortcut.increaseSpeed;
+	document.getElementById("decrease-speed-shortcut-setting").value = config.shortcut.decreaseSpeed;
 
-// Update settings
-document.getElementById("switch-block-update").checked =
-	config.update?.blockUpdate ?? false;
+	// Update settings
+	document.getElementById("switch-block-update").checked =
+		config.update?.blockUpdate ?? false;
+});
 
 // -------------------------------------
 // UPDATE CHECK FUNCTIONALITY
 // -------------------------------------
 // Add click event listener to the "Check for Updates" button
-// When clicked, it sends a message to the main process to check for updates
-document.getElementById("check-update-btn").addEventListener("click", () => {
-	ipcRenderer.send("check-update");
+document.addEventListener('DOMContentLoaded', () => {
+	document.getElementById("check-update-btn").addEventListener("click", () => {
+		ipcRenderer.send("check-update");
+	});
 });
 
 // Function to fetch changelog from GitHub
@@ -237,7 +248,7 @@ ipcRenderer.on('update-status', (event, data) => {
 		// Update failed - show error and re-enable buttons
 		updateNowBtn.disabled = false;
 		updateLaterBtn.disabled = false;
-		updateNowBtn.textContent = 'Update Now';
+		updateNowBtn.innerHTML = '<i class="bi bi-download"></i><span>Update Now</span>';
 		
 		// Show error message
 		const messageElement = document.getElementById('update-message');
@@ -316,133 +327,128 @@ function convertToKeysenderFormat(shortcut) {
 	}).join("+");
 }
 
-for (let id of [
-	"pre-shortcut-setting",
-	"play-shortcut-setting",
-	"next-shortcut-setting",
-	"increase-speed-shortcut-setting",
-	"decrease-speed-shortcut-setting",
-]) {
-	// Handle key release - format the shortcut string
-	document.getElementById(id).addEventListener("keyup", (data) => {
-		let dom = document.getElementById(id);
-		dom.value = dom.value
-			.split("+")
-			.sort((a, b) => {
-				// Sort modifier keys first, then regular keys
-				if (a.length == 1 && b.length > 1) return 1;
-				if (b.length == 1 && a.length > 1) return -1;
-				if (a < b) return -1;
-				if (a > b) return 1;
-				return 0;
-			})
-			.join("+");
-		keyup = true;
-	});
+document.addEventListener('DOMContentLoaded', () => {
+	for (let id of [
+		"pre-shortcut-setting",
+		"play-shortcut-setting",
+		"next-shortcut-setting",
+		"increase-speed-shortcut-setting",
+		"decrease-speed-shortcut-setting",
+	]) {
+		// Handle key release - format the shortcut string
+		document.getElementById(id).addEventListener("keyup", (data) => {
+			let dom = document.getElementById(id);
+			dom.value = dom.value
+				.split("+")
+				.sort((a, b) => {
+					// Sort modifier keys first, then regular keys
+					if (a.length == 1 && b.length > 1) return 1;
+					if (b.length == 1 && a.length > 1) return -1;
+					if (a < b) return -1;
+					if (a > b) return 1;
+					return 0;
+				})
+				.join("+");
+			keyup = true;
+		});
 
-	// Handle key press - build the shortcut string
-	document.getElementById(id).addEventListener("keydown", (data) => {
-		let dom = document.getElementById(id);
-		if (keyup) {
-			dom.value = "";
-			keyup = false;
-		}
+		// Handle key press - build the shortcut string
+		document.getElementById(id).addEventListener("keydown", (data) => {
+			let dom = document.getElementById(id);
+			if (keyup) {
+				dom.value = "";
+				keyup = false;
+			}
 
-		let key = data.code; // Use code instead of key to detect numpad keys
-		
-		// Map special keys using keyMap
-		if (keyMap[key.toLocaleLowerCase()]) {
-			key = keyMap[key.toLocaleLowerCase()];
-		}
-		
-		// Remove 'Key' prefix from regular keys
-		if (key.startsWith("Key")) {
-			key = key.substring(3);
-		}
-		// Remove 'Digit' prefix from digit keys
-		if (key.startsWith("Digit")) {
-			key = key.substring(5);
-		}
+			let key = data.code; // Use code instead of key to detect numpad keys
+			
+			// Map special keys using keyMap
+			if (keyMap[key.toLocaleLowerCase()]) {
+				key = keyMap[key.toLocaleLowerCase()];
+			}
+			
+			// Remove 'Key' prefix from regular keys
+			if (key.startsWith("Key")) {
+				key = key.substring(3);
+			}
+			// Remove 'Digit' prefix from digit keys
+			if (key.startsWith("Digit")) {
+				key = key.substring(5);
+			}
 
-		// Avoid duplicates in combination
-		if (dom.value.split("+").indexOf(key) != -1) return;
+			// Avoid duplicates in combination
+			if (dom.value.split("+").indexOf(key) != -1) return;
 
-		// Add key to combination
-		if (dom.value != "") dom.value += "+";
-		dom.value += key;
-	});
-}
+			// Add key to combination
+			if (dom.value != "") dom.value += "+";
+			dom.value += key;
+		});
+	}
+});
 
 /**
  * Save settings button handler
  * Validates and saves all settings to the config file
  */
-document.getElementById("btn-save-setting").addEventListener("click", () => {
-	// Save general settings
-	config.panel.autoSave = document.getElementById("switch-save-setting").checked;
-	config.panel.minimizeOnPlay = document.getElementById("switch-minimize-on-play").checked;
+document.addEventListener('DOMContentLoaded', () => {
+	document.getElementById("btn-save-setting").addEventListener("click", () => {
+		// Save general settings
+		config.panel.autoSave = document.getElementById("switch-save-setting").checked;
+		config.panel.minimizeOnPlay = document.getElementById("switch-minimize-on-play").checked;
 
-	// Save keyboard settings
-	let i = 0;
-	for (let dom of document.getElementsByClassName("keys")) {
-		config.keyboard.keys[i++] = dom.value;
-	}
-	config.keyboard.customKeyboard = document.getElementById("switch-custom-keyboard").checked;
+		// Save keyboard settings
+		let i = 0;
+		for (let dom of document.getElementsByClassName("keys")) {
+			config.keyboard.keys[i++] = dom.value;
+		}
+		config.keyboard.customKeyboard = document.getElementById("switch-custom-keyboard").checked;
 
-	// Save and validate shortcut settings
-	let arrShortcut = [];
-	config.shortcut.pre = document.getElementById("pre-shortcut-setting").value;
-	config.shortcut.play = document.getElementById("play-shortcut-setting").value;
-	config.shortcut.next = document.getElementById("next-shortcut-setting").value;
-	config.shortcut.increaseSpeed = document.getElementById("increase-speed-shortcut-setting").value;
-	config.shortcut.decreaseSpeed = document.getElementById("decrease-speed-shortcut-setting").value;
+		// Save and validate shortcut settings
+		let arrShortcut = [];
+		config.shortcut.pre = document.getElementById("pre-shortcut-setting").value;
+		config.shortcut.play = document.getElementById("play-shortcut-setting").value;
+		config.shortcut.next = document.getElementById("next-shortcut-setting").value;
+		config.shortcut.increaseSpeed = document.getElementById("increase-speed-shortcut-setting").value;
+		config.shortcut.decreaseSpeed = document.getElementById("decrease-speed-shortcut-setting").value;
 
-	// Check for duplicate shortcuts
-	for (let key in config.shortcut) {
-		if (arrShortcut.indexOf(config.shortcut[key]) != -1) {
-			return notie.alert({
+		// Check for duplicate shortcuts
+		for (let key in config.shortcut) {
+			if (arrShortcut.indexOf(config.shortcut[key]) != -1) {
+				return notie.alert({
+					type: 3,
+					text: "Unable to save the settings, the shortcut has been duplicated!",
+				});
+			}
+			arrShortcut.push(config.shortcut[key]);
+		}
+
+		// Save update settings
+		if (!config.update) {
+			config.update = {};
+		}
+		config.update.blockUpdate = document.getElementById("switch-block-update").checked;
+
+		// Write config to file
+		try {
+			fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
+			notie.alert({
+				type: 1,
+				text: "Saved the settings. Please restart the software to apply the settings.",
+			});
+			ipcRenderer.send("changeSetting");
+		} catch (err) {
+			console.log(err);
+			notie.alert({
 				type: 3,
-				text: "Unable to save the settings, the shortcut has been duplicated!",
+				text: "Can't save the settings!",
 			});
 		}
-		arrShortcut.push(config.shortcut[key]);
-	}
-
-	// Save update settings
-	if (!config.update) {
-		config.update = {};
-	}
-	config.update.blockUpdate = document.getElementById("switch-block-update").checked;
-
-	// Write config to file
-	try {
-		fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
-		notie.alert({
-			type: 1,
-			text: "Saved the settings. Please restart the software to apply the settings.",
-		});
-		ipcRenderer.send("changeSetting");
-	} catch (err) {
-		console.log(err);
-		notie.alert({
-			type: 3,
-			text: "Can't save the settings!",
-		});
-	}
+	});
 });
 
 // -------------------------------------
 // UTILITY FUNCTIONS
 // -------------------------------------
-/**
- * Extract tab ID from DOM element
- * @param {Element} dom - Tab DOM element
- * @returns {string} Tab ID
- */
-function getTab(dom) {
-	let htmlDOM = dom.outerHTML.replaceAll(" ", "");
-	return htmlDOM.split('tab="')[1].split('"')[0];
-}
 
 // Function to show changelog dialog
 async function showChangelog(version) {
@@ -468,7 +474,7 @@ async function showChangelog(version) {
 			
 			// Update buttons
 			const buttonsContainer = updatePrompt.querySelector('.update-prompt-buttons');
-			buttonsContainer.innerHTML = '<button id="close-changelog-btn" class="update-btn primary">Got it!</button>';
+			buttonsContainer.innerHTML = '<button id="close-changelog-btn" class="update-btn primary"><i class="bi bi-check-lg"></i><span>Got it!</span></button>';
 			
 			// Show the dialog
 			updatePrompt.classList.add('show');
@@ -504,3 +510,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	}
 });
+
+
+

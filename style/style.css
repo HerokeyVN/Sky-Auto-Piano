@@ -599,30 +599,85 @@ body.dark-mode .bi-light-fill {
 
 .update-prompt-content {
     background: var(--background-color);
-    padding: 30px;
-    border-radius: 10px;
+    padding: 25px;
+    border-radius: 16px;
     text-align: left;
-    max-width: 500px;
+    max-width: 480px;
     width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    max-height: 80vh;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
 }
 
 .update-header {
-    margin-bottom: 20px;
+    margin-bottom: 25px;
     text-align: center;
+    position: relative;
+}
+
+.update-header::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--font-color), transparent);
+    border-radius: 1px;
 }
 
 .update-header h2 {
-    margin: 0 0 10px 0;
+    margin: 0 0 12px 0;
     color: var(--font-color);
+    font-size: 1.4em;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
 .version-info {
-    font-size: 1.2em;
+    font-size: 0.95em;
     color: var(--font-color);
-    opacity: 0.8;
+    font-weight: 600;
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 25px;
+    padding: 10px 20px;
+    margin-top: 12px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 
+        0 4px 15px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 0.85em;
+    position: relative;
+    overflow: hidden;
+}
+
+.version-info:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 
+        0 8px 25px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.version-info:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 
+        0 2px 10px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .changelog {
@@ -630,47 +685,218 @@ body.dark-mode .bi-light-fill {
     padding: 15px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 10px;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Modern scrollbar styling for changelog */
+.changelog::-webkit-scrollbar {
+    width: 6px;
+}
+
+.changelog::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+}
+
+.changelog::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    transition: background 0.2s ease;
+}
+
+.changelog::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Firefox scrollbar styling */
+.changelog {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 .changelog h3 {
     margin: 0 0 15px 0;
     font-size: 1.1em;
     color: var(--font-color);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.changelog h3 i {
+    font-size: 1em;
+    opacity: 0.8;
 }
 
 .changelog-content {
     color: var(--font-color);
     font-size: 0.9em;
-    line-height: 1.5;
+    line-height: 1.6;
+    padding: 5px 0;
+}
+
+.changelog-content h1,
+.changelog-content h2,
+.changelog-content h3,
+.changelog-content h4,
+.changelog-content h5,
+.changelog-content h6 {
+    color: var(--font-color);
+    margin: 15px 0 8px 0;
+    font-weight: 600;
+}
+
+.changelog-content p {
+    margin: 8px 0;
+    color: var(--font-color);
+    opacity: 0.9;
+}
+
+.changelog-content ul,
+.changelog-content ol {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.changelog-content li {
+    margin: 4px 0;
+    color: var(--font-color);
+    opacity: 0.9;
+}
+
+.changelog-content code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+}
+
+.changelog-content blockquote {
+    border-left: 3px solid rgba(255, 255, 255, 0.3);
+    margin: 10px 0;
+    padding-left: 15px;
+    font-style: italic;
+    opacity: 0.8;
 }
 
 .update-prompt-buttons {
     display: flex;
     justify-content: center;
     margin-top: 20px;
+    gap: 12px;
+    flex-shrink: 0;
 }
 
 .update-btn {
-    padding: 10px 20px;
+    padding: 12px 24px;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
-    font-weight: bold;
-    transition: 0.3s linear;
-    min-width: 120px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    min-width: 100px;
+    position: relative;
+    overflow: hidden;
 }
 
 .update-btn.primary {
     background: var(--font-color);
     color: var(--background-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .update-btn.primary:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 10px rgba(var(--font-color), 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.update-btn.primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.update-btn.secondary {
+    background: transparent;
+    color: var(--font-color);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.update-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
 }
 
 @keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Add a subtle pulse animation for the update icon */
+.update-header .update-icon {
+    animation: pulse 2s infinite, rotate 8s linear infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Floating animation for the version badge */
+.update-prompt .version-info {
+    animation: float 3s ease-in-out infinite;
+    animation-delay: 0.8s;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+/* Staggered entrance animation for update prompt elements */
+.update-prompt.show .update-header {
+    animation: slideInDown 0.6s ease-out 0s both;
+}
+
+.update-prompt.show .changelog {
+    animation: slideInUp 0.6s ease-out 0.2s both;
+}
+
+.update-prompt.show .update-prompt-buttons {
+    animation: slideInUp 0.6s ease-out 0.4s both;
+}
+
+@keyframes slideInDown {
     from {
         opacity: 0;
         transform: translateY(-20px);
@@ -679,4 +905,86 @@ body.dark-mode .bi-light-fill {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Shimmer effect for the version badge */
+.version-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    transition: left 0.5s;
+}
+
+.version-info:hover::before {
+    left: 100%;
+}
+
+/* Bounce animation for buttons */
+.update-btn {
+    animation: bounceIn 0.8s ease-out 0.6s both;
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Glow pulse for the entire update prompt */
+.update-prompt.show .update-prompt-content {
+    animation: glowPulse 2s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% {
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.4),
+            0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+    50% {
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.4),
+            0 0 20px rgba(255, 255, 255, 0.1),
+            0 0 0 1px rgba(255, 255, 255, 0.2);
+    }
+}
+
+
+
+/* Improve the backdrop blur effect */
+.update-prompt {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
