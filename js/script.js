@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const themeToggleButtonDark = document.getElementById("btn-darkmode");
   const body = document.body;
 
-  const lightModeBgColor = "#0a1930";
+  const lightModeBgColor = "#ffffff";
   const darkModeBgColor = "#1B1D1E";
 
   // Apply theme to UI
@@ -343,17 +343,38 @@ function printSheet() {
             <div class="sheet-info">
                 <h3 class="name-sheet">${i.name}</h3>
                 <div class="info-lines">
-                    <div class="author-sheet">Author: ${i.author || ''}</div>
-                    <div class="tranScript-sheet">Transcript by: ${i.transcribedBy || ''}</div>
-                    <div class="bpm-sheet">BPM: ${i.bpm || ''}</div>
+                    <div class="info-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="icon author-icon">
+                            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                            <path d="M14 14s-1-1.5-6-1.5S2 14 2 14s1-4 6-4 6 4 6 4z"/>
+                        </svg>
+                        <span class="label">Author:</span>
+                        <span class="value author-sheet">${i.author || ''}</span>
+                    </div>
+                    <div class="info-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="icon trans-icon">
+                            <path d="M12.146.854a.5.5 0 0 1 .708 0l2.292 2.292a.5.5 0 0 1 0 .708L6.207 12.793l-3.75.75.75-3.75L12.146.854z"/>
+                            <path d="M11.207 2.5 13.5 4.793 12.793 5.5 10.5 3.207 11.207 2.5z"/>
+                        </svg>
+                        <span class="label">Transcript by:</span>
+                        <span class="value tranScript-sheet">${i.transcribedBy || ''}</span>
+                    </div>
+                    <div class="info-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="icon bpm-icon">
+                            <path d="M8 3a6 6 0 1 0 0 12A6 6 0 0 0 8 3zm0 1a5 5 0 1 1 0 10A5 5 0 0 1 8 4z"/>
+                            <path d="M10.5 8.5 8 11a1 1 0 1 1-1.414-1.414l3-3A1 1 0 1 1 10.5 8.5z"/>
+                        </svg>
+                        <span class="label">BPM:</span>
+                        <span class="value bpm-sheet">${i.bpm || ''}</span>
+                    </div>
                 </div>
             </div>
             <div class="menu-btn" style="display: flex; flex-direction: row; align-items: center; gap: 8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" class="bi bi-sheet-editor" viewBox="0 0 40 40" style="cursor:pointer;">
-                    <path d="M20.8333 36.6667H30C30.884 36.6667 31.7319 36.3155 32.357 35.6903C32.9821 35.0652 33.3333 34.2174 33.3333 33.3333V11.6667L25 3.33333H9.99996C9.1159 3.33333 8.26806 3.68452 7.64294 4.30964C7.01782 4.93476 6.66663 5.78261 6.66663 6.66666V22.5" stroke="#AAB7D7" stroke-width="4.16667" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M23.333 3.33333V9.99999C23.333 10.884 23.6842 11.7319 24.3093 12.357C24.9344 12.9821 25.7822 13.3333 26.6663 13.3333H33.333M22.2963 26.0433C22.625 25.7146 22.8858 25.3243 23.0637 24.8948C23.2416 24.4653 23.3332 24.0049 23.3332 23.54C23.3332 23.0751 23.2416 22.6147 23.0637 22.1852C22.8858 21.7557 22.625 21.3654 22.2963 21.0367C21.9676 20.7079 21.5773 20.4471 21.1478 20.2692C20.7182 20.0913 20.2579 19.9997 19.793 19.9997C19.3281 19.9997 18.8677 20.0913 18.4382 20.2692C18.0087 20.4471 17.6184 20.7079 17.2896 21.0367L8.93964 29.39C8.54338 29.786 8.25334 30.2756 8.0963 30.8133L6.7013 35.5967C6.65947 35.7401 6.65697 35.8921 6.69404 36.0368C6.73112 36.1815 6.80641 36.3136 6.91205 36.4192C7.01768 36.5249 7.14977 36.6002 7.29449 36.6373C7.4392 36.6743 7.59122 36.6718 7.73464 36.63L12.518 35.235C13.0557 35.078 13.5453 34.7879 13.9413 34.3917L22.2963 26.0433Z" stroke="#AAB7D7" stroke-width="4.16667" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" class="bi bi-sheet-editor" viewBox="0 0 40 40" style="cursor:pointer;">
+                    <path d="M20.8333 36.6667H30C30.884 36.6667 31.7319 36.3155 32.357 35.6903C32.9821 35.0652 33.3333 34.2174 33.3333 33.3333V11.6667L25 3.33333H9.99996C9.1159 3.33333 8.26806 3.68452 7.64294 4.30964C7.01782 4.93476 6.66663 5.78261 6.66663 6.66666V22.5" fill="none" stroke="currentColor" stroke-width="4.16667" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M23.333 3.33333V9.99999C23.333 10.884 23.6842 11.7319 24.3093 12.357C24.9344 12.9821 25.7822 13.3333 26.6663 13.3333H33.333M22.2963 26.0433C22.625 25.7146 22.8858 25.3243 23.0637 24.8948C23.2416 24.4653 23.3332 24.0049 23.3332 23.54C23.3332 23.0751 23.2416 22.6147 23.0637 22.1852C22.8858 21.7557 22.625 21.3654 22.2963 21.0367C21.9676 20.7079 21.5773 20.4471 21.1478 20.2692C20.7182 20.0913 20.2579 19.9997 19.793 19.9997C19.3281 19.9997 18.8677 20.0913 18.4382 20.2692C18.0087 20.4471 17.6184 20.7079 17.2896 21.0367L8.93964 29.39C8.54338 29.786 8.25334 30.2756 8.0963 30.8133L6.7013 35.5967C6.65947 35.7401 6.65697 35.8921 6.69404 36.0368C6.73112 36.1815 6.80641 36.3136 6.91205 36.4192C7.01768 36.5249 7.14977 36.6002 7.29449 36.6373C7.4392 36.6743 7.59122 36.6718 7.73464 36.63L12.518 35.235C13.0557 35.078 13.5453 34.7879 13.9413 34.3917L22.2963 26.0433Z" fill="none" stroke="currentColor" stroke-width="4.16667" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16" style="cursor:pointer;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" class="bi bi-trash3" viewBox="0 0 16 16" style="cursor:pointer;" fill="currentColor">
                     <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5" />
                 </svg>
             </div>

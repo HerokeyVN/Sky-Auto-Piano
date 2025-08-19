@@ -137,3 +137,93 @@
 .notie-date-selector-up {
     transform: rotate(180deg)
 }
+
+/* --- Modern glass notifications redesign --- */
+/* Smaller size, rounded corners, glass blur, centered card */
+.notie-container {
+    font-size: 0.95rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: 780px;
+    min-width: 540px;
+    margin: 12px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .25), 0 1px 0 rgba(255, 255, 255, .05) inset;
+}
+
+@media screen and (max-width:400px) {
+    .notie-container {
+        max-width: calc(100% - 24px);
+        min-width: 0;
+    }
+}
+
+/* Apply blur to surfaces */
+.notie-textbox,
+.notie-button,
+.notie-element {
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+
+/* Tighter paddings for a smaller feel */
+.notie-textbox {
+    padding: 12px 14px;
+}
+
+.notie-button,
+.notie-element {
+    padding: 10px 12px;
+}
+
+/* Dimmed, slightly blurred overlay */
+.notie-overlay {
+    background-color: rgba(10, 15, 20, .25);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+}
+
+.notie-background-overlay {
+    background-color: transparent;
+}
+
+/* Glass-tinted backgrounds per type */
+.notie-background-success {
+    background: linear-gradient(135deg, rgba(46, 204, 113, .22), rgba(46, 204, 113, .12));
+    border: 1px solid rgba(46, 204, 113, .35);
+}
+
+.notie-background-warning {
+    background: linear-gradient(135deg, rgba(238, 184, 73, .22), rgba(238, 184, 73, .12));
+    border: 1px solid rgba(238, 184, 73, .35);
+}
+
+.notie-background-error {
+    background: linear-gradient(135deg, rgba(231, 76, 60, .22), rgba(231, 76, 60, .12));
+    border: 1px solid rgba(231, 76, 60, .35);
+}
+
+.notie-background-info {
+    background: linear-gradient(135deg, rgba(52, 152, 219, .22), rgba(52, 152, 219, .12));
+    border: 1px solid rgba(52, 152, 219, .35);
+}
+
+.notie-background-neutral {
+    background: linear-gradient(135deg, rgba(160, 160, 160, .22), rgba(160, 160, 160, .12));
+    border: 1px solid rgba(160, 160, 160, .35);
+}
+
+/* Ensure text stays legible on glass */
+.notie-button,
+.notie-element,
+.notie-textbox {
+    color: #fff;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, .25);
+}
+
+/* Subtle separators for repeated/select items */
+.notie-select-choice-repeated {
+    border-bottom-color: rgba(255, 255, 255, .25);
+}
