@@ -36,7 +36,7 @@ document.addEventListener('click', (event) => {
 // -------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
 	const body = document.body;
-	const lightModeBgColor = "#0a1930";
+	const lightModeBgColor = "#f7f9fc";
 	const darkModeBgColor = "#1B1D1E";
 
 	// Fetch version information

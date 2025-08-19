@@ -16,6 +16,7 @@
 body {
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--background-color);
+    padding: 0px;
     height: 100vh;
     overflow: hidden;
     transition: all 0.3s ease;
@@ -444,8 +445,8 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) rotate(45deg);
-    width: 35px;
-    height: 35px;
+    width: 25px;
+    height: 25px;
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 4px;
     pointer-events: none;
@@ -457,8 +458,8 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 35px;
-    height: 35px;
+    width: 25px;
+    height: 25px;
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
     pointer-events: none;
@@ -1031,4 +1032,90 @@ body.dark-mode .shortcut-item input {
     background: rgba(255, 255, 255, 0.03);
     border-color: rgba(255, 255, 255, 0.05);
 }
+
+/* -------------------------------------
+   LIGHT MODE ENHANCEMENTS
+   ------------------------------------- */
+body:not(.dark-mode) .sidebar {
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+}
+
+body:not(.dark-mode) .nav-item:hover {
+    background: #f3f4f6;
+}
+
+body:not(.dark-mode) .nav-item.active {
+    background: linear-gradient(135deg, #6cc2cf, #4a90e2);
+    color: #ffffff;
+}
+
+body:not(.dark-mode) .tab-header {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* Ensure paragraphs read clearly in light mode */
+body:not(.dark-mode) p {
+    color: #111111;
+}
+
+body:not(.dark-mode) .setting-card,
+body:not(.dark-mode) .shortcut-item,
+body:not(.dark-mode) .keyboard-layout,
+body:not(.dark-mode) .update-section,
+body:not(.dark-mode) .update-prompt-content {
+    background: #ffffff;
+    border-color: #e5e7eb;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+body:not(.dark-mode) .key {
+    background: #f9fafb;
+    border-color: #e5e7eb;
+}
+
+body:not(.dark-mode) .shortcut-item input {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    color: #111827;
+}
+
+/* Light mode: add clear border to toggle sliders */
+body:not(.dark-mode) .toggle-slider {
+    background: #f3f4f6;
+    border: 2px solid #cbd5e1;
+}
+body:not(.dark-mode) .toggle-switch input:checked + .toggle-slider {
+    border-color: #60a5fa;
+}
+
+/* Light mode icon accent colors */
+body:not(.dark-mode) .nav-item i { color: #0ea5e9; }
+body:not(.dark-mode) .setting-icon { background: linear-gradient(135deg, #06b6d4, #4a90e2); }
+body:not(.dark-mode) .setting-icon i { color: #ffffff !important; }
+body:not(.dark-mode) .check-update-btn { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+body:not(.dark-mode) .check-update-btn i { color: #ffffff; }
+body:not(.dark-mode) .bi-keyboard { color: #8b5cf6; }
+body:not(.dark-mode) .bi-sliders { color: #f59e0b; }
+body:not(.dark-mode) .bi-lightning { color: #f43f5e; }
+body:not(.dark-mode) .bi-arrow-clockwise { color: #0ea5e9; }
+body:not(.dark-mode) .bi-shield-exclamation { color: #ef4444; }
+
+/* Improve key shape visibility in light mode */
+body:not(.dark-mode) .key.square:after,
+body:not(.dark-mode) .key.circle:before {
+    border-color: #64748b; /* slate-500 for contrast on white */
+}
+
+/* Dark mode icon accents to match style */
+body.dark-mode .nav-item i { color: #60a5fa; }
+body.dark-mode .setting-icon { background: linear-gradient(135deg, #38bdf8, #4a90e2); }
+body.dark-mode .setting-icon i { color: #ffffff !important; }
+body.dark-mode .check-update-btn { background: linear-gradient(135deg, #22c55e, #16a34a); }
+body.dark-mode .check-update-btn i { color: #ffffff; }
+body.dark-mode .bi-keyboard { color: #c084fc; }
+body.dark-mode .bi-sliders { color: #fbbf24; }
+body.dark-mode .bi-lightning { color: #fb7185; }
+body.dark-mode .bi-arrow-clockwise { color: #38bdf8; }
+body.dark-mode .bi-shield-exclamation { color: #f87171; }
   
