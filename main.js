@@ -3,7 +3,7 @@
  * This is the main Electron process that handles application lifecycle,
  * window management, updates, and auto-play functionality.
  */
-const devMode = false;
+const devMode = true;
 // -------------------------------------
 // IMPORTS AND SETUP
 // -------------------------------------
@@ -465,9 +465,10 @@ function createWindowSetting() {
 		config.appTheme === "dark" ? "#1B1D1E" : "#0a1930";
 
 	const win = new BrowserWindow({
-		width: 750,
-		height: 600,
+		width: 800,
+		height: 650,
 		resizable: false,
+		maximizable: false,
 		backgroundColor: windowBackgroundColor,
 		parent: global.winMain,
 		webPreferences: {
