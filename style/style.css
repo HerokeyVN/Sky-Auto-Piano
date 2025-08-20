@@ -600,6 +600,34 @@ body.dark-mode .bi-dark-fill { color: #a78bfa; }
 /* Sheet edit icon accent */
 .bi-sheet-editor { color: #10b981; }
 
+/* Favorite button styles */
+.favorite-btn {
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.3s ease;
+}
+
+.favorite-btn:hover {
+    transform: scale(1.1);
+    color: #ef4444;
+}
+
+.favorite-btn.favorited {
+    color: #ef4444;
+}
+
+/* Light mode favorite button styles */
+body:not(.dark-mode) .favorite-btn {
+    color: #bebebe; /* A solid, visible gray for unfavorited state */
+}
+
+body:not(.dark-mode) .favorite-btn:hover {
+    color: #dc2626; /* Red on hover */
+}
+
+body:not(.dark-mode) .favorite-btn.favorited {
+    color: #dc2626; /* Red when favorited */
+}
+
 /* Hide dark mode icon by default (in light mode) */
 body:not(.dark-mode) .bi-dark-fill {
   opacity: 0;
@@ -753,6 +781,125 @@ body:not(.dark-mode) #search-bar::placeholder {
 }
 body:not(.dark-mode) .search-icon {
   color: #64748b;
+}
+
+/* -------------------------------------
+   NAVIGATION BAR
+   ------------------------------------- */
+.nav-container {
+    margin: 0 20px 20px 20px;
+    padding: 0;
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 4px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-tab::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.nav-tab:hover::before {
+    left: 100%;
+}
+
+.nav-tab:hover {
+    color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+}
+
+.nav-tab.active {
+    background: linear-gradient(135deg, var(--hover), #4a90e2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    transform: translateY(-1px);
+}
+
+.nav-tab.active::before {
+    display: none;
+}
+
+.nav-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* Light mode navigation styles */
+body:not(.dark-mode) .nav-tabs {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark-mode) .nav-tab {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+body:not(.dark-mode) .nav-tab:hover {
+    color: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark-mode) .nav-tab.active {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+}
+
+/* Responsive design for navigation */
+@media (max-width: 600px) {
+    .nav-container {
+        margin: 0 15px 15px 15px;
+    }
+    
+    .nav-tabs {
+        gap: 4px;
+        padding: 3px;
+    }
+    
+    .nav-tab {
+        padding: 8px 12px;
+        font-size: 13px;
+        gap: 6px;
+    }
+    
+    .nav-icon {
+        width: 14px;
+        height: 14px;
+    }
 }
 
 /* -------------------------------------

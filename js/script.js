@@ -117,7 +117,175 @@ document.addEventListener("DOMContentLoaded", () => {
   const savedTheme = localStorage.getItem("theme");
   const initialTheme = savedTheme ? savedTheme : "light";
   applyTheme(initialTheme);
+
+  // -------------------------------------
+  // NAVIGATION TAB FUNCTIONALITY
+  // -------------------------------------
+  // Initialize navigation tabs
+  const navTabs = document.querySelectorAll('.nav-tab');
+  let currentTab = 'all-songs';
+  
+  // Load favorites and recent plays from localStorage
+  let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+  let recentPlays = JSON.parse(localStorage.getItem('recentPlays') || '[]');
+  
+  // Tab switching functionality
+  navTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabType = tab.getAttribute('data-tab');
+      
+      // Remove active class from all tabs
+      navTabs.forEach(t => t.classList.remove('active'));
+      
+      // Add active class to clicked tab
+      tab.classList.add('active');
+      
+      // Update current tab
+      currentTab = tabType;
+      
+      // Filter and display content based on selected tab
+      filterContentByTab(tabType);
+    });
+  });
+  
+  /**
+   * Filter content based on selected tab
+   * @param {string} tabType - The type of tab selected
+   */
+  function filterContentByTab(tabType) {
+    const cards = document.querySelectorAll('.card');
+    const searchTerm = document.getElementById('search-bar').value.toLowerCase().trim();
+    
+    cards.forEach((card, index) => {
+      if (index < listSheet.length) {
+        const sheetData = listSheet[index];
+        const sheetName = sheetData.name.toLowerCase();
+        const authorName = (sheetData.author || "").toLowerCase();
+        
+        let shouldShow = false;
+        
+        switch (tabType) {
+          case 'all-songs':
+            shouldShow = true;
+            break;
+          case 'favorite':
+            shouldShow = favorites.includes(sheetData.name);
+            break;
+          case 'recent-play':
+            shouldShow = recentPlays.includes(sheetData.name);
+            break;
+        }
+        
+        // Apply search filter if there's a search term
+        if (shouldShow && searchTerm) {
+          shouldShow = sheetName.includes(searchTerm) || authorName.includes(searchTerm);
+        }
+        
+        card.style.display = shouldShow ? "" : "none";
+      } else {
+        card.style.display = "none";
+      }
+    });
+  }
+  
+  /**
+   * Add a song to favorites
+   * @param {string} songName - Name of the song to add to favorites
+   */
+  function addToFavorites(songName) {
+    if (!favorites.includes(songName)) {
+      favorites.push(songName);
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+  }
+  
+  /**
+   * Remove a song from favorites
+   * @param {string} songName - Name of the song to remove from favorites
+   */
+  function removeFromFavorites(songName) {
+    const index = favorites.indexOf(songName);
+    if (index > -1) {
+      favorites.splice(index, 1);
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+  }
+  
+  /**
+   * Add a song to recent plays
+   * @param {string} songName - Name of the song to add to recent plays
+   */
+  function addToRecentPlays(songName) {
+    // Remove if already exists
+    const index = recentPlays.indexOf(songName);
+    if (index > -1) {
+      recentPlays.splice(index, 1);
+    }
+    
+    // Add to beginning
+    recentPlays.unshift(songName);
+    
+    // Keep only last 10 recent plays
+    if (recentPlays.length > 10) {
+      recentPlays = recentPlays.slice(0, 10);
+    }
+    
+    localStorage.setItem('recentPlays', JSON.stringify(recentPlays));
+  }
+  
+  // Make functions globally available
+  window.addToFavorites = addToFavorites;
+  window.removeFromFavorites = removeFromFavorites;
+  window.addToRecentPlays = addToRecentPlays;
+  window.filterContentByTab = filterContentByTab;
+  window.favorites = favorites;
+  window.recentPlays = recentPlays;
 });
+
+// -------------------------------------
+// GLOBAL FUNCTIONS
+// -------------------------------------
+/**
+ * Filter content based on selected tab (global function)
+ * @param {string} tabType - The type of tab selected
+ */
+function filterContentByTab(tabType) {
+  const cards = document.querySelectorAll('.card');
+  const searchTerm = document.getElementById('search-bar').value.toLowerCase().trim();
+  const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+  const recentPlays = JSON.parse(localStorage.getItem('recentPlays') || '[]');
+  
+  cards.forEach((card, index) => {
+    if (index < listSheet.length) {
+      const sheetData = listSheet[index];
+      const sheetName = sheetData.name.toLowerCase();
+      const authorName = (sheetData.author || "").toLowerCase();
+      
+      let shouldShow = false;
+      
+      switch (tabType) {
+        case 'all-songs':
+          shouldShow = true;
+          break;
+        case 'favorite':
+          shouldShow = favorites.includes(sheetData.name);
+          break;
+        case 'recent-play':
+          shouldShow = recentPlays.includes(sheetData.name);
+          break;
+      }
+      
+      // Apply search filter if there's a search term
+      if (shouldShow && searchTerm) {
+        shouldShow = sheetName.includes(searchTerm) || authorName.includes(searchTerm);
+      }
+      
+      card.style.display = shouldShow ? "" : "none";
+    } else {
+      card.style.display = "none";
+    }
+  });
+}
 
 // -------------------------------------
 // UI SETUP
@@ -147,23 +315,12 @@ const contentContainer = document.querySelector(".content");
 
 if (searchBar && contentContainer) {
   searchBar.addEventListener("input", () => {
-    const searchTerm = searchBar.value.toLowerCase().trim();
-    const cards = contentContainer.querySelectorAll(".card");
-
-    cards.forEach((card, index) => {
-      if (index < listSheet.length) {
-        const sheetData = listSheet[index];
-        const sheetName = sheetData.name.toLowerCase();
-        const authorName = (sheetData.author || "").toLowerCase();
-
-        const isMatch =
-          sheetName.includes(searchTerm) || authorName.includes(searchTerm);
-
-        card.style.display = isMatch ? "" : "none";
-      } else {
-        card.style.display = "none";
-      }
-    });
+    // Get current active tab
+    const activeTab = document.querySelector('.nav-tab.active');
+    const currentTabType = activeTab ? activeTab.getAttribute('data-tab') : 'all-songs';
+    
+    // Filter content based on current tab and search term
+    filterContentByTab(currentTabType);
   });
 } else {
   console.error("Search bar or content container element not found!");
@@ -423,11 +580,14 @@ function printSheet() {
                 </div>
             </div>
             <div class="menu-btn" style="display: flex; flex-direction: row; align-items: center; gap: 8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" class="bi bi-heart favorite-btn" data-song="${i.name}" viewBox="0 0 16 16" style="cursor:pointer;" fill="currentColor">
+                    <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
+                </svg>
                 <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" class="bi bi-sheet-editor" viewBox="0 0 40 40" style="cursor:pointer;">
                     <path d="M20.8333 36.6667H30C30.884 36.6667 31.7319 36.3155 32.357 35.6903C32.9821 35.0652 33.3333 34.2174 33.3333 33.3333V11.6667L25 3.33333H9.99996C9.1159 3.33333 8.26806 3.68452 7.64294 4.30964C7.01782 4.93476 6.66663 5.78261 6.66663 6.66666V22.5" fill="none" stroke="currentColor" stroke-width="4.16667" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M23.333 3.33333V9.99999C23.333 10.884 23.6842 11.7319 24.3093 12.357C24.9344 12.9821 25.7822 13.3333 26.6663 13.3333H33.333M22.2963 26.0433C22.625 25.7146 22.8858 25.3243 23.0637 24.8948C23.2416 24.4653 23.3332 24.0049 23.3332 23.54C23.3332 23.0751 23.2416 22.6147 23.0637 22.1852C22.8858 21.7557 22.625 21.3654 22.2963 21.0367C21.9676 20.7079 21.5773 20.4471 21.1478 20.2692C20.7182 20.0913 20.2579 19.9997 19.793 19.9997C19.3281 19.9997 18.8677 20.0913 18.4382 20.2692C18.0087 20.4471 17.6184 20.7079 17.2896 21.0367L8.93964 29.39C8.54338 29.786 8.25334 30.2756 8.0963 30.8133L6.7013 35.5967C6.65947 35.7401 6.65697 35.8921 6.69404 36.0368C6.73112 36.1815 6.80641 36.3136 6.91205 36.4192C7.01768 36.5249 7.14977 36.6002 7.29449 36.6373C7.4392 36.6743 7.59122 36.6718 7.73464 36.63L12.518 35.235C13.0557 35.078 13.5453 34.7879 13.9413 34.3917L22.2963 26.0433Z" fill="none" stroke="currentColor" stroke-width="4.16667" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" class="bi bi-trash3" viewBox="0 0 16 16" style="cursor:pointer;" fill="currentColor">
+<svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" class="bi bi-trash3" viewBox="0 0 16 16" style="cursor:pointer;" fill="currentColor">
                     <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5" />
                 </svg>
             </div>
@@ -449,6 +609,9 @@ function printSheet() {
         }
       } catch (_) {}
 
+      // Add to recent plays
+      window.addToRecentPlays(i.name);
+      
       updateFooter({ ...listSheet[j], keys: listKeys[j] }, j);
     };
 
@@ -471,6 +634,40 @@ function printSheet() {
       );
       printSheet();
     };
+
+    // Set up favorite button handlers
+    let btnFavorite = document.getElementsByClassName("favorite-btn");
+    btnFavorite[j].onclick = (e) => {
+      e.stopPropagation(); // Prevent card click
+      const songName = i.name;
+      const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+      
+      if (favorites.includes(songName)) {
+        // Remove from favorites
+        window.removeFromFavorites(songName);
+        btnFavorite[j].innerHTML = `<path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>`;
+        btnFavorite[j].classList.remove('favorited');
+      } else {
+        // Add to favorites
+        window.addToFavorites(songName);
+        btnFavorite[j].innerHTML = `<path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>`;
+        btnFavorite[j].classList.add('favorited');
+      }
+    };
+
+    // Update favorite button appearance based on current state
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    if (favorites.includes(i.name)) {
+      btnFavorite[j].innerHTML = `<path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>`;
+      btnFavorite[j].classList.add('favorited');
+    }
+  }
+  
+  // Apply current tab filter after rendering
+  const activeTab = document.querySelector('.nav-tab.active');
+  if (activeTab) {
+    const currentTabType = activeTab.getAttribute('data-tab');
+    filterContentByTab(currentTabType);
   }
 }
 
