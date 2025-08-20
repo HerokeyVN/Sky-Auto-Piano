@@ -137,6 +137,25 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Update settings
 	document.getElementById("switch-block-update").checked =
 		config.update?.blockUpdate ?? false;
+		
+	// Add event listener for block updates switch with confirmation dialog
+	document.getElementById("switch-block-update").addEventListener("change", (event) => {
+		if (event.target.checked) {
+			// Show custom centered confirmation dialog when trying to enable block updates
+			showBlockUpdatesDialog(() => {
+				// User confirmed - keep the switch enabled
+				config.update = config.update || {};
+				config.update.blockUpdate = true;
+			}, () => {
+				// User cancelled - revert the switch
+				event.target.checked = false;
+			});
+		} else {
+			// Disabling block updates - no confirmation needed
+			config.update = config.update || {};
+			config.update.blockUpdate = false;
+		}
+	});
 });
 
 // -------------------------------------
@@ -449,6 +468,121 @@ document.addEventListener('DOMContentLoaded', () => {
 // -------------------------------------
 // UTILITY FUNCTIONS
 // -------------------------------------
+
+/**
+ * Show custom centered dialog for block updates confirmation
+ * @param {Function} onConfirm - Callback when user confirms
+ * @param {Function} onCancel - Callback when user cancels
+ */
+function showBlockUpdatesDialog(onConfirm, onCancel) {
+	// Create dialog container
+	const dialogOverlay = document.createElement('div');
+	dialogOverlay.className = 'block-updates-dialog-overlay';
+	dialogOverlay.id = 'block-updates-dialog';
+	
+	// Create dialog content
+	dialogOverlay.innerHTML = `
+		<div class="block-updates-dialog">
+			<div class="dialog-header">
+				<div class="dialog-icon">
+					<i class="bi bi-exclamation-triangle"></i>
+				</div>
+				<h2>Block Automatic Updates?</h2>
+			</div>
+			<div class="dialog-content">
+				<p>Are you sure you want to block automatic updates?</p>
+				<div class="warning-details">
+					<div class="warning-item">
+						<i class="bi bi-shield-x"></i>
+						<span>You won't receive important security patches</span>
+					</div>
+					<div class="warning-item">
+						<i class="bi bi-bug"></i>
+						<span>Bug fixes and improvements will be missed</span>
+					</div>
+					<div class="warning-item">
+						<i class="bi bi-lightbulb"></i>
+						<span>New features won't be available automatically</span>
+					</div>
+				</div>
+				<p class="note">You can still manually check for updates in the Updates tab.</p>
+			</div>
+			<div class="dialog-buttons">
+				<button class="dialog-btn cancel-btn" id="block-updates-cancel">
+					<i class="bi bi-x-circle"></i>
+					<span>Cancel</span>
+				</button>
+				<button class="dialog-btn confirm-btn" id="block-updates-confirm">
+					<i class="bi bi-shield-check"></i>
+					<span>Yes, Block Updates</span>
+				</button>
+			</div>
+		</div>
+	`;
+	
+	// Add to document
+	document.body.appendChild(dialogOverlay);
+	
+	// Add event listeners
+	document.getElementById('block-updates-cancel').addEventListener('click', () => {
+		closeBlockUpdatesDialog();
+		onCancel();
+	});
+	
+	document.getElementById('block-updates-confirm').addEventListener('click', () => {
+		closeBlockUpdatesDialog();
+		onConfirm();
+	});
+	
+	// Close on overlay click
+	dialogOverlay.addEventListener('click', (e) => {
+		if (e.target === dialogOverlay) {
+			closeBlockUpdatesDialog();
+			onCancel();
+		}
+	});
+	
+	// Close on Escape key
+	document.addEventListener('keydown', handleEscapeKey);
+	
+	// Show dialog with animation
+	setTimeout(() => {
+		dialogOverlay.classList.add('show');
+	}, 10);
+}
+
+/**
+ * Close the block updates dialog
+ */
+function closeBlockUpdatesDialog() {
+	const dialog = document.getElementById('block-updates-dialog');
+	if (dialog) {
+		dialog.classList.remove('show');
+		setTimeout(() => {
+			if (dialog.parentNode) {
+				dialog.parentNode.removeChild(dialog);
+			}
+		}, 300);
+	}
+	document.removeEventListener('keydown', handleEscapeKey);
+}
+
+/**
+ * Handle Escape key for dialog
+ */
+function handleEscapeKey(e) {
+	if (e.key === 'Escape') {
+		const dialog = document.getElementById('block-updates-dialog');
+		if (dialog) {
+			closeBlockUpdatesDialog();
+			// Trigger cancel callback
+			const cancelBtn = document.getElementById('block-updates-cancel');
+			if (cancelBtn) {
+				cancelBtn.click();
+			}
+		}
+	}
+}
 
 // Function to show changelog dialog
 async function showChangelog(version) {

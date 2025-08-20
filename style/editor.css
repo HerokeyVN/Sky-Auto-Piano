@@ -43,17 +43,16 @@ body {
     height: 100vh;
     padding: 15px;
     box-sizing: border-box;
-    overflow: hidden; /* Prevent container scroll */
+    overflow: hidden;
 }
 
 .music-grid {
     flex: 1;
     padding: 10px;
     margin-bottom: 20px;
-    overflow-y: auto; /* Enable vertical scrolling */
-    min-height: 0; /* Allows grid to shrink if needed */
-    padding-bottom: 250px; /* Adjust this value based on your bottom container height */
-    /* Hide scrollbar for Chrome, Safari and Opera */
+    overflow-y: auto; 
+    min-height: 0; 
+    padding-bottom: 250px;
     &::-webkit-scrollbar {
         display: none;
     }

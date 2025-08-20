@@ -332,6 +332,51 @@ function random(min, max) {
 }
 
 /**
+ * Formats duration from keymap data to MM:SS format
+ * @param {Object} keys - Keymap data object
+ * @returns {string} Formatted duration string
+ */
+function formatDuration(keys) {
+  if (!keys || Object.keys(keys).length === 0) return '0:00';
+  
+  // Get the last timestamp (highest time value)
+  const timestamps = Object.keys(keys).map(Number).sort((a, b) => a - b);
+  const lastTimestamp = timestamps[timestamps.length - 1];
+  
+  if (!lastTimestamp || lastTimestamp <= 0) return '0:00';
+  
+  // Convert milliseconds to seconds
+  const totalSeconds = Math.floor(lastTimestamp / 1000);
+  
+  // Calculate minutes and seconds
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  
+  // Format as MM:SS
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Formats duration from keymap filename to MM:SS format
+ * @param {string} keyMapFilename - Keymap filename
+ * @returns {string} Formatted duration string
+ */
+function formatDurationFromKeyMap(keyMapFilename) {
+  try {
+    if (!keyMapFilename) return '0:00';
+    
+    // Read the keymap file
+    const keymapPath = path.join(__dirname, "..", "data", keyMapFilename);
+    const keymapData = JSON.parse(fs.readFileSync(keymapPath, { encoding: "utf8" }));
+    
+    return formatDuration(keymapData);
+  } catch (error) {
+    console.error('Error reading keymap for duration:', error);
+    return '0:00';
+  }
+}
+
+/**
  * Renders the sheet list in the UI
  */
 function printSheet() {
@@ -366,6 +411,14 @@ function printSheet() {
                         </svg>
                         <span class="label">BPM:</span>
                         <span class="value bpm-sheet">${i.bpm || ''}</span>
+                    </div>
+                    <div class="info-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="icon duration-icon">
+                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                        </svg>
+                        <span class="label">Length:</span>
+                        <span class="value duration-sheet">${formatDurationFromKeyMap(i.keyMap) || '0:00'}</span>
                     </div>
                 </div>
             </div>
