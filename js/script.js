@@ -42,13 +42,38 @@ const keys = [
   "n", "m", ",", ".", "/"
 ];
 
-// Decryption MASK for encrypted sheets
+// -------------------------------------
+// DECRYPTION LOGIC
+// -------------------------------------
 const MASK = Object.freeze([
-    16, 34, 56, 18, 62, 19, -25, 55,
-    15, 24, 30, 12, 30, 45, 39, -23,
-    -10, 15, 45, -18, 37, -2, -21, 65,
-    25, -4, -14, 43, 23, -4, -17, -17
+  16, 34, 56, 18, 62, 19, -25, 55,
+  15, 24, 30, 12, 30, 45, 39, -23,
+  -10, 15, 45, -18, 37, -2, -21, 65,
+  25, -4, -14, 43, 23, -4, -17, -17
 ]);
+
+/**
+ * Decrypts an array of numbers into a song notes object.
+ * @param {number[]} nums The encrypted array of numbers from songNotes.
+ * @returns {Object} The decrypted song notes object.
+ */
+function decodeNums(nums) {
+  if (!Array.isArray(nums)) throw new TypeError("decodeNums: input must be an array of numbers");
+  let s = "";
+  for (let i = 0; i < nums.length; i++) {
+    const n = nums[i] | 0;
+    const code = n + MASK[i % MASK.length];
+    s += String.fromCharCode(code);
+  }
+  // Clean up potential trailing characters and parse the JSON string
+  try {
+      const cleanedString = s.replace(/(].*)/, "]");
+      return JSON.parse(cleanedString);
+  } catch (e) {
+      console.error("Failed to parse decrypted string:", s);
+      throw new Error("Decryption resulted in invalid JSON.");
+  }
+}
 
 
 // -------------------------------------
@@ -359,27 +384,11 @@ document
 
     let done = 0;
     for (let file of files) {
-      // Read file content
-      let fileContent = fs.readFileSync(file.path, 'utf8');
-
-      // Attempt to parse as JSON to check for encrypted format
-      let text;
-      try {
-        const parsed = JSON.parse(fileContent);
-        if (Array.isArray(parsed) && typeof parsed[0] === 'number') {
-            // It's an encrypted file, so decrypt it
-            text = decodeNums(parsed);
-        } else {
-            // It's a regular JSON file
-            text = fileContent;
-        }
-      } catch (e) {
-        // Not a JSON file, could be UTF-16 or something else
-        let typeDetect = fs.readFileSync(file.path, { encoding: "utf8" })[0] != "[" ? "utf16le" : "utf8";
-        text = decUTF16toUTF8(
-          fs.readFileSync(file.path, { encoding: typeDetect })
-        );
-      }
+      // Detect file encoding
+      let typeDetect = fs.readFileSync(file.path, { encoding: "utf8" })[0] != "[" ? "utf16le" : "utf8";
+      let text = decUTF16toUTF8(
+        fs.readFileSync(file.path, { encoding: typeDetect })
+      );
 
       // Parse sheet file
       let json;
@@ -395,6 +404,29 @@ document
         }
         continue;
       }
+      
+      // ---- START OF DECRYPTION MODIFICATION ----
+      // Check if the sheet is encrypted and decrypt if necessary
+      if (json.isEncrypted === true) {
+        try {
+          // Decrypt the songNotes
+          const decryptedNotes = decodeNums(json.songNotes);
+          // Replace the encrypted notes with the decrypted ones
+          json.songNotes = decryptedNotes;
+          // Mark it as not encrypted anymore for further processing
+          json.isEncrypted = false;
+        } catch (decryptErr) {
+          console.error("Failed to decrypt sheet:", json.name, decryptErr);
+          if (files.length == 1) {
+            notie.alert({
+              type: 3,
+              text: "Failed to decrypt the sheet. It might be corrupted."
+            });
+          }
+          continue; // Skip this file if decryption fails
+        }
+      }
+      // ---- END OF DECRYPTION MODIFICATION ----
 
       // Process and encode sheet
       let res;
@@ -440,29 +472,12 @@ document
   });
 
 /**
- * Decrypts an array of numbers into a sheet string
- * @param {number[]} nums - Array of numbers representing the encrypted sheet
- * @returns {string} - The decrypted sheet string
- */
-function decodeNums(nums) {
-    if (!Array.isArray(nums)) throw new TypeError("decodeNums: input must be an array of numbers");
-    let s = "";
-    for (let i = 0; i < nums.length; i++) {
-        const n = nums[i] | 0;
-        const code = n + MASK[i % MASK.length];
-        s += String.fromCharCode(code);
-    }
-    return s.replace(/(].*)/, "]");
-}
-
-
-/**
  * Encodes sheet music data and saves it to a file
  * @param {Object} json - Sheet music data in JSON format
  * @returns {Object|undefined} Error object or undefined on success
  */
 function encSheet(json) {
-  // Check if sheet is already encrypted
+  // Check if sheet is already encrypted (this will be false for successfully decrypted sheets)
   if (json.isEncrypted)
     return {
       errCode: 1,
@@ -476,10 +491,11 @@ function encSheet(json) {
       msg: "The sheet file is not valid, please try again with another file!",
     };
   
+  // This check ensures notes are in the correct format (e.g., objects), not numbers (as in encrypted sheets)
   if (typeof json.songNotes[0] != "object")
     return {
       errCode: 1,
-      msg: "Sheet has been encrypted!",
+      msg: "Sheet format is incorrect or still encrypted!",
     };
   
   // Create encoded keymap
