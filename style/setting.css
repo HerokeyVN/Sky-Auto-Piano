@@ -325,13 +325,14 @@ body:not(.dark-mode) .warning-text {
     max-width: 500px;
     width: 90%;
     max-height: 90vh;
+    
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(20px);
     transform: scale(0.9) translateY(20px);
     transition: all 0.3s ease;
     position: relative;
-    max-height: 60vh;
+    max-height: 100vh;
     overflow-y: auto;
     scroll-behavior: smooth;
     scrollbar-width: none;
