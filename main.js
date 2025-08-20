@@ -3,7 +3,7 @@
  * This is the main Electron process that handles application lifecycle,
  * window management, updates, and auto-play functionality.
  */
-const devMode = true;
+const devMode = false;
 // -------------------------------------
 // IMPORTS AND SETUP
 // -------------------------------------
