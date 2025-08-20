@@ -10,10 +10,10 @@
 
 :root {
   /* Modern, soothing light theme */
-  --background-color: #ffffff; /* Surfaces/cards/footer */
-  --dark-backround: #0f172a; /* Dark tooltip/switch rail on light */
-  --font-color: #0f172a; /* Primary text */
-  --hover: #3b82f6; /* Accent (thumbs, hovers) */
+  --background-color: #ffffff; 
+  --dark-backround: #0f172a; 
+  --font-color: #0f172a; 
+  --hover: #3b82f6; 
 }
 
 body.dark-mode {
@@ -95,8 +95,7 @@ body:not(.dark-mode)::-webkit-scrollbar-track {
 }
 /* Light mode card refinements */
 body:not(.dark-mode) .content .card {
-  border-top: 1px solid #e5e7eb;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  border-top: 5px solid #e5e7eb;
 }
 
 .card .sheet-info {
@@ -139,10 +138,25 @@ body:not(.dark-mode) .content .card {
 body:not(.dark-mode) .card .sheet-info .info-lines .info-item .author-icon { color: #0ea5e9; }
 body:not(.dark-mode) .card .sheet-info .info-lines .info-item .trans-icon { color: #f59e0b; }
 body:not(.dark-mode) .card .sheet-info .info-lines .info-item .bpm-icon { color: #10b981; }
+body:not(.dark-mode) .card .sheet-info .info-lines .info-item .duration-icon { 
+  color: #c084fc; 
+  width: 13px;
+  height: 13px;
+  margin-left: 3px;
+  margin-top: 2px;
+
+}
 
 body.dark-mode .card .sheet-info .info-lines .info-item .author-icon { color: #38bdf8; }
 body.dark-mode .card .sheet-info .info-lines .info-item .trans-icon { color: #fbbf24; }
 body.dark-mode .card .sheet-info .info-lines .info-item .bpm-icon { color: #34d399; }
+body.dark-mode .card .sheet-info .info-lines .info-item .duration-icon { 
+  color: #c084fc; 
+  width: 13px;
+  height: 13px;
+  margin-left: 3px;
+  margin-top: 2px;
+}
 
 /* Light mode text tones for meta */
 body:not(.dark-mode) .card .sheet-info .info-lines .info-item .label { color: #334155; }
@@ -205,6 +219,7 @@ body:not(.dark-mode) .footer {
 
 .name-playing {
   margin-bottom: 15px;
+  font-weight: bold;
 }
 
 /* Process bar (progress slider) */
@@ -229,10 +244,10 @@ body:not(.dark-mode) .footer {
 }
 /* Light mode progress bar */
 body:not(.dark-mode) .process-bar {
-  background: #94a3b8; /* slate-400 */
+  background: #94a3b8; 
 }
 body:not(.dark-mode) .process-bar::-webkit-slider-thumb {
-  background: #3b82f6; /* blue-500 */
+  background: #3b82f6; 
 }
 
 /* Time display */
@@ -280,58 +295,58 @@ body:not(.dark-mode) .process-bar::-webkit-slider-thumb {
 }
 /* Distinct button accents in light mode */
 body:not(.dark-mode) #btn-prev {
-  border-color: #8b5cf6; /* violet-500 */
-  color: #8b5cf6;
+  border-color: #0ea5e9; 
+  color: #0ea5e9;
 }
 body:not(.dark-mode) #btn-prev:hover {
-  border-color: #7c3aed; /* violet-600 */
-  color: #7c3aed;
+  border-color: #0284c7; 
+  color: #0284c7;
 }
 body:not(.dark-mode) #btn-play {
-  border-color: #22c55e; /* green-500 */
+  border-color: #22c55e; 
   color: #22c55e;
 }
 body:not(.dark-mode) #btn-play:hover {
-  border-color: #16a34a; /* green-600 */
+  border-color: #16a34a; 
   color: #16a34a;
 }
 body:not(.dark-mode) #btn-next {
-  border-color: #0ea5e9; /* sky-500 */
+  border-color: #0ea5e9; 
   color: #0ea5e9;
 }
 body:not(.dark-mode) #btn-next:hover {
-  border-color: #0284c7; /* sky-600 */
+  border-color: #0284c7; 
   color: #0284c7;
 }
 /* Distinct button accents in dark mode */
 body.dark-mode #btn-prev {
-  border-color: #c084fc; /* violet-400 */
-  color: #c084fc;
+  border-color: #38bdf8; 
+  color: #38bdf8;
 }
 body.dark-mode #btn-prev:hover {
-  border-color: #a78bfa; /* violet-300 */
-  color: #a78bfa;
+  border-color: #0ea5e9; 
+  color: #0ea5e9;
 }
 body.dark-mode #btn-play {
-  border-color: #22c55e; /* green-500 */
+  border-color: #22c55e;
   color: #22c55e;
 }
 body.dark-mode #btn-play:hover {
-  border-color: #16a34a; /* green-600 */
+  border-color: #16a34a; 
   color: #16a34a;
 }
 body.dark-mode #btn-next {
-  border-color: #38bdf8; /* sky-400 */
+  border-color: #38bdf8; 
   color: #38bdf8;
 }
 body.dark-mode #btn-next:hover {
-  border-color: #0ea5e9; /* sky-500 */
+  border-color: #0ea5e9; 
   color: #0ea5e9;
 }
 /* Light mode button refinements */
 body:not(.dark-mode) .btn {
   background: #ffffff;
-  border-color: #cbd5e1; /* slate-300 */
+  border-color: #cbd5e1; 
   color: #0f172a;
 }
 body:not(.dark-mode) .btn:hover {
@@ -469,6 +484,15 @@ input[type="number"]::-webkit-outer-spin-button {
   width: 13px;
 }
 
+/* Light mode long press switch styling - better colors */
+body:not(.dark-mode) .long-press-btn .switch + label::before {
+  background-color: #e5e7eb;
+}
+
+body:not(.dark-mode) .long-press-btn .switch + label::after {
+  background-color: #94a3b8; 
+}
+
 .long-press-btn .switch + label .switch-x-text {
   display: block;
   margin-right: 0.3em;
@@ -538,6 +562,8 @@ input[type="number"]::-webkit-outer-spin-button {
 /* -------------------------------------
    UTILITY ICONS AND BUTTONS
    ------------------------------------- */
+
+   
 /* Settings button */
 .footer .bi-gear-fill {
   position: absolute;
@@ -557,35 +583,69 @@ input[type="number"]::-webkit-outer-spin-button {
   position: absolute;
   top: 10px;
   right: 10px;
-  transition: opacity 0.3s linear, color 0.1s linear; /* Added opacity transition */
-  cursor: pointer; /* Make icons clickable */
-  color: var(--font-color); /* Ensure icon uses theme color */
+  transition: opacity 0.3s linear, color 0.1s linear; 
+  cursor: pointer; 
+  color: var(--font-color); 
 }
 
 .footer .bi-light-fill:hover,
 .footer .bi-dark-fill:hover {
-  color: var(--hover); /* Apply hover effect */
+  color: var(--hover); 
 }
-/* Icon brand colors */
-/* Sun icon (visible in light mode) */
+
+
+/* Sun icon */
 body:not(.dark-mode) .bi-light-fill { color: #f59e0b; }
+
+
 /* Moon icon (visible in dark mode) */
 body.dark-mode .bi-dark-fill { color: #a78bfa; }
+
+
 /* Delete icon always red */
 .bi-trash3 { color: #ef4444; }
-/* Sheet edit icon accent */
+
+
+/* Sheet edit icon */
 .bi-sheet-editor { color: #10b981; }
+
+/* Favorite button styles */
+.favorite-btn {
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.3s ease;
+}
+
+.favorite-btn:hover {
+    transform: scale(1.1);
+    color: #ef4444;
+}
+
+.favorite-btn.favorited {
+    color: #ef4444;
+}
+
+/* Light mode favorite button styles */
+body:not(.dark-mode) .favorite-btn {
+    color: #bebebe; 
+}
+
+body:not(.dark-mode) .favorite-btn:hover {
+    color: #dc2626; 
+}
+
+body:not(.dark-mode) .favorite-btn.favorited {
+    color: #dc2626; 
+}
 
 /* Hide dark mode icon by default (in light mode) */
 body:not(.dark-mode) .bi-dark-fill {
   opacity: 0;
-  pointer-events: none; /* Prevent interaction when hidden */
+  pointer-events: none; 
 }
 
-/* Hide light mode icon when in dark mode */
 body.dark-mode .bi-light-fill {
   opacity: 0;
-  pointer-events: none; /* Prevent interaction when hidden */
+  pointer-events: none; 
 }
 /*Checkbox*/
 .checkbox input[type="checkbox"] {
@@ -719,7 +779,7 @@ body.dark-mode .bi-light-fill {
   color: var(--font-color);
   pointer-events: none;
 }
-/* Light mode search field */
+
 body:not(.dark-mode) #search-bar {
   background-color: #f3f4f6;
   color: #0f172a;
@@ -729,6 +789,125 @@ body:not(.dark-mode) #search-bar::placeholder {
 }
 body:not(.dark-mode) .search-icon {
   color: #64748b;
+}
+
+/* -------------------------------------
+   NAVIGATION BAR
+   ------------------------------------- */
+.nav-container {
+    margin: 0 20px 20px 20px;
+    padding: 0;
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 4px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-tab::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.nav-tab:hover::before {
+    left: 100%;
+}
+
+.nav-tab:hover {
+    color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+}
+
+.nav-tab.active {
+    background: linear-gradient(135deg, var(--hover), #4a90e2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    transform: translateY(-1px);
+}
+
+.nav-tab.active::before {
+    display: none;
+}
+
+.nav-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* Light mode navigation styles */
+body:not(.dark-mode) .nav-tabs {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark-mode) .nav-tab {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+body:not(.dark-mode) .nav-tab:hover {
+    color: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark-mode) .nav-tab.active {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+}
+
+/* Responsive design for navigation */
+@media (max-width: 600px) {
+    .nav-container {
+        margin: 0 15px 15px 15px;
+    }
+    
+    .nav-tabs {
+        gap: 4px;
+        padding: 3px;
+    }
+    
+    .nav-tab {
+        padding: 8px 12px;
+        font-size: 13px;
+        gap: 6px;
+    }
+    
+    .nav-icon {
+        width: 14px;
+        height: 14px;
+    }
 }
 
 /* -------------------------------------
@@ -742,7 +921,7 @@ body:not(.dark-mode) .search-icon {
 body:not(.dark-mode) .notie-textbox,
 body:not(.dark-mode) .notie-button,
 body:not(.dark-mode) .notie-element {
-  color: #0f172a !important; /* black-ish for light mode */
+  color: #0f172a !important; 
   text-shadow: none !important;
 }
 
@@ -869,7 +1048,6 @@ body.dark-mode .notie-element {
     min-height: 0;
 }
 
-/* Modern scrollbar styling for changelog */
 .changelog::-webkit-scrollbar {
     width: 6px;
 }
@@ -889,7 +1067,6 @@ body.dark-mode .notie-element {
     background: rgba(255, 255, 255, 0.5);
 }
 
-/* Firefox scrollbar styling */
 .changelog {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
@@ -1022,7 +1199,6 @@ body.dark-mode .notie-element {
     }
 }
 
-/* Add a subtle pulse animation for the update icon */
 .update-header .update-icon {
     animation: pulse 2s infinite, rotate 8s linear infinite;
 }
@@ -1045,7 +1221,7 @@ body.dark-mode .notie-element {
     }
 }
 
-/* Floating animation for the version badge */
+/* Floating animation for the version info */
 .update-prompt .version-info {
     animation: float 3s ease-in-out infinite;
     animation-delay: 0.8s;
@@ -1060,7 +1236,6 @@ body.dark-mode .notie-element {
     }
 }
 
-/* Staggered entrance animation for update prompt elements */
 .update-prompt.show .update-header {
     animation: slideInDown 0.6s ease-out 0s both;
 }
@@ -1095,7 +1270,6 @@ body.dark-mode .notie-element {
     }
 }
 
-/* Shimmer effect for the version badge */
 .version-info::before {
     content: '';
     position: absolute;
@@ -1139,7 +1313,7 @@ body.dark-mode .notie-element {
     }
 }
 
-/* Glow pulse for the entire update prompt */
+/* Glow effect for the entire update prompt */
 .update-prompt.show .update-prompt-content {
     animation: glowPulse 2s ease-in-out infinite;
 }
@@ -1160,7 +1334,7 @@ body.dark-mode .notie-element {
 
 
 
-/* Improve the backdrop blur effect */
+/*  blur effect for update prompt */
 .update-prompt {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);

@@ -254,6 +254,379 @@ body {
     border-color: rgba(255, 255, 255, 0.2);
 }
 
+/* Warning card styling for potentially risky settings */
+.warning-card {
+    border-color: rgba(255, 193, 7, 0.3) !important;
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.05), rgba(255, 193, 7, 0.02)) !important;
+}
+
+.warning-card:hover {
+    border-color: rgba(255, 193, 7, 0.5) !important;
+    box-shadow: 0 8px 25px rgba(255, 193, 7, 0.1) !important;
+}
+
+.warning-icon {
+    background: linear-gradient(135deg, #ffc107, #ff9800) !important;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3) !important;
+}
+
+.warning-text {
+    display: block;
+    font-size: 12px;
+    color: #ffc107;
+    margin-top: 8px;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+/* Light mode warning card styling */
+body:not(.dark-mode) .warning-card {
+    border-color: rgba(255, 193, 7, 0.4) !important;
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.08), rgba(255, 193, 7, 0.03)) !important;
+}
+
+body:not(.dark-mode) .warning-card:hover {
+    border-color: rgba(255, 193, 7, 0.6) !important;
+    box-shadow: 0 8px 25px rgba(255, 193, 7, 0.15) !important;
+}
+
+body:not(.dark-mode) .warning-text {
+    color: #d97706;
+}
+
+/* -------------------------------------
+   BLOCK UPDATES DIALOG
+   ------------------------------------- */
+.block-updates-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.block-updates-dialog-overlay.show {
+    opacity: 1;
+}
+
+.block-updates-dialog {
+    background: var(--background-color);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 0;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+    transform: scale(0.9) translateY(20px);
+    transition: all 0.3s ease;
+    position: relative;
+    max-height: 60vh;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+}
+
+.block-updates-dialog::-webkit-scrollbar {
+    width: 6px;
+    background: transparent;
+    display: none; 
+
+}
+
+.block-updates-dialog::-webkit-scrollbar-thumb {
+    background: #b0b6c3;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.block-updates-dialog::-webkit-scrollbar-thumb:hover {
+    background: #888ea8;
+}
+
+/* For dark mode */
+body.dark-mode .block-updates-dialog::-webkit-scrollbar-thumb {
+    background: #44474f;
+}
+
+body.dark-mode .block-updates-dialog::-webkit-scrollbar-thumb:hover {
+    background: #2e3138;
+}
+
+
+.block-updates-dialog-overlay.show .block-updates-dialog {
+    transform: scale(1) translateY(0);
+}
+
+.dialog-header {
+    background: linear-gradient(135deg, #ffc107, #ff9800);
+    padding: 30px;
+    text-align: center;
+    position: relative;
+}
+
+.dialog-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    backdrop-filter: blur(10px);
+}
+
+.dialog-icon i {
+    font-size: 36px;
+    color: white;
+}
+
+.dialog-header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.dialog-content {
+    padding: 30px;
+}
+
+.dialog-content p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--font-color);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.warning-details {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.warning-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 8px 0;
+}
+
+.warning-item:last-child {
+    margin-bottom: 0;
+}
+
+.warning-item i {
+    font-size: 18px;
+    color: #ffc107;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.warning-item span {
+    font-size: 14px;
+    color: var(--font-color);
+    line-height: 1.4;
+}
+
+.note {
+    font-size: 13px !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-style: italic;
+    text-align: center;
+    margin-top: 15px !important;
+}
+
+.dialog-buttons {
+    display: flex;
+    gap: 15px;
+    padding: 20px 30px 30px;
+    justify-content: center;
+}
+
+.dialog-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.dialog-btn.cancel-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--font-color);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dialog-btn.cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.dialog-btn.confirm-btn {
+    background: linear-gradient(135deg, #ffc107, #ff9800);
+    color: white;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+}
+
+.dialog-btn.confirm-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 193, 7, 0.4);
+}
+
+.dialog-btn i {
+    font-size: 16px;
+}
+
+/* Light mode dialog styling */
+body:not(.dark-mode) .block-updates-dialog {
+    background: #ffffff;
+    border-color: #e5e7eb;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+body:not(.dark-mode) .block-updates-dialog .dialog-content p {
+    color: #111827;
+}
+
+body:not(.dark-mode) .block-updates-dialog .warning-details {
+    background: rgba(255, 193, 7, 0.08);
+    border-color: rgba(255, 193, 7, 0.3);
+}
+
+body:not(.dark-mode) .block-updates-dialog .warning-item span {
+    color: #374151;
+}
+
+body:not(.dark-mode) .block-updates-dialog .note {
+    color: #6b7280 !important;
+}
+
+body:not(.dark-mode) .block-updates-dialog .dialog-btn.cancel-btn {
+    background: #f3f4f6;
+    color: #374151;
+    border-color: #d1d5db;
+}
+
+body:not(.dark-mode) .block-updates-dialog .dialog-btn.cancel-btn:hover {
+    background: #e5e7eb;
+}
+
+body:not(.dark-mode) .block-updates-dialog .dialog-btn.confirm-btn {
+    color: #000000;
+}
+
+body:not(.dark-mode) .block-updates-dialog .dialog-btn.confirm-btn span {
+    color: #ffffff;
+}
+
+/* Dark mode dialog box */
+body.dark-mode .block-updates-dialog {
+    background: var(--background-color);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .block-updates-dialog .dialog-content p {
+    color: #ffffff;
+}
+
+body.dark-mode .block-updates-dialog .warning-details {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.2);
+}
+
+body.dark-mode .block-updates-dialog .warning-item span {
+    color: #ffffff;
+}
+
+body.dark-mode .block-updates-dialog .note {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+body.dark-mode .block-updates-dialog .dialog-btn.cancel-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .block-updates-dialog .dialog-btn.cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn {
+    color: #ffffff;
+}
+
+body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
+    color: #ffffff;
+}
+
+
+
+/* Responsive design for dialog */
+@media (max-width: 600px) {
+    .block-updates-dialog {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .dialog-header {
+        padding: 20px;
+    }
+    
+    .dialog-icon {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 15px;
+    }
+    
+    .dialog-icon i {
+        font-size: 28px;
+    }
+    
+    .dialog-header h2 {
+        font-size: 20px;
+    }
+    
+    .dialog-content {
+        padding: 20px;
+    }
+    
+    .dialog-buttons {
+        flex-direction: column;
+        padding: 20px;
+    }
+    
+    .dialog-btn {
+        width: 100%;
+    }
+}
+
 .setting-info {
     display: flex;
     align-items: center;
@@ -284,7 +657,6 @@ body {
     color: white !important;
 }
 
-/* Fallback icon if Bootstrap Icons fail to load */
 .fallback-icon {
     font-size: 20px;
     color: white;
@@ -292,7 +664,6 @@ body {
     display: none;
 }
 
-/* Show fallback icon when Bootstrap Icons fail to load */
 .setting-icon .fallback-icon {
     display: none;
 }
@@ -975,7 +1346,6 @@ body {
     }
 }
 
-/* Force sidebar to stay on left side for larger screens */
 @media (min-width: 601px) {
     .settings-container {
         flex-direction: row !important;
@@ -1063,11 +1433,7 @@ body:not(.dark-mode) .setting-card,
 body:not(.dark-mode) .shortcut-item,
 body:not(.dark-mode) .keyboard-layout,
 body:not(.dark-mode) .update-section,
-body:not(.dark-mode) .update-prompt-content {
-    background: #ffffff;
-    border-color: #e5e7eb;
-    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
-}
+body:not(.dark-mode) .warning-card,
 
 body:not(.dark-mode) .key {
     background: #f9fafb;
@@ -1101,13 +1467,13 @@ body:not(.dark-mode) .bi-lightning { color: #f43f5e; }
 body:not(.dark-mode) .bi-arrow-clockwise { color: #0ea5e9; }
 body:not(.dark-mode) .bi-shield-exclamation { color: #ef4444; }
 
-/* Improve key shape visibility in light mode */
+/* improve key shape visibility in light mode */
 body:not(.dark-mode) .key.square:after,
 body:not(.dark-mode) .key.circle:before {
     border-color: #64748b; /* slate-500 for contrast on white */
 }
 
-/* Dark mode icon accents to match style */
+/* Dark mode icon accents */
 body.dark-mode .nav-item i { color: #60a5fa; }
 body.dark-mode .setting-icon { background: linear-gradient(135deg, #38bdf8, #4a90e2); }
 body.dark-mode .setting-icon i { color: #ffffff !important; }
