@@ -42,6 +42,14 @@ const keys = [
   "n", "m", ",", ".", "/"
 ];
 
+// Decryption MASK for encrypted sheets
+const MASK = Object.freeze([
+    16, 34, 56, 18, 62, 19, -25, 55,
+    15, 24, 30, 12, 30, 45, 39, -23,
+    -10, 15, 45, -18, 37, -2, -21, 65,
+    25, -4, -14, 43, 23, -4, -17, -17
+]);
+
 
 // -------------------------------------
 // DATA INITIALIZATION
@@ -49,28 +57,45 @@ const keys = [
 // Ensure data directory exists
 ensureExists(path.join(__dirname, "..", "data"));
 
-// Load sheet music list
-let listSheet = [];
-try {
-  listSheet = JSON.parse(
-    fs.readFileSync(path.join(__dirname, "..", "data", "listSheet.json"), {
-      encoding: "utf8",
-    })
-  );
-} catch (_) {
-  fs.writeFileSync(
-    path.join(__dirname, "..", "data", "listSheet.json"),
-    JSON.stringify([], null, 4),
-    { mode: 0o666 }
-  );
-}
-
 // Application state variables
+let listSheet = []; // Will be populated asynchronously
 let listKeys = [];  // Cached key maps for sheets
 let playing = 0;    // Current playing sheet index
 let isPlay = false; // Playback state
 let maxPCB = 0;     // Maximum process bar value
 let loopMode = 0;   // Loop mode (0: off, 1: playlist, 2: single)
+
+const listSheetPath = path.join(__dirname, "..", "data", "listSheet.json");
+
+fs.readFile(listSheetPath, { encoding: "utf8" }, (err, data) => {
+    if (err) {
+        fs.writeFile(listSheetPath, JSON.stringify([], null, 4), { mode: 0o666 }, (writeErr) => {
+            if (writeErr) console.error("Failed to create listSheet.json:", writeErr);
+        });
+        listSheet = [];
+    } else {
+        try {
+            listSheet = JSON.parse(data);
+        } catch (parseErr) {
+            console.error("Failed to parse listSheet.json:", parseErr);
+            listSheet = [];
+        }
+    }
+    
+    printSheet();
+
+    if (listSheet.length > 0) {
+        fs.readFile(path.join(__dirname, "..", "data", listSheet[0].keyMap), { encoding: "utf8" }, (err, keymapData) => {
+            if (!err) {
+                listKeys[0] = JSON.parse(keymapData);
+                updateFooter({ ...listSheet[0], keys: listKeys[0] }, 0);
+            } else {
+                console.error("Failed to preload first song's keymap:", err);
+            }
+        });
+    }
+});
+
 
 // -------------------------------------
 // UI INITIALIZATION
@@ -306,9 +331,6 @@ if (config.panel.autoSave) {
   document.getElementById("speed-btn").value = config.panel.speed;
 }
 
-// Load and display sheet list
-printSheet();
-
 // Configure search functionality
 const searchBar = document.getElementById("search-bar");
 const contentContainer = document.querySelector(".content");
@@ -326,19 +348,6 @@ if (searchBar && contentContainer) {
   console.error("Search bar or content container element not found!");
 }
 
-// Load the first sheet if available
-if (listSheet.length > 0) {
-  if (!listKeys[0]) {
-    listKeys[0] = JSON.parse(
-      fs.readFileSync(
-        path.join(__dirname, "..", "data", listSheet[0].keyMap),
-        { encoding: "utf8" }
-      )
-    );
-  }
-  updateFooter({ ...listSheet[0], keys: listKeys[0] }, 0);
-}
-
 // -------------------------------------
 // SHEET MANAGEMENT
 // -------------------------------------
@@ -350,11 +359,27 @@ document
 
     let done = 0;
     for (let file of files) {
-      // Detect file encoding
-      let typeDetect = fs.readFileSync(file.path, { encoding: "utf8" })[0] != "[" ? "utf16le" : "utf8";
-      let text = decUTF16toUTF8(
-        fs.readFileSync(file.path, { encoding: typeDetect })
-      );
+      // Read file content
+      let fileContent = fs.readFileSync(file.path, 'utf8');
+
+      // Attempt to parse as JSON to check for encrypted format
+      let text;
+      try {
+        const parsed = JSON.parse(fileContent);
+        if (Array.isArray(parsed) && typeof parsed[0] === 'number') {
+            // It's an encrypted file, so decrypt it
+            text = decodeNums(parsed);
+        } else {
+            // It's a regular JSON file
+            text = fileContent;
+        }
+      } catch (e) {
+        // Not a JSON file, could be UTF-16 or something else
+        let typeDetect = fs.readFileSync(file.path, { encoding: "utf8" })[0] != "[" ? "utf16le" : "utf8";
+        text = decUTF16toUTF8(
+          fs.readFileSync(file.path, { encoding: typeDetect })
+        );
+      }
 
       // Parse sheet file
       let json;
@@ -413,6 +438,23 @@ document
         text: `Complete import!`,
       });
   });
+
+/**
+ * Decrypts an array of numbers into a sheet string
+ * @param {number[]} nums - Array of numbers representing the encrypted sheet
+ * @returns {string} - The decrypted sheet string
+ */
+function decodeNums(nums) {
+    if (!Array.isArray(nums)) throw new TypeError("decodeNums: input must be an array of numbers");
+    let s = "";
+    for (let i = 0; i < nums.length; i++) {
+        const n = nums[i] | 0;
+        const code = n + MASK[i % MASK.length];
+        s += String.fromCharCode(code);
+    }
+    return s.replace(/(].*)/, "]");
+}
+
 
 /**
  * Encodes sheet music data and saves it to a file
@@ -488,188 +530,112 @@ function random(min, max) {
   return Math.floor(Math.random() * (max - min + 2)) + min;
 }
 
-/**
- * Formats duration from keymap data to MM:SS format
- * @param {Object} keys - Keymap data object
- * @returns {string} Formatted duration string
- */
-function formatDuration(keys) {
-  if (!keys || Object.keys(keys).length === 0) return '0:00';
-  
-  // Get the last timestamp (highest time value)
-  const timestamps = Object.keys(keys).map(Number).sort((a, b) => a - b);
-  const lastTimestamp = timestamps[timestamps.length - 1];
-  
-  if (!lastTimestamp || lastTimestamp <= 0) return '0:00';
-  
-  // Convert milliseconds to seconds
-  const totalSeconds = Math.floor(lastTimestamp / 1000);
-  
-  // Calculate minutes and seconds
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  
-  // Format as MM:SS
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
-
-/**
- * Formats duration from keymap filename to MM:SS format
- * @param {string} keyMapFilename - Keymap filename
- * @returns {string} Formatted duration string
- */
-function formatDurationFromKeyMap(keyMapFilename) {
-  try {
-    if (!keyMapFilename) return '0:00';
-    
-    // Read the keymap file
-    const keymapPath = path.join(__dirname, "..", "data", keyMapFilename);
-    const keymapData = JSON.parse(fs.readFileSync(keymapPath, { encoding: "utf8" }));
-    
-    return formatDuration(keymapData);
-  } catch (error) {
-    console.error('Error reading keymap for duration:', error);
-    return '0:00';
-  }
-}
-
-/**
- * Renders the sheet list in the UI
- */
 function printSheet() {
-  document.getElementsByClassName("content")[0].innerHTML = "";
-  
-  for (let i of listSheet) {
-    document.getElementsByClassName("content")[0].innerHTML += `
-        <div class="card">
+    const contentContainer = document.getElementsByClassName("content")[0];
+    contentContainer.innerHTML = "";
+
+    const fragment = document.createDocumentFragment();
+
+    listSheet.forEach((sheetData, index) => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
             <div class="sheet-info">
-                <h3 class="name-sheet">${i.name}</h3>
+                <h3 class="name-sheet">${sheetData.name}</h3>
                 <div class="info-lines">
                     <div class="info-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="icon author-icon">
-                            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-                            <path d="M14 14s-1-1.5-6-1.5S2 14 2 14s1-4 6-4 6 4 6 4z"/>
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="icon author-icon"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M14 14s-1-1.5-6-1.5S2 14 2 14s1-4 6-4 6 4 6 4z"/></svg>
                         <span class="label">Author:</span>
-                        <span class="value author-sheet">${i.author || ''}</span>
+                        <span class="value author-sheet">${sheetData.author || ''}</span>
                     </div>
                     <div class="info-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="icon trans-icon">
-                            <path d="M12.146.854a.5.5 0 0 1 .708 0l2.292 2.292a.5.5 0 0 1 0 .708L6.207 12.793l-3.75.75.75-3.75L12.146.854z"/>
-                            <path d="M11.207 2.5 13.5 4.793 12.793 5.5 10.5 3.207 11.207 2.5z"/>
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="icon trans-icon"><path d="M12.146.854a.5.5 0 0 1 .708 0l2.292 2.292a.5.5 0 0 1 0 .708L6.207 12.793l-3.75.75.75-3.75L12.146.854z"/><path d="M11.207 2.5 13.5 4.793 12.793 5.5 10.5 3.207 11.207 2.5z"/></svg>
                         <span class="label">Transcript by:</span>
-                        <span class="value tranScript-sheet">${i.transcribedBy || ''}</span>
+                        <span class="value tranScript-sheet">${sheetData.transcribedBy || ''}</span>
                     </div>
                     <div class="info-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="icon bpm-icon">
-                            <path d="M8 3a6 6 0 1 0 0 12A6 6 0 0 0 8 3zm0 1a5 5 0 1 1 0 10A5 5 0 0 1 8 4z"/>
-                            <path d="M10.5 8.5 8 11a1 1 0 1 1-1.414-1.414l3-3A1 1 0 1 1 10.5 8.5z"/>
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="icon bpm-icon"><path d="M8 3a6 6 0 1 0 0 12A6 6 0 0 0 8 3zm0 1a5 5 0 1 1 0 10A5 5 0 0 1 8 4z"/><path d="M10.5 8.5 8 11a1 1 0 1 1-1.414-1.414l3-3A1 1 0 1 1 10.5 8.5z"/></svg>
                         <span class="label">BPM:</span>
-                        <span class="value bpm-sheet">${i.bpm || ''}</span>
-                    </div>
-                    <div class="info-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="icon duration-icon">
-                            <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
-                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
-                        </svg>
-                        <span class="label">Length:</span>
-                        <span class="value duration-sheet">${formatDurationFromKeyMap(i.keyMap) || '0:00'}</span>
+                        <span class="value bpm-sheet">${sheetData.bpm || ''}</span>
                     </div>
                 </div>
             </div>
             <div class="menu-btn" style="display: flex; flex-direction: row; align-items: center; gap: 8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" class="bi bi-heart favorite-btn" data-song="${i.name}" viewBox="0 0 16 16" style="cursor:pointer;" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" class="bi bi-heart favorite-btn" data-song="${sheetData.name}" viewBox="0 0 16 16" style="cursor:pointer;" fill="currentColor">
                     <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
                 </svg>
-                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" class="bi bi-sheet-editor" viewBox="0 0 40 40" style="cursor:pointer;">
-                    <path d="M20.8333 36.6667H30C30.884 36.6667 31.7319 36.3155 32.357 35.6903C32.9821 35.0652 33.3333 34.2174 33.3333 33.3333V11.6667L25 3.33333H9.99996C9.1159 3.33333 8.26806 3.68452 7.64294 4.30964C7.01782 4.93476 6.66663 5.78261 6.66663 6.66666V22.5" fill="none" stroke="currentColor" stroke-width="4.16667" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M23.333 3.33333V9.99999C23.333 10.884 23.6842 11.7319 24.3093 12.357C24.9344 12.9821 25.7822 13.3333 26.6663 13.3333H33.333M22.2963 26.0433C22.625 25.7146 22.8858 25.3243 23.0637 24.8948C23.2416 24.4653 23.3332 24.0049 23.3332 23.54C23.3332 23.0751 23.2416 22.6147 23.0637 22.1852C22.8858 21.7557 22.625 21.3654 22.2963 21.0367C21.9676 20.7079 21.5773 20.4471 21.1478 20.2692C20.7182 20.0913 20.2579 19.9997 19.793 19.9997C19.3281 19.9997 18.8677 20.0913 18.4382 20.2692C18.0087 20.4471 17.6184 20.7079 17.2896 21.0367L8.93964 29.39C8.54338 29.786 8.25334 30.2756 8.0963 30.8133L6.7013 35.5967C6.65947 35.7401 6.65697 35.8921 6.69404 36.0368C6.73112 36.1815 6.80641 36.3136 6.91205 36.4192C7.01768 36.5249 7.14977 36.6002 7.29449 36.6373C7.4392 36.6743 7.59122 36.6718 7.73464 36.63L12.518 35.235C13.0557 35.078 13.5453 34.7879 13.9413 34.3917L22.2963 26.0433Z" fill="none" stroke="currentColor" stroke-width="4.16667" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-<svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" class="bi bi-trash3" viewBox="0 0 16 16" style="cursor:pointer;" fill="currentColor">
-                    <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5" />
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" class="bi bi-sheet-editor" viewBox="0 0 40 40" style="cursor:pointer;"><path d="M20.8333 36.6667H30C30.884 36.6667 31.7319 36.3155 32.357 35.6903C32.9821 35.0652 33.3333 34.2174 33.3333 33.3333V11.6667L25 3.33333H9.99996C9.1159 3.33333 8.26806 3.68452 7.64294 4.30964C7.01782 4.93476 6.66663 5.78261 6.66663 6.66666V22.5" fill="none" stroke="currentColor" stroke-width="4.16667" stroke-linecap="round" stroke-linejoin="round"/><path d="M23.333 3.33333V9.99999C23.333 10.884 23.6842 11.7319 24.3093 12.357C24.9344 12.9821 25.7822 13.3333 26.6663 13.3333H33.333M22.2963 26.0433C22.625 25.7146 22.8858 25.3243 23.0637 24.8948C23.2416 24.4653 23.3332 24.0049 23.3332 23.54C23.3332 23.0751 23.2416 22.6147 23.0637 22.1852C22.8858 21.7557 22.625 21.3654 22.2963 21.0367C21.9676 20.7079 21.5773 20.4471 21.1478 20.2692C20.7182 20.0913 20.2579 19.9997 19.793 19.9997C19.3281 19.9997 18.8677 20.0913 18.4382 20.2692C18.0087 20.4471 17.6184 20.7079 17.2896 21.0367L8.93964 29.39C8.54338 29.786 8.25334 30.2756 8.0963 30.8133L6.7013 35.5967C6.65947 35.7401 6.65697 35.8921 6.69404 36.0368C6.73112 36.1815 6.80641 36.3136 6.91205 36.4192C7.01768 36.5249 7.14977 36.6002 7.29449 36.6373C7.4392 36.6743 7.59122 36.6718 7.73464 36.63L12.518 35.235C13.0557 35.078 13.5453 34.7879 13.9413 34.3917L22.2963 26.0433Z" fill="none" stroke="currentColor" stroke-width="4.16667" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" class="bi bi-trash3" viewBox="0 0 16 16" style="cursor:pointer;" fill="currentColor"><path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5" /></svg>
             </div>
-        </div>`;
-  }
+        `;
 
-  // Set up click handlers for each sheet
-  for (let j in listSheet) {
-    let i = listSheet[j];
-    let btnPlay = document.getElementsByClassName("card");
-    btnPlay[j].onclick = () => {
-      try {
-        if (!listKeys[j]) {
-          listKeys[j] = JSON.parse(
-            fs.readFileSync(path.join(__dirname, "..", "data", i.keyMap), {
-              encoding: "utf8",
-            })
-          );
+        card.onclick = () => {
+            fs.readFile(path.join(__dirname, "..", "data", sheetData.keyMap), { encoding: "utf8" }, (err, data) => {
+                if (err) {
+                    console.error("Failed to read keymap:", err);
+                    notie.alert({ type: 3, text: "Error loading song data." });
+                    return;
+                }
+                listKeys[index] = JSON.parse(data);
+                window.addToRecentPlays(sheetData.name);
+                updateFooter({ ...sheetData, keys: listKeys[index] }, index);
+            });
+        };
+
+        card.querySelector(".bi-sheet-editor").onclick = (e) => {
+            e.stopPropagation();
+            ipcRenderer.send("openSheetEditor", { sheetIndex: index });
+        };
+
+        card.querySelector(".bi-trash3").onclick = (e) => {
+            e.stopPropagation();
+            fs.unlinkSync(path.join(__dirname, "..", "data", sheetData.keyMap));
+            listSheet.splice(index, 1);
+            listKeys.splice(index, 1);
+            fs.writeFileSync(
+                path.join(__dirname, "..", "data", "listSheet.json"),
+                JSON.stringify(listSheet, null, 4),
+                { mode: 0o666 }
+            );
+            printSheet();
+        };
+
+        const btnFavorite = card.querySelector(".favorite-btn");
+        btnFavorite.onclick = (e) => {
+            e.stopPropagation();
+            const songName = sheetData.name;
+            let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+            
+            if (favorites.includes(songName)) {
+                window.removeFromFavorites(songName);
+                btnFavorite.classList.remove('favorited');
+                if (document.querySelector('.nav-tab.active')?.getAttribute('data-tab') === 'favorite') {
+                    card.style.display = 'none';
+                }
+            } else {
+                window.addToFavorites(songName);
+                btnFavorite.classList.add('favorited');
+            }
+        };
+
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        if (favorites.includes(sheetData.name)) {
+            btnFavorite.classList.add('favorited');
         }
-      } catch (_) {}
+        
+        fragment.appendChild(card);
+    });
 
-      // Add to recent plays
-      window.addToRecentPlays(i.name);
-      
-      updateFooter({ ...listSheet[j], keys: listKeys[j] }, j);
-    };
+    contentContainer.appendChild(fragment);
 
-    // Set up Sheet Editor icon click handler
-    let btnEdit = document.getElementsByClassName("bi-sheet-editor");
-    btnEdit[j].onclick = () => {
-      ipcRenderer.send("openSheetEditor", { sheetIndex: j });
-    };
-
-    // Set up delete handlers
-    let btndel = document.getElementsByClassName("bi-trash3");
-    btndel[j].onclick = () => {
-      fs.unlinkSync(path.join(__dirname, "..", "data", listSheet[j].keyMap));
-      listSheet.splice(j, 1);
-      listKeys.splice(j, 1);
-      fs.writeFileSync(
-        path.join(__dirname, "..", "data", "listSheet.json"),
-        JSON.stringify(listSheet, null, 4),
-        { mode: 0o666 }
-      );
-      printSheet();
-    };
-
-    // Set up favorite button handlers
-    let btnFavorite = document.getElementsByClassName("favorite-btn");
-    btnFavorite[j].onclick = (e) => {
-      e.stopPropagation(); // Prevent card click
-      const songName = i.name;
-      const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-      
-      if (favorites.includes(songName)) {
-        // Remove from favorites
-        window.removeFromFavorites(songName);
-        btnFavorite[j].innerHTML = `<path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>`;
-        btnFavorite[j].classList.remove('favorited');
-      } else {
-        // Add to favorites
-        window.addToFavorites(songName);
-        btnFavorite[j].innerHTML = `<path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>`;
-        btnFavorite[j].classList.add('favorited');
-      }
-    };
-
-    // Update favorite button appearance based on current state
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    if (favorites.includes(i.name)) {
-      btnFavorite[j].innerHTML = `<path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>`;
-      btnFavorite[j].classList.add('favorited');
+    const activeTab = document.querySelector('.nav-tab.active');
+    if (activeTab) {
+        const currentTabType = activeTab.getAttribute('data-tab');
+        filterContentByTab(currentTabType);
     }
-  }
-  
-  // Apply current tab filter after rendering
-  const activeTab = document.querySelector('.nav-tab.active');
-  if (activeTab) {
-    const currentTabType = activeTab.getAttribute('data-tab');
-    filterContentByTab(currentTabType);
-  }
 }
+
 
 /**
  * Updates the footer area with sheet information
@@ -713,33 +679,40 @@ function updateFooter(info, id) {
  * Navigate to the previous sheet
  */
 function btnPrev() {
-  if (playing - 1 < 0) playing = listSheet.length - 1;
-  else playing--;
-  
-  // Load sheet if not already loaded
-  if (!listKeys[playing]) {
-    listKeys[playing] = JSON.parse(
-      fs.readFileSync(
-        path.join(__dirname, "..", "data", listSheet[playing].keyMap),
-        { encoding: "utf8" }
-      )
-    );
-  }
-  
-  updateFooter({ ...listSheet[playing], keys: listKeys[playing] }, playing);
+    if (playing - 1 < 0) playing = listSheet.length - 1;
+    else playing--;
 
-  // Restart playback if playing
-  if (isPlay) {
-    btnPlay();
-    document.getElementsByClassName("process-bar")[0].value = 0;
-    document.getElementsByClassName("live-time")[0].innerHTML = `00:00`;
-    let delay = document.getElementById("delay-loop").value;
-    delay = delay == 0 ? 0.5 : delay;
-    setTimeout(btnPlay, delay * 1000);
-  }
+    const playPrevSong = () => {
+        updateFooter({ ...listSheet[playing], keys: listKeys[playing] }, playing);
+
+        if (isPlay) {
+            btnPlay(); 
+            document.getElementsByClassName("process-bar")[0].value = 0;
+            document.getElementsByClassName("live-time")[0].innerHTML = `00:00`;
+            let delay = document.getElementById("delay-loop").value;
+            delay = delay == 0 ? 0.5 : delay;
+            setTimeout(btnPlay, delay * 1000); 
+        }
+    };
+
+    if (listKeys[playing]) {
+        playPrevSong();
+    } else {
+        fs.readFile(
+            path.join(__dirname, "..", "data", listSheet[playing].keyMap),
+            { encoding: "utf8" },
+            (err, data) => {
+                if (err) {
+                    console.error("Failed to load previous song:", err);
+                    return;
+                }
+                listKeys[playing] = JSON.parse(data);
+                playPrevSong();
+            }
+        );
+    }
 }
 
-// Set up event listeners for previous button
 document.getElementById("btn-prev").addEventListener("click", btnPrev);
 ipcRenderer.on("btn-prev", btnPrev);
 
@@ -747,35 +720,43 @@ ipcRenderer.on("btn-prev", btnPrev);
  * Navigate to the next sheet
  */
 function btnNext() {
-  if (playing + 1 >= listSheet.length) playing = 0;
-  else playing++;
-  
-  // Load sheet if not already loaded
-  if (!listKeys[playing]) {
-    listKeys[playing] = JSON.parse(
-      fs.readFileSync(
-        path.join(__dirname, "..", "data", listSheet[playing].keyMap),
-        { encoding: "utf8" }
-      )
-    );
-  }
-  
-  updateFooter({ ...listSheet[playing], keys: listKeys[playing] }, playing);
+    if (playing + 1 >= listSheet.length) playing = 0;
+    else playing++;
 
-  // Restart playback if playing
-  if (isPlay) {
-    btnPlay();
-    document.getElementsByClassName("process-bar")[0].value = 0;
-    document.getElementsByClassName("live-time")[0].innerHTML = `00:00`;
-    let delay = document.getElementById("delay-loop").value;
-    delay = delay == 0 ? 0.5 : delay;
-    setTimeout(btnPlay, delay * 1000);
-  }
+    const playNextSong = () => {
+        updateFooter({ ...listSheet[playing], keys: listKeys[playing] }, playing);
+
+        if (isPlay) {
+            btnPlay();
+            document.getElementsByClassName("process-bar")[0].value = 0;
+            document.getElementsByClassName("live-time")[0].innerHTML = `00:00`;
+            let delay = document.getElementById("delay-loop").value;
+            delay = delay == 0 ? 0.5 : delay;
+            setTimeout(btnPlay, delay * 1000);
+        }
+    };
+    if (listKeys[playing]) {
+        playNextSong();
+    } else {
+        fs.readFile(
+            path.join(__dirname, "..", "data", listSheet[playing].keyMap),
+            { encoding: "utf8" },
+            (err, data) => {
+                if (err) {
+                    console.error("Failed to load next song:", err);
+                    return;
+                }
+                listKeys[playing] = JSON.parse(data);
+                playNextSong();
+            }
+        );
+    }
 }
 
 // Set up event listeners for next button
 document.getElementById("btn-next").addEventListener("click", btnNext);
 ipcRenderer.on("btn-next", btnNext);
+
 
 /**
  * Toggle playback state
@@ -1116,41 +1097,37 @@ ipcRenderer.on("update-progress", (event, data) => {
 ipcRenderer.on('sheet-list-updated', (event, { index, data }) => {
     listSheet[index] = data;
     
-    const cards = document.getElementsByClassName("card");
-    if (cards[index]) {
-        const card = cards[index];
+    // Instead of re-rendering everything, just update the specific card
+    const card = document.querySelectorAll(".card")[index];
+    if (card) {
         card.querySelector('.name-sheet').textContent = data.name;
-        card.querySelector('.author-sheet').textContent = `Author: ${data.author || ''}`;
-        card.querySelector('.tranScript-sheet').textContent = `Transcript by: ${data.transcribedBy || ''}`;
-        card.querySelector('.bpm-sheet').textContent = `BPM: ${data.bpm || ''}`;
+        card.querySelector('.author-sheet').textContent = data.author || '';
+        card.querySelector('.tranScript-sheet').textContent = data.transcribedBy || '';
+        card.querySelector('.bpm-sheet').textContent = data.bpm || '';
     }
 
     if (playing === index) {
-        try {
-            listKeys[index] = JSON.parse(
-                fs.readFileSync(path.join(__dirname, '..', 'data', data.keyMap), {
-                    encoding: 'utf8',
-                })
-            );
+        // Asynchronously update the keymap if the currently playing song is edited
+        fs.readFile(path.join(__dirname, '..', 'data', data.keyMap), { encoding: 'utf8' }, (err, keymapData) => {
+            if (err) {
+                console.error('Error reloading keymap after sheet update:', err);
+                return;
+            }
+            listKeys[index] = JSON.parse(keymapData);
             updateFooter({ ...data, keys: listKeys[index] }, index);
-        } catch (error) {
-            console.error('Error reloading keymap:', error);
-        }
+        });
     }
 });
 
 ipcRenderer.on('keymap-updated', (event, { index }) => {
-    try {
-        listKeys[index] = JSON.parse(
-            fs.readFileSync(path.join(__dirname, '..', 'data', listSheet[index].keyMap), {
-                encoding: 'utf8',
-            })
-        );
-        
+    fs.readFile(path.join(__dirname, '..', 'data', listSheet[index].keyMap), { encoding: 'utf8' }, (err, data) => {
+        if (err) {
+            console.error('Error reloading keymap:', err);
+            return;
+        }
+        listKeys[index] = JSON.parse(data);
         if (playing === index) {
             updateFooter({ ...listSheet[index], keys: listKeys[index] }, index);
         }
-    } catch (error) {
-        console.error('Error reloading keymap:', error);
-    }
+    });
 });

@@ -10,10 +10,10 @@
 
 :root {
   /* Modern, soothing light theme */
-  --background-color: #ffffff; /* Surfaces/cards/footer */
-  --dark-backround: #0f172a; /* Dark tooltip/switch rail on light */
-  --font-color: #0f172a; /* Primary text */
-  --hover: #3b82f6; /* Accent (thumbs, hovers) */
+  --background-color: #ffffff; 
+  --dark-backround: #0f172a; 
+  --font-color: #0f172a; 
+  --hover: #3b82f6; 
 }
 
 body.dark-mode {
@@ -244,10 +244,10 @@ body:not(.dark-mode) .footer {
 }
 /* Light mode progress bar */
 body:not(.dark-mode) .process-bar {
-  background: #94a3b8; /* slate-400 */
+  background: #94a3b8; 
 }
 body:not(.dark-mode) .process-bar::-webkit-slider-thumb {
-  background: #3b82f6; /* blue-500 */
+  background: #3b82f6; 
 }
 
 /* Time display */
@@ -295,58 +295,58 @@ body:not(.dark-mode) .process-bar::-webkit-slider-thumb {
 }
 /* Distinct button accents in light mode */
 body:not(.dark-mode) #btn-prev {
-  border-color: #0ea5e9; /* sky-500 - same as next */
+  border-color: #0ea5e9; 
   color: #0ea5e9;
 }
 body:not(.dark-mode) #btn-prev:hover {
-  border-color: #0284c7; /* sky-600 - same as next */
+  border-color: #0284c7; 
   color: #0284c7;
 }
 body:not(.dark-mode) #btn-play {
-  border-color: #22c55e; /* green-500 */
+  border-color: #22c55e; 
   color: #22c55e;
 }
 body:not(.dark-mode) #btn-play:hover {
-  border-color: #16a34a; /* green-600 */
+  border-color: #16a34a; 
   color: #16a34a;
 }
 body:not(.dark-mode) #btn-next {
-  border-color: #0ea5e9; /* sky-500 */
+  border-color: #0ea5e9; 
   color: #0ea5e9;
 }
 body:not(.dark-mode) #btn-next:hover {
-  border-color: #0284c7; /* sky-600 */
+  border-color: #0284c7; 
   color: #0284c7;
 }
 /* Distinct button accents in dark mode */
 body.dark-mode #btn-prev {
-  border-color: #38bdf8; /* sky-400 - same as next */
+  border-color: #38bdf8; 
   color: #38bdf8;
 }
 body.dark-mode #btn-prev:hover {
-  border-color: #0ea5e9; /* sky-500 - same as next */
+  border-color: #0ea5e9; 
   color: #0ea5e9;
 }
 body.dark-mode #btn-play {
-  border-color: #22c55e; /* green-500 */
+  border-color: #22c55e;
   color: #22c55e;
 }
 body.dark-mode #btn-play:hover {
-  border-color: #16a34a; /* green-600 */
+  border-color: #16a34a; 
   color: #16a34a;
 }
 body.dark-mode #btn-next {
-  border-color: #38bdf8; /* sky-400 */
+  border-color: #38bdf8; 
   color: #38bdf8;
 }
 body.dark-mode #btn-next:hover {
-  border-color: #0ea5e9; /* sky-500 */
+  border-color: #0ea5e9; 
   color: #0ea5e9;
 }
 /* Light mode button refinements */
 body:not(.dark-mode) .btn {
   background: #ffffff;
-  border-color: #cbd5e1; /* slate-300 */
+  border-color: #cbd5e1; 
   color: #0f172a;
 }
 body:not(.dark-mode) .btn:hover {
@@ -486,11 +486,11 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Light mode long press switch styling - better colors */
 body:not(.dark-mode) .long-press-btn .switch + label::before {
-  background-color: #e5e7eb; /* Light gray track */
+  background-color: #e5e7eb;
 }
 
 body:not(.dark-mode) .long-press-btn .switch + label::after {
-  background-color: #94a3b8; /* Medium gray slider */
+  background-color: #94a3b8; 
 }
 
 .long-press-btn .switch + label .switch-x-text {
@@ -562,6 +562,8 @@ body:not(.dark-mode) .long-press-btn .switch + label::after {
 /* -------------------------------------
    UTILITY ICONS AND BUTTONS
    ------------------------------------- */
+
+   
 /* Settings button */
 .footer .bi-gear-fill {
   position: absolute;
@@ -581,23 +583,30 @@ body:not(.dark-mode) .long-press-btn .switch + label::after {
   position: absolute;
   top: 10px;
   right: 10px;
-  transition: opacity 0.3s linear, color 0.1s linear; /* Added opacity transition */
-  cursor: pointer; /* Make icons clickable */
-  color: var(--font-color); /* Ensure icon uses theme color */
+  transition: opacity 0.3s linear, color 0.1s linear; 
+  cursor: pointer; 
+  color: var(--font-color); 
 }
 
 .footer .bi-light-fill:hover,
 .footer .bi-dark-fill:hover {
-  color: var(--hover); /* Apply hover effect */
+  color: var(--hover); 
 }
-/* Icon brand colors */
-/* Sun icon (visible in light mode) */
+
+
+/* Sun icon */
 body:not(.dark-mode) .bi-light-fill { color: #f59e0b; }
+
+
 /* Moon icon (visible in dark mode) */
 body.dark-mode .bi-dark-fill { color: #a78bfa; }
+
+
 /* Delete icon always red */
 .bi-trash3 { color: #ef4444; }
-/* Sheet edit icon accent */
+
+
+/* Sheet edit icon */
 .bi-sheet-editor { color: #10b981; }
 
 /* Favorite button styles */
@@ -617,27 +626,26 @@ body.dark-mode .bi-dark-fill { color: #a78bfa; }
 
 /* Light mode favorite button styles */
 body:not(.dark-mode) .favorite-btn {
-    color: #bebebe; /* A solid, visible gray for unfavorited state */
+    color: #bebebe; 
 }
 
 body:not(.dark-mode) .favorite-btn:hover {
-    color: #dc2626; /* Red on hover */
+    color: #dc2626; 
 }
 
 body:not(.dark-mode) .favorite-btn.favorited {
-    color: #dc2626; /* Red when favorited */
+    color: #dc2626; 
 }
 
 /* Hide dark mode icon by default (in light mode) */
 body:not(.dark-mode) .bi-dark-fill {
   opacity: 0;
-  pointer-events: none; /* Prevent interaction when hidden */
+  pointer-events: none; 
 }
 
-/* Hide light mode icon when in dark mode */
 body.dark-mode .bi-light-fill {
   opacity: 0;
-  pointer-events: none; /* Prevent interaction when hidden */
+  pointer-events: none; 
 }
 /*Checkbox*/
 .checkbox input[type="checkbox"] {
@@ -771,7 +779,7 @@ body.dark-mode .bi-light-fill {
   color: var(--font-color);
   pointer-events: none;
 }
-/* Light mode search field */
+
 body:not(.dark-mode) #search-bar {
   background-color: #f3f4f6;
   color: #0f172a;
@@ -913,7 +921,7 @@ body:not(.dark-mode) .nav-tab.active {
 body:not(.dark-mode) .notie-textbox,
 body:not(.dark-mode) .notie-button,
 body:not(.dark-mode) .notie-element {
-  color: #0f172a !important; /* black-ish for light mode */
+  color: #0f172a !important; 
   text-shadow: none !important;
 }
 
@@ -1040,7 +1048,6 @@ body.dark-mode .notie-element {
     min-height: 0;
 }
 
-/* Modern scrollbar styling for changelog */
 .changelog::-webkit-scrollbar {
     width: 6px;
 }
@@ -1060,7 +1067,6 @@ body.dark-mode .notie-element {
     background: rgba(255, 255, 255, 0.5);
 }
 
-/* Firefox scrollbar styling */
 .changelog {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
@@ -1193,7 +1199,6 @@ body.dark-mode .notie-element {
     }
 }
 
-/* Add a subtle pulse animation for the update icon */
 .update-header .update-icon {
     animation: pulse 2s infinite, rotate 8s linear infinite;
 }
@@ -1216,7 +1221,7 @@ body.dark-mode .notie-element {
     }
 }
 
-/* Floating animation for the version badge */
+/* Floating animation for the version info */
 .update-prompt .version-info {
     animation: float 3s ease-in-out infinite;
     animation-delay: 0.8s;
@@ -1231,7 +1236,6 @@ body.dark-mode .notie-element {
     }
 }
 
-/* Staggered entrance animation for update prompt elements */
 .update-prompt.show .update-header {
     animation: slideInDown 0.6s ease-out 0s both;
 }
@@ -1266,7 +1270,6 @@ body.dark-mode .notie-element {
     }
 }
 
-/* Shimmer effect for the version badge */
 .version-info::before {
     content: '';
     position: absolute;
@@ -1310,7 +1313,7 @@ body.dark-mode .notie-element {
     }
 }
 
-/* Glow pulse for the entire update prompt */
+/* Glow effect for the entire update prompt */
 .update-prompt.show .update-prompt-content {
     animation: glowPulse 2s ease-in-out infinite;
 }
@@ -1331,7 +1334,7 @@ body.dark-mode .notie-element {
 
 
 
-/* Improve the backdrop blur effect */
+/*  blur effect for update prompt */
 .update-prompt {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
