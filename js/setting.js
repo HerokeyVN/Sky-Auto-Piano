@@ -493,10 +493,6 @@ function showBlockUpdatesDialog(onConfirm, onCancel) {
 				<p>Are you sure you want to block automatic updates?</p>
 				<div class="warning-details">
 					<div class="warning-item">
-						<i class="bi bi-shield-x"></i>
-						<span>You won't receive important security patches</span>
-					</div>
-					<div class="warning-item">
 						<i class="bi bi-bug"></i>
 						<span>Bug fixes and improvements will be missed</span>
 					</div>

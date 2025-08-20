@@ -405,7 +405,6 @@ document
         continue;
       }
       
-      // ---- START OF DECRYPTION MODIFICATION ----
       // Check if the sheet is encrypted and decrypt if necessary
       if (json.isEncrypted === true) {
         try {
@@ -423,12 +422,10 @@ document
               text: "Failed to decrypt the sheet. It might be corrupted."
             });
           }
-          continue; // Skip this file if decryption fails
+          continue; 
         }
       }
-      // ---- END OF DECRYPTION MODIFICATION ----
 
-      // Process and encode sheet
       let res;
       try {
         res = encSheet(json);
