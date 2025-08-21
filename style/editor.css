@@ -43,17 +43,16 @@ body {
     height: 100vh;
     padding: 15px;
     box-sizing: border-box;
-    overflow: hidden; /* Prevent container scroll */
+    overflow: hidden;
 }
 
 .music-grid {
     flex: 1;
     padding: 10px;
     margin-bottom: 20px;
-    overflow-y: auto; /* Enable vertical scrolling */
-    min-height: 0; /* Allows grid to shrink if needed */
-    padding-bottom: 250px; /* Adjust this value based on your bottom container height */
-    /* Hide scrollbar for Chrome, Safari and Opera */
+    overflow-y: auto; 
+    min-height: 0; 
+    padding-bottom: 250px;
     &::-webkit-scrollbar {
         display: none;
     }
@@ -161,6 +160,7 @@ body {
     z-index: 100;
 }
 
+
 .music-info {
     position: absolute;
     left: 20px;
@@ -168,6 +168,23 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+
+    background: rgba(30, 35, 50, 0.55);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+    max-width: 350px; 
+    overflow: hidden; 
+}
+
+[data-theme="light"] .music-info {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
 
 .editable-container {
@@ -179,11 +196,29 @@ body {
 .editable-field {
     font-size: 13px;
     color: var(--font-color);
-    white-space: nowrap;
-    position: relative;
     padding: 4px;
     border-radius: 4px;
     transition: background-color 0.2s;
+    
+    white-space: normal;
+    line-height: 1.5; 
+}
+
+.field-label {
+    color: var(--font-color);
+    user-select: none;
+    cursor: default;
+    margin-right: 4px; 
+}
+
+.field-value {
+    display: inline;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+        word-break: break-all;
+    overflow-wrap: break-word; 
 }
 
 .editable-field:hover {
@@ -192,21 +227,6 @@ body {
 
 .editable-field.editing {
     background-color: rgba(110, 110, 110, 0.3);
-}
-
-.field-label {
-    color: var(--font-color);
-    user-select: none;
-    cursor: default;
-}
-
-.field-value {
-    display: inline-block;
-    min-width: 50px;
-    cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 3px;
-    transition: background-color 0.2s;
 }
 
 .field-value:hover {
@@ -221,12 +241,12 @@ body {
     background: var(--edit-bg);
     min-width: 30px;
 }
-
 #keyboard {
     display: flex;
     flex-direction: column;
     align-items: center;
     position: relative;
+    
 }
 
 #keyboard table {

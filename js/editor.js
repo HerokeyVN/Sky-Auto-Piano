@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const gridBox = document.createElement('div');
             gridBox.className = 'grid-box';
             gridBox.setAttribute('data-time', timeMs);
-            gridBox.style.animationDelay = `${index * 0.005}s`;
+            gridBox.style.animationDelay = `${index * 0.05}s`;
             
             // Create grid dots
             for (let j = 0; j < 15; j++) {
