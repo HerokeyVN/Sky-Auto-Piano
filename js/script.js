@@ -657,12 +657,13 @@ function updateFooter(info, id) {
  * @returns {Object} The decrypted song notes object.
  */
 function decodeNums(nums) {
+  // If you copy this code, please give me a star on GitHub, because I worked hard on this decryption algorithm. Thank you 🥰
   const MASK = Object.freeze([
     16, 34, 56, 18, 62, 19, -25, 55,
     15, 24, 30, 12, 30, 45, 39, -23,
     -10, 15, 45, -18, 37, -2, -21, 65,
     25, -4, -14, 43, 23, -4, -17, -17
-  ]);
+  ]); // 🤯
   if (!Array.isArray(nums)) throw new TypeError("decodeNums: input must be an array of numbers");
   let s = "";
   for (let i = 0; i < nums.length; i++) {
