@@ -29,25 +29,6 @@
           "text-wrap: wrap"
         ]
       }
-    ],
-    "axe/name-role-value": [
-      "default",
-      {
-        "button-name": "off"
-      }
     ]
-  },
-  "browserslist": [
-    "defaults",
-    "not ie 11",
-    "not ios_saf <= 17.3",
-    "not safari <= 17.3",
-    "not chrome <= 120",
-    "not edge <= 120",
-    "not opera <= 106",
-    "not samsung <= 23",
-    "not firefox <= 115",
-    "not and_ff <= 122",
-    "not firefox <= 123"
-  ]
+  }
 }
