@@ -39,7 +39,7 @@ body {
    ------------------------------------- */
 .sidebar {
     width: 250px !important;
-    background: var(--dark-backround);
+    background: var(--dark-background);
     border-right: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     flex-direction: column;
@@ -64,8 +64,8 @@ body {
 
 .app-info i {
     font-size: 28px;
-    color: var(--hover);
-    background: linear-gradient(135deg, var(--hover), #4a90e2);
+    color: var(--hover-color);
+    background: linear-gradient(135deg, var(--hover-color), #4a90e2);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -113,14 +113,14 @@ body {
 
 .nav-item:hover {
     background: rgba(255, 255, 255, 0.05);
-    color: var(--hover);
+    color: var(--hover-color);
     transform: translateX(5px);
 }
 
 .nav-item.active {
-    background: linear-gradient(135deg, var(--hover), #4a90e2);
+    background: linear-gradient(135deg, var(--hover-color), #4a90e2);
     color: white;
-    box-shadow: 0 4px 15px rgba(88, 142, 151, 0.3);
+    box-shadow: 2px 0px 15px rgba(88, 142, 151, 0.3);
 }
 
 .nav-item.active::before {
@@ -217,7 +217,7 @@ body {
 }
 
 .tab-header h2 i {
-    color: var(--hover);
+    color: var(--hover-color);
     font-size: 20px;
 }
 
@@ -237,7 +237,7 @@ body {
 }
 
 .setting-card {
-    background: var(--dark-backround);
+    background: var(--dark-background);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     padding: 20px;
@@ -277,6 +277,7 @@ body {
     margin-top: 8px;
     font-weight: 500;
     opacity: 0.9;
+    cursor: default;
 }
 
 /* Light mode warning card styling */
@@ -638,7 +639,7 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
 .setting-icon {
     width: 50px;
     height: 50px;
-    background: linear-gradient(135deg, var(--hover), #4a90e2);
+    background: linear-gradient(135deg, var(--hover-color), #4a90e2);
     border-radius: 12px;
     display: flex;
     align-items: center;
@@ -734,8 +735,8 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
 }
 
 .toggle-switch input:checked + .toggle-slider {
-    background: linear-gradient(135deg, var(--hover), #4a90e2);
-    border-color: var(--hover);
+    background: linear-gradient(135deg, var(--hover-color), #4a90e2);
+    border-color: var(--hover-color);
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
@@ -753,7 +754,7 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
 }
 
 .keyboard-layout {
-    background: var(--dark-backround);
+    background: var(--dark-background);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     padding: 20px;
@@ -784,7 +785,7 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
 
 .key:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-color: var(--hover);
+    border-color: var(--hover-color);
     transform: scale(1.05);
 }
 
@@ -848,7 +849,7 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
 }
 
 .shortcut-item {
-    background: var(--dark-backround);
+    background: var(--dark-background);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     padding: 16px;
@@ -872,7 +873,7 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
 
 .shortcut-info i {
     font-size: 20px;
-    color: var(--hover);
+    color: var(--hover-color);
     width: 24px;
     text-align: center;
 }
@@ -893,12 +894,14 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
     text-align: center;
     min-width: 120px;
     transition: all 0.3s ease;
+    cursor: pointer;
 }
 
 .shortcut-item input:focus {
     outline: none;
-    border-color: var(--hover);
+    border-color: #10b981;
     background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 
 /* -------------------------------------
@@ -912,7 +915,7 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
     margin-top: 30px;
     margin-bottom: 30px;
     padding: 30px;
-    background: var(--dark-backround);
+    background: var(--dark-background);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     backdrop-filter: blur(10px);
@@ -923,7 +926,7 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
     align-items: center;
     gap: 12px;
     padding: 15px 30px;
-    background: linear-gradient(135deg, var(--hover), #4a90e2);
+    background: linear-gradient(135deg, var(--hover-color), #4a90e2);
     color: white;
     border: none;
     border-radius: 12px;
@@ -1053,7 +1056,7 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
 }
 
 .update-prompt-content {
-    background: var(--dark-backround);
+    background: var(--dark-background);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
     padding: 40px;
@@ -1085,7 +1088,7 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
 .update-icon {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, var(--hover), #4a90e2);
+    background: linear-gradient(135deg, var(--hover-color), #4a90e2);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1107,6 +1110,7 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
     font-size: 18px;
     color: rgba(255, 255, 255, 0.7);
     font-weight: 500;
+    cursor: default;
 }
 
 .changelog {
@@ -1127,7 +1131,7 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
 }
 
 .changelog h3 i {
-    color: var(--hover);
+    color: var(--hover-color);
 }
 
 .changelog-content {
@@ -1192,7 +1196,7 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
 }
 
 .changelog-content a {
-    color: var(--hover);
+    color: var(--hover-color);
     text-decoration: none;
 }
 
@@ -1232,7 +1236,7 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
 }
 
 .update-btn.primary {
-    background: linear-gradient(135deg, var(--hover), #4a90e2);
+    background: linear-gradient(135deg, var(--hover-color), #4a90e2);
     color: white;
     box-shadow: 0 4px 15px rgba(88, 142, 151, 0.3);
 }

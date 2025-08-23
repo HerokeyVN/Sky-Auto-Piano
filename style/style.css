@@ -3,71 +3,10 @@
  * This stylesheet contains all styles for the main application interface
  */
 
-/* -------------------------------------
-   FONTS AND THEME VARIABLES
-   ------------------------------------- */
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap");
-
-:root {
-  /* Modern, soothing light theme */
-  --background-color: #ffffff; 
-  --dark-backround: #0f172a; 
-  --font-color: #0f172a; 
-  --hover: #3b82f6; 
-}
-
-body.dark-mode {
-  --background-color: #171717; /* Dark mode background */
-  --dark-backround: #05012c; /* Dark mode dark background (as specified) */
-  --font-color: #aab7d7;
-  --hover: #588e97;
-}
-
-/* -------------------------------------
-   GLOBAL STYLES
-   ------------------------------------- */
-* {
-  font-family: "Roboto", sans-serif;
-}
-
-/* Commented out viewport constraints
-html, body {
-    width: 100vh;
-    height: 100vh;
-} */
-
 body {
   padding: 10px 20px;
 }
 
-/* Scrollbar styling */
-body::-webkit-scrollbar {
-  width: 6px;
-  background-color: #071324;
-  border-radius: 25px;
-}
-
-body::-webkit-scrollbar-thumb {
-  width: 6px;
-  background-color: var(--font-color);
-  border-radius: 25px;
-}
-
-body::-webkit-scrollbar-track {
-  -webkit-box-shadow: inset 0 0 6px rgba (0, 0, 0, 0.3);
-  background-color: #071324;
-  border-radius: 25px;
-}
-/* Light mode scrollbar tweaks */
-body:not(.dark-mode)::-webkit-scrollbar {
-  width: 8px;
-}
-body:not(.dark-mode)::-webkit-scrollbar-thumb {
-  background-color: #94a3b8; /* slate-400 */
-}
-body:not(.dark-mode)::-webkit-scrollbar-track {
-  background-color: #e5e7eb; /* gray-200 */
-}
 
 /* -------------------------------------
    CONTENT AREA AND CARDS
@@ -92,6 +31,7 @@ body:not(.dark-mode)::-webkit-scrollbar-track {
   -webkit-backdrop-filter: blur(5px);
   backdrop-filter: blur(5px);
   border-radius: 16px;
+  cursor: pointer;
 }
 /* Light mode card refinements */
 body:not(.dark-mode) .content .card {
@@ -184,7 +124,7 @@ body:not(.dark-mode) .card .sheet-info .info-lines .info-item .label { color: #3
 }
 
 .btn-add:hover {
-  color: var(--hover);
+  color: var(--hover-color);
 }
 
 /* -------------------------------------
@@ -239,7 +179,7 @@ body:not(.dark-mode) .footer {
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: var(--hover);
+  background: var(--hover-color);
   cursor: pointer;
 }
 /* Light mode progress bar */
@@ -285,8 +225,8 @@ body:not(.dark-mode) .process-bar::-webkit-slider-thumb {
 }
 
 .btn:hover {
-  border: 2px solid var(--hover);
-  color: var(--hover);
+  border: 2px solid var(--hover-color);
+  color: var(--hover-color);
 }
 
 .btn:active {
@@ -459,7 +399,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .long-press-btn .switch + label::before {
-  background-color: var(--dark-backround);
+  background-color: var(--dark-background);
   border-radius: 500px;
   height: 15px;
   margin-right: 8px;
@@ -529,7 +469,7 @@ body:not(.dark-mode) .long-press-btn .switch + label::after {
   opacity: 0;
   -webkit-transform: translate3d(0, 100%, 0);
   transform: translate3d(0, 100%, 0);
-  color: var(--hover);
+  color: var(--hover-color);
 }
 
 .long-press-btn .switch + label .switch-x-hiddenlabel {
@@ -538,7 +478,7 @@ body:not(.dark-mode) .long-press-btn .switch + label::after {
 }
 
 .long-press-btn .switch:checked + label::before {
-  background-color: var(--hover);
+  background-color: var(--hover-color);
 }
 
 .long-press-btn .switch:checked + label::after {
@@ -556,7 +496,7 @@ body:not(.dark-mode) .long-press-btn .switch + label::after {
   opacity: 1;
   -webkit-transform: none;
   transform: none;
-  color: var(--hover);
+  color: var(--hover-color);
 }
 
 /* -------------------------------------
@@ -573,7 +513,7 @@ body:not(.dark-mode) .long-press-btn .switch + label::after {
 }
 
 .footer .bi-gear-fill:hover {
-  color: var(--hover);
+  color: var(--hover-color);
   transform: rotate(0.2turn);
 }
 
@@ -590,7 +530,7 @@ body:not(.dark-mode) .long-press-btn .switch + label::after {
 
 .footer .bi-light-fill:hover,
 .footer .bi-dark-fill:hover {
-  color: var(--hover); 
+  color: var(--hover-color); 
 }
 
 
@@ -659,7 +599,7 @@ body.dark-mode .bi-light-fill {
   cursor: pointer;
   width: var(--size);
   height: calc(var(--size) / 2);
-  background: var(--dark-backround);
+  background: var(--dark-background);
   display: block;
   border-radius: 100px;
   position: relative;
@@ -678,7 +618,7 @@ body.dark-mode .bi-light-fill {
 }
 
 .checkbox input:checked + label {
-  background: var(--hover);
+  background: var(--hover-color);
 }
 
 .checkbox input:checked + label:after {
@@ -704,14 +644,14 @@ body.dark-mode .bi-light-fill {
 .tooltip {
   position: relative;
   display: inline-block;
-  border-bottom: 1px dotted var(--dark-backround);
+  border-bottom: 1px dotted var(--dark-background);
 }
 
 .tooltip .tooltiptext {
   visibility: hidden;
   min-width: 150px;
   max-width: 1000px;
-  background-color: var(--dark-backround);
+  background-color: var(--dark-background);
   color: var(--font-color);
   text-align: center;
   text-wrap: wrap;
@@ -732,7 +672,7 @@ body.dark-mode .bi-light-fill {
   margin-left: -5px;
   border-width: 5px;
   border-style: solid;
-  border-color: var(--dark-backround) transparent transparent transparent;
+  border-color: var(--dark-background) transparent transparent transparent;
 }
 
 .tooltip:hover .tooltiptext {
@@ -770,7 +710,7 @@ body.dark-mode .bi-light-fill {
 }
 
 #search-bar:focus {
-  box-shadow: 0 0 5px var(--hover);
+  box-shadow: 0 0 5px var(--hover-color);
 }
 
 .search-icon {
@@ -849,9 +789,9 @@ body:not(.dark-mode) .search-icon {
 }
 
 .nav-tab.active {
-    background: linear-gradient(135deg, var(--hover), #4a90e2);
+    background: linear-gradient(135deg, var(--hover-color), #4a90e2);
     color: white;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0px 15px rgba(59, 130, 246, 0.3);
     transform: translateY(-1px);
 }
 
@@ -1336,6 +1276,6 @@ body.dark-mode .notie-element {
 
 /*  blur effect for update prompt */
 .update-prompt {
-    backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
 }

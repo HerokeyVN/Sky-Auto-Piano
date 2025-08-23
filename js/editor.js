@@ -14,9 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Get the sheet index from the URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const sheetIndex = urlParams.get('sheetIndex');
-
-    // Load and apply theme
+    const sheetIndex = urlParams.get('sheetIndex');    // Load and apply theme
     function loadTheme() {
         try {
             const config = JSON.parse(
@@ -24,15 +22,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     encoding: 'utf8',
                 })
             );
-            document.documentElement.setAttribute('data-theme', config.appTheme || 'dark');
+            const theme = config.appTheme || 'dark';
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
         } catch (error) {
             console.error('Error loading theme:', error);
-            document.documentElement.setAttribute('data-theme', 'dark');
+            document.body.classList.add('dark-mode');
         }
     }
 
     ipcRenderer.on('theme-changed', (event, theme) => {
-        document.documentElement.setAttribute('data-theme', theme);
+        if (theme === 'dark') {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
     });
 
     // Initial theme load
@@ -177,30 +184,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 JSON.stringify(keyMapData),
                 { mode: 0o666 }
             );
-
             ipcRenderer.send('keymap-updated', {
                 index: parseInt(sheetIndex)
             });
             
-            // Show success message
-            const successMessage = document.createElement('div');
-            successMessage.className = 'save-success-message';
-            successMessage.textContent = 'Sheet saved successfully!';
-            successMessage.style.position = 'fixed';
-            successMessage.style.top = '20px';
-            successMessage.style.left = '50%';
-            successMessage.style.transform = 'translateX(-50%)';
-            successMessage.style.backgroundColor = '#4CAF50';
-            successMessage.style.color = 'white';
-            successMessage.style.padding = '10px 20px';
-            successMessage.style.borderRadius = '4px';
-            successMessage.style.zIndex = '1000';
-            document.body.appendChild(successMessage);
-
-            // Remove the message after 2 seconds
-            setTimeout(() => {
-                document.body.removeChild(successMessage);
-            }, 2000);
+            // Show success message using notie
+            notie.alert({ type: 'success', text: 'Sheet saved successfully!', time: 2 });
 
             hasUnsavedChanges = false;
             
@@ -209,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             buttons.classList.remove('visible');
         } catch (error) {
             console.error('Error saving keymap:', error);
-            alert('Failed to save changes to the music sheet');
+            notie.alert({ type: 'error', text: 'Failed to save changes to the music sheet', time: 3 });
         }
     }
 
@@ -331,11 +320,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const fieldType = field.getAttribute('data-field');
         const valueSpan = field.querySelector('.field-value');
         let newValue = valueSpan.textContent.trim();
-
         if (fieldType === 'bpm') {
             const bpmValue = parseInt(newValue);
             if (isNaN(bpmValue) || bpmValue <= 0) {
-                alert('Please enter a valid BPM number (must be greater than 0)');
+                notie.alert({ type: 'error', text: 'Please enter a valid BPM number (must be greater than 0)', time: 3 });
                 valueSpan.textContent = originalValue;
                 cancelEditing();
                 return;
@@ -361,36 +349,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 path.join(__dirname, '..', 'data', 'listSheet.json'),
                 JSON.stringify(listSheet, null, 4)
             );
-
             ipcRenderer.send('update-sheet-list', {
                 index: parseInt(sheetIndex),
                 data: sheetData
             });
 
-            // Show success message
-            const successMessage = document.createElement('div');
-            successMessage.className = 'save-success-message';
-            successMessage.textContent = 'Changes saved successfully!';
-            successMessage.style.position = 'fixed';
-            successMessage.style.top = '20px';
-            successMessage.style.left = '50%';
-            successMessage.style.transform = 'translateX(-50%)';
-            successMessage.style.backgroundColor = '#4CAF50';
-            successMessage.style.color = 'white';
-            successMessage.style.padding = '10px 20px';
-            successMessage.style.borderRadius = '4px';
-            successMessage.style.zIndex = '1000';
-            document.body.appendChild(successMessage);
-
-            // Remove the message after 2 seconds
-            setTimeout(() => {
-                document.body.removeChild(successMessage);
-            }, 2000);
+            // Show success message using notie
+            notie.alert({ type: 'success', text: 'Changes saved successfully!', time: 2 });
 
             endEditing();
         } catch (error) {
             console.error('Error saving sheet data:', error);
-            alert('Failed to save changes to the sheet');
+            notie.alert({ type: 'error', text: 'Failed to save changes to the sheet', time: 3 });
             valueSpan.textContent = originalValue;
             endEditing();
         }
@@ -595,14 +565,12 @@ document.addEventListener('DOMContentLoaded', () => {
             content = JSON.stringify(contentObj, null, 4);
         }
         await ipcRenderer.invoke('save-exported-file', { filePath, content });
-    }
-
-    // Add event listener for export button
+    }    // Add event listener for export button
     const exportBtn = document.querySelector('.export-button-bottom-right');
     if (exportBtn) {
         exportBtn.addEventListener('click', async () => {
             if (!sheetData || !keyMapData) {
-                alert('No sheet loaded to export.');
+                notie.alert({ type: 'warning', text: 'No sheet loaded to export.', time: 3 });
                 return;
             }
             const originalFormat = getOriginalSheetFormat(sheetData, keyMapData);

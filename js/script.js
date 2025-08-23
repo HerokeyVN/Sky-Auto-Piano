@@ -43,40 +43,6 @@ const keys = [
 ];
 
 // -------------------------------------
-// DECRYPTION LOGIC
-// -------------------------------------
-const MASK = Object.freeze([
-  16, 34, 56, 18, 62, 19, -25, 55,
-  15, 24, 30, 12, 30, 45, 39, -23,
-  -10, 15, 45, -18, 37, -2, -21, 65,
-  25, -4, -14, 43, 23, -4, -17, -17
-]);
-
-/**
- * Decrypts an array of numbers into a song notes object.
- * @param {number[]} nums The encrypted array of numbers from songNotes.
- * @returns {Object} The decrypted song notes object.
- */
-function decodeNums(nums) {
-  if (!Array.isArray(nums)) throw new TypeError("decodeNums: input must be an array of numbers");
-  let s = "";
-  for (let i = 0; i < nums.length; i++) {
-    const n = nums[i] | 0;
-    const code = n + MASK[i % MASK.length];
-    s += String.fromCharCode(code);
-  }
-  // Clean up potential trailing characters and parse the JSON string
-  try {
-      const cleanedString = s.replace(/(].*)/, "]");
-      return JSON.parse(cleanedString);
-  } catch (e) {
-      console.error("Failed to parse decrypted string:", s);
-      throw new Error("Decryption resulted in invalid JSON.");
-  }
-}
-
-
-// -------------------------------------
 // DATA INITIALIZATION
 // -------------------------------------
 // Ensure data directory exists
@@ -381,14 +347,12 @@ document
   .getElementsByClassName("btn-add")[0]
   .addEventListener("change", (event) => {
     const { files } = event.target;
-
     let done = 0;
-    for (let file of files) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       // Detect file encoding
       let typeDetect = fs.readFileSync(file.path, { encoding: "utf8" })[0] != "[" ? "utf16le" : "utf8";
-      let text = decUTF16toUTF8(
-        fs.readFileSync(file.path, { encoding: typeDetect })
-      );
+      let text = decUTF16toUTF8(fs.readFileSync(file.path, { encoding: typeDetect }));
 
       // Parse sheet file
       let json;
@@ -406,11 +370,10 @@ document
       }
       
       // Check if the sheet is encrypted and decrypt if necessary
-      if (json.isEncrypted === true) {
+      if (json.isEncrypted == true || (Array.isArray(json.songNotes) && typeof json.songNotes[0] == "number")) {
         try {
-          // Decrypt the songNotes
           const decryptedNotes = decodeNums(json.songNotes);
-          // Replace the encrypted notes with the decrypted ones
+          
           json.songNotes = decryptedNotes;
           // Mark it as not encrypted anymore for further processing
           json.isEncrypted = false;
@@ -466,6 +429,9 @@ document
         type: 1,
         text: `Complete import!`,
       });
+    
+    // Reset file input
+    event.target.value = "";
   });
 
 /**
@@ -554,7 +520,7 @@ function printSheet() {
         card.className = "card";
 
         card.innerHTML = `
-            <div class="sheet-info">
+            <div class="sheet-info" sheetID="${sheetData.keyMap.split(".json")[0]}">
                 <h3 class="name-sheet">${sheetData.name}</h3>
                 <div class="info-lines">
                     <div class="info-item">
@@ -649,7 +615,6 @@ function printSheet() {
     }
 }
 
-
 /**
  * Updates the footer area with sheet information
  * @param {Object} info - Sheet information
@@ -685,15 +650,115 @@ function updateFooter(info, id) {
   )[0].innerHTML = `${totalMin}:${totalSec}`;
 }
 
+
+/**
+ * Decrypts an array of numbers into a song notes object.
+ * @param {number[]} nums The encrypted array of numbers from songNotes.
+ * @returns {Object} The decrypted song notes object.
+ */
+function decodeNums(nums) {
+  const MASK = Object.freeze([
+    16, 34, 56, 18, 62, 19, -25, 55,
+    15, 24, 30, 12, 30, 45, 39, -23,
+    -10, 15, 45, -18, 37, -2, -21, 65,
+    25, -4, -14, 43, 23, -4, -17, -17
+  ]);
+  if (!Array.isArray(nums)) throw new TypeError("decodeNums: input must be an array of numbers");
+  let s = "";
+  for (let i = 0; i < nums.length; i++) {
+    const n = nums[i] | 0;
+    const code = n + MASK[i % MASK.length];
+    s += String.fromCharCode(code);
+  }
+  // Clean up potential trailing characters and parse the JSON string
+  try {
+      const cleanedString = s.replace(/(].*)/, "]");
+      return JSON.parse(cleanedString);
+  } catch (e) {
+      console.error("Failed to parse decrypted string:", s);
+      throw new Error("Decryption resulted in invalid JSON.");
+  }
+}
+
 // -------------------------------------
 // PLAYBACK CONTROL
 // -------------------------------------
+
+/**
+ * Check if a card at the given index is visible (display !== "none")
+ * @param {number} index - Index of the card to check
+ * @returns {boolean} True if the card is visible
+ */
+function isCardVisible(index) {
+    const cards = document.querySelectorAll('.card');
+    if (index >= 0 && index < cards.length) {
+        return window.getComputedStyle(cards[index]).display !== "none";
+    }
+    return false;
+}
+
+/**
+ * Find the previous visible card index
+ * @param {number} currentIndex - Current playing index
+ * @returns {number} Index of the previous visible card, or -1 if none found
+ */
+function findPreviousVisibleCard(currentIndex) {
+    let index = currentIndex - 1;
+    let searchCount = 0;
+    
+    while (searchCount < listSheet.length) {
+        if (index < 0) {
+            index = listSheet.length - 1;
+        }
+        
+        if (isCardVisible(index)) {
+            return index;
+        }
+        
+        index--;
+        searchCount++;
+    }
+    
+    return -1; // No visible card found
+}
+
+/**
+ * Find the next visible card index
+ * @param {number} currentIndex - Current playing index
+ * @returns {number} Index of the next visible card, or -1 if none found
+ */
+function findNextVisibleCard(currentIndex) {
+    let index = currentIndex + 1;
+    let searchCount = 0;
+    
+    while (searchCount < listSheet.length) {
+        if (index >= listSheet.length) {
+            index = 0;
+        }
+        
+        if (isCardVisible(index)) {
+            return index;
+        }
+        
+        index++;
+        searchCount++;
+    }
+    
+    return -1; // No visible card found
+}
+
 /**
  * Navigate to the previous sheet
  */
 function btnPrev() {
-    if (playing - 1 < 0) playing = listSheet.length - 1;
-    else playing--;
+    const previousIndex = findPreviousVisibleCard(playing);
+    
+    if (previousIndex === -1) {
+        console.log("No visible previous song found");
+        return;
+    }
+    
+    playing = previousIndex;
 
     const playPrevSong = () => {
         updateFooter({ ...listSheet[playing], keys: listKeys[playing] }, playing);
@@ -733,8 +798,14 @@ ipcRenderer.on("btn-prev", btnPrev);
  * Navigate to the next sheet
  */
 function btnNext() {
-    if (playing + 1 >= listSheet.length) playing = 0;
-    else playing++;
+    const nextIndex = findNextVisibleCard(playing);
+    
+    if (nextIndex === -1) {
+        console.log("No visible next song found");
+        return;
+    }
+    
+    playing = nextIndex;
 
     const playNextSong = () => {
         updateFooter({ ...listSheet[playing], keys: listKeys[playing] }, playing);
@@ -891,7 +962,7 @@ document.getElementsByClassName("bi-loop")[0].addEventListener("click", () => {
     // Enable playlist loop
     loopMode = 1;
     document.getElementsByClassName("bi-loop")[0].style =
-      "box-shadow: inset 0 0 15px 0 rgba(256, 256, 256, 0.2), 0 0 15px 0 rgba(256, 256, 256, 0.4); border-radius: 5px; padding: 0 2px;";
+      "box-shadow: inset 0 0 15px 0 rgba(256, 256, 1, 0.2), 0 0 15px 0 rgba(256, 256, 1, 0.4); border-radius: 5px; padding: 0 2px;";
   } else if (loopMode == 1) {
     // Enable single song loop
     loopMode = 2;
@@ -984,20 +1055,29 @@ function sec2array(sec, arr) {
  * @returns {string} UTF-8 string
  */
 function decUTF16toUTF8(str) {
-  const utf16leArray = new Uint16Array(str.length);
-  for (let i = 0; i < str.length; i++) {
-    utf16leArray[i] = str.charCodeAt(i);
+  const chunkSize = 10000; // Split into chunks of 10000 characters
+  let result = "";
+  
+  // Process string in chunks to avoid stack overflow
+  for (let i = 0; i < str.length; i += chunkSize) {
+    const chunk = str.slice(i, i + chunkSize);
+    const utf16leArray = new Uint16Array(chunk.length);
+    
+    for (let j = 0; j < chunk.length; j++) {
+      utf16leArray[j] = chunk.charCodeAt(j);
+    }
+
+    // Convert chunk to UTF-8
+    const utf8Array = new TextEncoder().encode(
+      String.fromCharCode.apply(null, utf16leArray)
+    );
+
+    // Convert Uint8Array to a UTF-8 string and append to result
+    const utf8String = new TextDecoder("utf-8").decode(utf8Array);
+    result += utf8String;
   }
 
-  // Convert Uint16Array to a Uint8Array (UTF-8)
-  const utf8Array = new TextEncoder().encode(
-    String.fromCharCode.apply(null, utf16leArray)
-  );
-
-  // Convert Uint8Array to a UTF-8 string
-  const utf8String = new TextDecoder("utf-8").decode(utf8Array);
-
-  return utf8String;
+  return result;
 }
 
 /**

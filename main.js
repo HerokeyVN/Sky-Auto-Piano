@@ -85,7 +85,7 @@ const defaultConfig = {
 	update: {
 		blockUpdate: false,
 	},
-	appTheme: "light",
+	appTheme: "dark",
 };
 
 // Function to update config with missing values
@@ -220,7 +220,7 @@ app.setName("Sky Auto Piano");
 // -------------------------------------
 function createWindow() {
 	const windowBackgroundColor =
-		config.appTheme === "dark" ? "#1B1D1E" : "#0a1930";
+		config.appTheme === "dark" ? "#171717" : "#0a1930";
 
 	const win = new BrowserWindow({
 		width: 750,
@@ -422,9 +422,9 @@ function createWindow() {
 
 	// Open Sheet Editor window
 	ipcMain.on("openSheetEditor", (event, args) => {
-		const windowBackgroundColor = config.appTheme === "dark" ? "#1B1D1E" : "#0a1930";
+		const windowBackgroundColor = config.appTheme === "dark" ? "#171717" : "#0a1930";
 		const editorWin = new BrowserWindow({
-			width: 800,
+			width: 900,
 			height: 600,
 			resizable: false,
 			maximizable: false,
@@ -462,7 +462,7 @@ function createWindow() {
 function createWindowSetting() {
 	if (global.isOpenSetting) return;
 	const windowBackgroundColor =
-		config.appTheme === "dark" ? "#1B1D1E" : "#0a1930";
+		config.appTheme === "dark" ? "#171717" : "#0a1930";
 
 	const win = new BrowserWindow({
 		width: 800,

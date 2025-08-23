@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Sheet Editor</title>
+    <meta charset="utf-8">
+    <title>Sheet Editor (beta)</title>
 
+    <link rel="stylesheet" type="text/css" href="../style/notie.min.css">
+    <link rel="stylesheet" href="../style/global.css">
     <link rel="stylesheet" href="../style/editor.css">
 </head>
 <body>
@@ -42,15 +45,15 @@
                     </tr>
                     <tr>
                         <td><span class="circle"><input type="button" value="H" data-key="h"></span></td>
-                        <td><span class="circle"><input type="button" value="J" data-key="j"></span></td>
+                        <td><span class="square"><input type="button" value="J" data-key="j"></span></td>
                         <td><span class="square circle"><input type="button" value="K" data-key="k"></span></td>
-                        <td><span class="circle"><input type="button" value="L" data-key="l"></span></td>
+                        <td><span class="square"><input type="button" value="L" data-key="l"></span></td>
                         <td><span class="circle"><input type="button" value=";" data-key=";"></span></td>
                     </tr>
                     <tr>
-                        <td><span class="square"><input type="button" value="N" data-key="n"></span></td>
+                        <td><span class="circle"><input type="button" value="N" data-key="n"></span></td>
                         <td><span class="square"><input type="button" value="M" data-key="m"></span></td>
-                        <td><span class="square"><input type="button" value="," data-key=","></span></td>
+                        <td><span class="circle"><input type="button" value="," data-key=","></span></td>
                         <td><span class="square"><input type="button" value="." data-key="."></span></td>
                         <td><span class="square circle"><input type="button" value="/" data-key="/"></span></td>
                     </tr>
@@ -63,6 +66,7 @@
             <button id="export-btn" class="export-button-bottom-right">Export</button>
         </div>
     </div>
+    <script type="text/javascript" src="../js/notie.js"></script>
     <script src="../js/editor.js"></script>
 </body>
 </html>
