@@ -1,0 +1,80 @@
+
+/* -------------------------------------
+   FONTS AND THEME VARIABLES
+   ------------------------------------- */
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap");
+
+:root {
+  --background-color: #ffffff;
+  --dark-background: #0f172a;
+  --font-color: #2c3e50;
+  --hover-color: #3b83f6;
+  
+  --grid-color: rgba(44, 62, 80, 0.1);
+  --dot-size: 3px;
+  --dot-color: rgba(44, 62, 80, 0.2);
+  --active-color: rgba(44, 62, 80, 0.25);
+  --edit-bg: rgba(44, 62, 80, 0.1);
+  --border-color: #2c3e50;
+  --success-color: #27ae60;
+  --error-color: #e74c3c;
+}
+
+body.dark-mode {
+  --background-color: #171717;
+  --dark-background: #05012c;
+  --font-color: #a8b2d1;
+  --hover-color: #588e97;
+  
+  --grid-color: rgba(110, 110, 110, 0.2);
+  --dot-color: rgba(255, 255, 255, 0.3);
+  --active-color: rgba(110, 110, 110, 0.4);
+  --edit-bg: rgba(0, 0, 0, 0.2);
+  --border-color: #a8b2d1;
+  --success-color: #4CAF50;
+  --error-color: #f44336;
+}
+
+/* -------------------------------------
+   GLOBAL STYLES
+   ------------------------------------- */
+* {
+  font-family: "Roboto", sans-serif;
+}
+
+/* Scrollbar styling */
+body::-webkit-scrollbar {
+  width: 8px;
+  background-color: transparent;
+  border-radius: 25px;
+}
+
+body::-webkit-scrollbar-thumb {
+  width: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+}
+.main-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+body::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba (0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 25px;
+}
+/* Light mode scrollbar tweaks */
+body:not(.dark-mode)::-webkit-scrollbar {
+  width: 8px;
+}
+body:not(.dark-mode)::-webkit-scrollbar-thumb {
+  background-color: #94a3b8; /* slate-400 */
+}
+body:not(.dark-mode)::-webkit-scrollbar-track {
+  background-color: #e5e7eb; /* gray-200 */
+}
+
+/* Prevent text selection */
+p, h1, h2, h3, h4, h5, h6 {
+  cursor: default; 
+}

@@ -3,138 +3,279 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Setting</title>
-
+    <title>Settings</title>
+    
+    <link rel="stylesheet" href="../style/global.css">
     <link rel="stylesheet" type="text/css" href="../style/notie.min.css">
     <link rel="stylesheet" href="../style/style.css">
     <link rel="stylesheet" href="../style/setting.css">
+    <!-- Add Bootstrap Icons for modern icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 
 <body>
-    <div class="menu">
-        <h1>Settings</h1>
-        <div style="text-align: center; margin-bottom: 15px; font-size: 0.9em; opacity: 0.8;">
-            <div id="app-version"></div>
-        </div>
-        <span style="height: 5px;"></span>
-        <h3 class="active" tab="general"><span></span><a>General</a></h3>
-        <h3 tab="keyboard"><span></span><a>Keyboard</a></h3>
-        <h3 tab="shortcut"><span></span><a>Shortcut</a></h3>
-        <h3 tab="update"><span></span><a>Update</a></h3>
-
-    </div>
-    <div class="content">
-        <!--GENERAL TAB-->
-        <div id="general" class="tab">
-            <div class="checkbox">
-                <input type="checkbox" id="switch-save-setting" />
-                <label for="switch-save-setting"><a>Save setting the control panel</a></label>
-            </div>
-            <div class="checkbox">
-                <input type="checkbox" id="switch-minimize-on-play" />
-                <label for="switch-minimize-on-play"><a>Minimize window on play start</a></label>
+    <div class="settings-container">
+        <!-- Modern Sidebar Navigation -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="app-info">
+                    <i class="bi bi-gear-fill"></i>
+                    <h1>Settings</h1>
+                </div>
+                <div class="version-info">
+                    <span id="app-version"></span>
+                </div>
             </div>
 
+            <nav class="sidebar-nav">
+                <a href="#general" class="nav-item active" data-tab="general">
+                    <i class="bi bi-sliders"></i>
+                    <span>General</span>
+                </a>
+                <a href="#keyboard" class="nav-item" data-tab="keyboard">
+                    <i class="bi bi-keyboard"></i>
+                    <span>Keyboard</span>
+                </a>
+                <a href="#shortcut" class="nav-item" data-tab="shortcut">
+                    <i class="bi bi-lightning"></i>
+                    <span>Shortcuts</span>
+                </a>
+                <a href="#update" class="nav-item" data-tab="update">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    <span>Updates</span>
+                </a>
+            </nav>
         </div>
 
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- General Tab -->
+            <div id="general" class="tab-content active">
+                <div class="tab-header">
+                    <h2><i class="bi bi-sliders"></i> General Settings</h2>
+                    <p>Configure basic application behavior and preferences</p>
+                </div>
 
+                <div class="settings-grid">
+                    <div class="setting-card">
+                        <div class="setting-info">
+                            <div class="setting-icon">
+                                <i class="bi bi-save"></i>
+                            </div>
+                            <div class="setting-details">
+                                <h3>Auto Save Settings</h3>
+                                <p>Automatically save settings to the control panel</p>
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="switch-save-setting" />
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
 
-        <!--KEYBOARD TAB-->
-        <div id="keyboard" class="tab">
-            <table>
-                <tr>
-                    <td><span class="square circle"><input class="keys" maxlength="1" type="text" value="c"></span></td>
-                    <td><span class="square"><input class="keys" maxlength="1" type="text" value="d"></span></td>
-                    <td><span class="circle"><input class="keys" maxlength="1" type="text" value="e"></span></td>
-                    <td><span class="square"><input class="keys" maxlength="1" type="text" value="f"></span></td>
-                    <td><span class="circle"><input class="keys" maxlength="1" type="text" value="g"></span></td>
-                </tr>
-                <tr>
-                    <td><span class="circle"><input class="keys" maxlength="1" type="text" value="c"></span></td>
-                    <td><span class="square"><input class="keys" maxlength="1" type="text" value="d"></span></td>
-                    <td><span class="square circle"><input class="keys" maxlength="1" type="text" value="e"></span></td>
-                    <td><span class="square"><input class="keys" maxlength="1" type="text" value="f"></span></td>
-                    <td><span class="circle"><input class="keys" maxlength="1" type="text" value="g"></span></td>
-                </tr>
-                <tr>
-                    <td><span class="circle"><input class="keys" maxlength="1" type="text" value="c"></span></td>
-                    <td><span class="square"><input class="keys" maxlength="1" type="text" value="d"></span></td>
-                    <td><span class="circle"><input class="keys" maxlength="1" type="text" value="e"></span></td>
-                    <td><span class="square"><input class="keys" maxlength="1" type="text" value="f"></span></td>
-                    <td><span class="square circle"><input class="keys" maxlength="1" type="text" value="g"></span></td>
-                </tr>
-            </table>
-            <div class="nor-setting">
-                <div class="checkbox">
-                    <input type="checkbox" id="switch-custom-keyboard" />
-                    <label for="switch-custom-keyboard"><a class="tooltip">Custom keyboard <span class="tooltiptext">If
-                                you turn on this function, the software will use the keyboard <br> you have edited
-                                above. Turn off the software will use the default keyboard.</span></a></label>
+                    <div class="setting-card">
+                        <div class="setting-info">
+                            <div class="setting-icon" id="minimize-icon">
+                                <i class="bi bi-window-minimize"></i>
+                                <!-- Fallback icon if Bootstrap Icons fail to load -->
+                                <span class="fallback-icon">−</span>
+                            </div>
+                            <div class="setting-details">
+                                <h3>Minimize on Play</h3>
+                                <p>Minimize window when playback starts</p>
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="switch-minimize-on-play" />
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Keyboard Tab -->
+            <div id="keyboard" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="bi bi-keyboard"></i> Keyboard Layout</h2>
+                    <p>Customize your keyboard mapping for piano keys</p>
+                </div>
+
+                <div class="keyboard-container">
+                    <div class="keyboard-layout">
+                        <table>
+                            <tr>
+                                <td><span class="key square circle"><input class="keys" maxlength="1" type="text"
+                                            value="c"></span></td>
+                                <td><span class="key square"><input class="keys" maxlength="1" type="text"
+                                            value="d"></span></td>
+                                <td><span class="key circle"><input class="keys" maxlength="1" type="text"
+                                            value="e"></span></td>
+                                <td><span class="key square"><input class="keys" maxlength="1" type="text"
+                                            value="f"></span></td>
+                                <td><span class="key circle"><input class="keys" maxlength="1" type="text"
+                                            value="g"></span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="key circle"><input class="keys" maxlength="1" type="text"
+                                            value="c"></span></td>
+                                <td><span class="key square"><input class="keys" maxlength="1" type="text"
+                                            value="d"></span></td>
+                                <td><span class="key square circle"><input class="keys" maxlength="1" type="text"
+                                            value="e"></span></td>
+                                <td><span class="key square"><input class="keys" maxlength="1" type="text"
+                                            value="f"></span></td>
+                                <td><span class="key circle"><input class="keys" maxlength="1" type="text"
+                                            value="g"></span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="key circle"><input class="keys" maxlength="1" type="text"
+                                            value="c"></span></td>
+                                <td><span class="key square"><input class="keys" maxlength="1" type="text"
+                                            value="d"></span></td>
+                                <td><span class="key circle"><input class="keys" maxlength="1" type="text"
+                                            value="e"></span></td>
+                                <td><span class="key square"><input class="keys" maxlength="1" type="text"
+                                            value="f"></span></td>
+                                <td><span class="key square circle"><input class="keys" maxlength="1" type="text"
+                                            value="g"></span></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="setting-card">
+                        <div class="setting-info">
+                            <div class="setting-icon">
+                                <i class="bi bi-palette"></i>
+                            </div>
+                            <div class="setting-details">
+                                <h3>Custom Keyboard</h3>
+                                <p>Use custom keyboard mapping instead of default layout</p>
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="switch-custom-keyboard" />
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shortcuts Tab -->
+            <div id="shortcut" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="bi bi-lightning"></i> Keyboard Shortcuts</h2>
+                    <p>Configure global shortcuts for quick access to features</p>
+                </div>
+
+                <div class="shortcuts-grid">
+                    <div class="shortcut-item">
+                        <div class="shortcut-info">
+                            <i class="bi bi-skip-backward"></i>
+                            <span>Previous Song</span>
+                        </div>
+                        <input type="text" id="pre-shortcut-setting" name="pre-shortcut" value="Ctrl+Shift+C" readonly>
+                    </div>
+
+                    <div class="shortcut-item">
+                        <div class="shortcut-info">
+                            <i class="bi bi-play-circle"></i>
+                            <span>Play Current Song</span>
+                        </div>
+                        <input type="text" id="play-shortcut-setting" name="play-shortcut" value="Ctrl+Shift+V"
+                            readonly>
+                    </div>
+
+                    <div class="shortcut-item">
+                        <div class="shortcut-info">
+                            <i class="bi bi-skip-forward"></i>
+                            <span>Next Song</span>
+                        </div>
+                        <input type="text" id="next-shortcut-setting" name="next-shortcut" value="Ctrl+Shift+B"
+                            readonly>
+                    </div>
+
+                    <div class="shortcut-item">
+                        <div class="shortcut-info">
+                            <i class="bi bi-eye"></i>
+                            <span>Show/Hide App</span>
+                        </div>
+                        <input type="text" id="show_app-shortcut-setting" name="show_app-shortcut" value="Alt+Tab"
+                            readonly>
+                    </div>
+
+                    <div class="shortcut-item">
+                        <div class="shortcut-info">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Increase Speed</span>
+                        </div>
+                        <input type="text" id="increase-speed-shortcut-setting" name="increase-speed-shortcut"
+                            value="numadd" readonly>
+                    </div>
+
+                    <div class="shortcut-item">
+                        <div class="shortcut-info">
+                            <i class="bi bi-speedometer"></i>
+                            <span>Decrease Speed</span>
+                        </div>
+                        <input type="text" id="decrease-speed-shortcut-setting" name="decrease-speed-shortcut"
+                            value="numsub" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Update Tab -->
+            <div id="update" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="bi bi-arrow-clockwise"></i> Updates</h2>
+                    <p>Manage application updates and version information</p>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="setting-card warning-card">
+                        <div class="setting-info">
+                            <div class="setting-icon warning-icon">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                            <div class="setting-details">
+                                <h3>Block Updates</h3>
+                                <p>Prevent automatic update checks (Not Recommended)</p>
+                                <span class="warning-text">⚠️ This may prevent you from receiving new feature updates
+                                    and important bug fixes.</span>
+                            </div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="switch-block-update" />
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="update-section">
+                    <button id="check-update-btn" class="check-update-btn">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        <span>Check for Updates</span>
+                    </button>
+
+                    <div class="update-status">
+                        <span id="update-message" class="update-message"></span>
+                    </div>
                 </div>
             </div>
         </div>
-        <!--SHORTCUT TAB-->
-        <div id="shortcut" class="tab">
-            <div class="setting-shell">
-                <a>Shortcut transferred to the previous song</a>
-                <input type="text" id="pre-shortcut-setting" name="pre-shortcut" value="Ctrl+Shift+C" readonly>
-            </div>
-            <div class="setting-shell">
-                <a>Shortcut plays the current song</a>
-                <input type="text" id="play-shortcut-setting" name="play-shortcut" value="Ctrl+Shift+V" readonly>
-            </div>
-            <div class="setting-shell">
-                <a>Shortcut transferred to the next song</a>
-                <input type="text" id="next-shortcut-setting" name="next-shortcut" value="Ctrl+Shift+B" readonly>
-            </div>
-            <div class="setting-shell">
-                <a>Hide/Show application</a>
-                <input type="text" id="show_app-shortcut-setting" name="show_app-shortcut" value="Alt+Tab" readonly>
-            </div>
-            <div class="setting-shell">
-                <a>Increase playback speed</a>
-                <input type="text" id="increase-speed-shortcut-setting" name="increase-speed-shortcut" value="numadd"
-                    readonly>
-            </div>
-            <div class="setting-shell">
-                <a>Decrease playback speed</a>
-                <input type="text" id="decrease-speed-shortcut-setting" name="decrease-speed-shortcut" value="numsub"
-                    readonly>
-            </div>
-        </div>
-        <div id="update" class="tab">
-            <div class="checkbox">
-                <input type="checkbox" id="switch-block-update" />
-                <label for="switch-block-update"><a>Block Upcoming Update (Not Recommended)</a></label>
-            </div>
-            <div class="update-check">
-                <button id="check-update-btn" class="check-update-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                        class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z" />
-                        <path
-                            d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z" />
-                    </svg>
-                    Check for Updates
-                </button>
-            </div>
-            <div class="update-status">
-                <span id="update-message" class="update-message"></span>
-            </div>
-        </div>
-
-        <span class="btn-save-setting" id="btn-save-setting">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                class="bi bi-floppy2-fill" viewBox="0 0 16 16">
-                <path d="M12 2h-2v3h2z" />
-                <path
-                    d="M1.5 0A1.5 1.5 0 0 0 0 1.5v13A1.5 1.5 0 0 0 1.5 16h13a1.5 1.5 0 0 0 1.5-1.5V2.914a1.5 1.5 0 0 0-.44-1.06L14.147.439A1.5 1.5 0 0 0 13.086 0zM4 6a1 1 0 0 1-1-1V1h10v4a1 1 0 0 1-1 1zM3 9h10a1 1 0 0 1 1 1v5H2v-5a1 1 0 0 1 1-1" />
-            </svg>
-        </span>
     </div>
 
-    <script type="text/javascript" src="../js/notie.js"></script>
-    <script type="text/javascript" src="../js/setting.js"></script>
+    <!-- Modern Save Button -->
+    <button class="save-button" id="btn-save-setting">
+        <i class="bi bi-floppy"></i>
+    </button>
 
     <!-- Update Prompt Dialog -->
     <div id="update-prompt" class="update-prompt">
@@ -147,18 +288,50 @@
             </div>
 
             <div class="changelog">
-                <h3>What's new?</h3>
                 <div class="changelog-content" id="changelog-content">
                     <!-- Changelog items will be inserted here dynamically -->
                 </div>
             </div>
 
             <div class="update-prompt-buttons">
-                <button id="update-now-btn" class="update-btn primary">Update Now</button>
-                <button id="update-later-btn" class="update-btn secondary">Later</button>
+                <button id="update-now-btn" class="update-btn primary">
+                    <i class="bi bi-download"></i>
+                    <span>Update Now</span>
+                </button>
+                <button id="update-later-btn" class="update-btn secondary">
+                    <i class="bi bi-clock"></i>
+                    <span>Later</span>
+                </button>
             </div>
         </div>
     </div>
+
+    <script type="text/javascript" src="../js/notie.js"></script>
+    <script type="text/javascript" src="../js/setting.js"></script>
+
+    <script>
+        // Check if Bootstrap Icons are loaded and show fallback if needed
+        function checkBootstrapIcons() {
+            const minimizeIcon = document.getElementById('minimize-icon');
+            const biIcon = minimizeIcon.querySelector('.bi');
+
+            // Simple check: if the icon element exists but doesn't show content, use fallback
+            if (biIcon && biIcon.offsetWidth === 0) {
+                minimizeIcon.classList.add('show-fallback');
+            }
+        }
+
+        // Check when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            // Wait for fonts to load
+            setTimeout(checkBootstrapIcons, 500);
+        });
+
+        // Also check when window loads completely
+        window.addEventListener('load', function () {
+            setTimeout(checkBootstrapIcons, 100);
+        });
+    </script>
 </body>
 
 </html>
