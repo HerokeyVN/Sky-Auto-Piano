@@ -54,6 +54,17 @@ To build Sky Auto Piano from source:
 
 The packaged application will be available in the `SkyAutoPiano-win32-x64` directory.
 
+## 🧱 Project Structure
+
+The codebase follows a layered Electron architecture:
+
+- `src/main` – Application entry (`app.js`), window management, IPC wiring, and background services.
+- `src/common` – Shared Node utilities (filesystem, archive, download helpers).
+- `src/renderer` – MVVM renderer with HTML views, viewmodels, and static assets.
+- `data` – User sheet data persisted at runtime (created automatically if missing).
+
+This separation keeps main-process logic, shared helpers, and renderer UI concerns isolated for easier maintenance.
+
 ## 🧪 Testing
 
 To test the application:
