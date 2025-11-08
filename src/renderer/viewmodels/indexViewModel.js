@@ -10,6 +10,9 @@
 const { ipcRenderer, shell } = require("electron");
 const fs = require("fs");
 const path = require("path");
+const appRoot = path.join(__dirname, "..", "..", "..");
+const dataDirectory = path.join(appRoot, "data");
+const configPath = path.join(appRoot, "config", "config.json");
 const { Base64 } = require("js-base64");
 const marked = require("marked");
 
@@ -17,9 +20,7 @@ const marked = require("marked");
 // CONFIGURATION AND CONSTANTS
 // -------------------------------------
 // Load application configuration
-const config = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "..", "config", "config.json"))
-);
+const config = JSON.parse(fs.readFileSync(configPath));
 
 // Configure marked to open links in external browser
 marked.setOptions({
@@ -46,7 +47,7 @@ const keys = [
 // DATA INITIALIZATION
 // -------------------------------------
 // Ensure data directory exists
-ensureExists(path.join(__dirname, "..", "data"));
+ensureExists(dataDirectory);
 
 // Application state variables
 let listSheet = []; // Will be populated asynchronously
@@ -56,7 +57,7 @@ let isPlay = false; // Playback state
 let maxPCB = 0;     // Maximum process bar value
 let loopMode = 0;   // Loop mode (0: off, 1: playlist, 2: single)
 
-const listSheetPath = path.join(__dirname, "..", "data", "listSheet.json");
+const listSheetPath = path.join(dataDirectory, "listSheet.json");
 
 fs.readFile(listSheetPath, { encoding: "utf8" }, (err, data) => {
     if (err) {
@@ -76,7 +77,7 @@ fs.readFile(listSheetPath, { encoding: "utf8" }, (err, data) => {
     printSheet();
 
     if (listSheet.length > 0) {
-        fs.readFile(path.join(__dirname, "..", "data", listSheet[0].keyMap), { encoding: "utf8" }, (err, keymapData) => {
+  fs.readFile(path.join(dataDirectory, listSheet[0].keyMap), { encoding: "utf8" }, (err, keymapData) => {
             if (!err) {
                 listKeys[0] = JSON.parse(keymapData);
                 updateFooter({ ...listSheet[0], keys: listKeys[0] }, 0);
@@ -478,7 +479,7 @@ function encSheet(json) {
 
   // Save keymap file
   fs.writeFileSync(
-    path.join(__dirname, "..", "data", fileName),
+  path.join(dataDirectory, fileName),
     JSON.stringify(!tempEnc["0"] ? { 0: [], ...tempEnc } : tempEnc),
     { mode: 0o666 }
   );
@@ -496,7 +497,7 @@ function encSheet(json) {
   });
   
   fs.writeFileSync(
-    path.join(__dirname, "..", "data", "listSheet.json"),
+  path.join(dataDirectory, "listSheet.json"),
     JSON.stringify(listSheet, null, 4),
     { mode: 0o666 }
   );
@@ -550,7 +551,7 @@ function printSheet() {
         `;
 
         card.onclick = () => {
-            fs.readFile(path.join(__dirname, "..", "data", sheetData.keyMap), { encoding: "utf8" }, (err, data) => {
+            fs.readFile(path.join(dataDirectory, sheetData.keyMap), { encoding: "utf8" }, (err, data) => {
                 if (err) {
                     console.error("Failed to read keymap:", err);
                     notie.alert({ type: 3, text: "Error loading song data." });
@@ -569,11 +570,11 @@ function printSheet() {
 
         card.querySelector(".bi-trash3").onclick = (e) => {
             e.stopPropagation();
-            fs.unlinkSync(path.join(__dirname, "..", "data", sheetData.keyMap));
+            fs.unlinkSync(path.join(dataDirectory, sheetData.keyMap));
             listSheet.splice(index, 1);
             listKeys.splice(index, 1);
             fs.writeFileSync(
-                path.join(__dirname, "..", "data", "listSheet.json"),
+                path.join(dataDirectory, "listSheet.json"),
                 JSON.stringify(listSheet, null, 4),
                 { mode: 0o666 }
             );
@@ -778,7 +779,7 @@ function btnPrev() {
         playPrevSong();
     } else {
         fs.readFile(
-            path.join(__dirname, "..", "data", listSheet[playing].keyMap),
+            path.join(dataDirectory, listSheet[playing].keyMap),
             { encoding: "utf8" },
             (err, data) => {
                 if (err) {
@@ -824,7 +825,7 @@ function btnNext() {
         playNextSong();
     } else {
         fs.readFile(
-            path.join(__dirname, "..", "data", listSheet[playing].keyMap),
+            path.join(dataDirectory, listSheet[playing].keyMap),
             { encoding: "utf8" },
             (err, data) => {
                 if (err) {
@@ -1144,7 +1145,7 @@ ipcRenderer.on('show-post-update-changelog', async (event, data) => {
             document.getElementById('close-changelog-btn').addEventListener('click', () => {
                 updatePrompt.classList.remove('show');
                 // Mark changelog as viewed
-                const updateInfoPath = path.join(__dirname, '..', 'config', 'update-info.json');
+                const updateInfoPath = path.join(appRoot, 'config', 'update-info.json');
                 if (fs.existsSync(updateInfoPath)) {
                     const updateInfo = JSON.parse(fs.readFileSync(updateInfoPath));
                     updateInfo.showChangelog = false;
@@ -1202,7 +1203,7 @@ ipcRenderer.on('sheet-list-updated', (event, { index, data }) => {
 
     if (playing === index) {
         // Asynchronously update the keymap if the currently playing song is edited
-        fs.readFile(path.join(__dirname, '..', 'data', data.keyMap), { encoding: 'utf8' }, (err, keymapData) => {
+  fs.readFile(path.join(dataDirectory, data.keyMap), { encoding: 'utf8' }, (err, keymapData) => {
             if (err) {
                 console.error('Error reloading keymap after sheet update:', err);
                 return;
@@ -1214,7 +1215,7 @@ ipcRenderer.on('sheet-list-updated', (event, { index, data }) => {
 });
 
 ipcRenderer.on('keymap-updated', (event, { index }) => {
-    fs.readFile(path.join(__dirname, '..', 'data', listSheet[index].keyMap), { encoding: 'utf8' }, (err, data) => {
+  fs.readFile(path.join(dataDirectory, listSheet[index].keyMap), { encoding: 'utf8' }, (err, data) => {
         if (err) {
             console.error('Error reloading keymap:', err);
             return;

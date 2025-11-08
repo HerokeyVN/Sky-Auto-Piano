@@ -10,12 +10,14 @@
 const { ipcRenderer, shell } = require("electron");
 const fs = require("fs");
 const path = require("path");
-const dirSetting = path.join(__dirname, "..", "config", "config.json");
-const packageJson = require(path.join(__dirname, "..", "package.json"));
+const appRoot = path.join(__dirname, "..", "..", "..");
+const configPath = path.join(appRoot, "config", "config.json");
+const dataDirectory = path.join(appRoot, "data");
+const packageJson = JSON.parse(fs.readFileSync(path.join(appRoot, "package.json"), "utf8"));
 const marked = require('marked');
 
 // Load current configuration
-var config = JSON.parse(fs.readFileSync(dirSetting));
+var config = JSON.parse(fs.readFileSync(configPath));
 
 // Configure marked to open links in external browser
 marked.setOptions({
@@ -449,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		// Write config to file
 		try {
-			fs.writeFileSync(dirSetting, JSON.stringify(config, null, 4));
+			fs.writeFileSync(configPath, JSON.stringify(config, null, 4));
 			notie.alert({
 				type: 1,
 				text: "Saved the settings. Please restart the software to apply the settings.",
@@ -613,7 +615,7 @@ async function showChangelog(version) {
 			document.getElementById('close-changelog-btn').addEventListener('click', () => {
 				updatePrompt.classList.remove('show');
 				// Mark changelog as viewed
-				const updateInfoPath = path.join(__dirname, '..', 'config', 'update-info.json');
+				const updateInfoPath = path.join(appRoot, 'config', 'update-info.json');
 				if (fs.existsSync(updateInfoPath)) {
 					const updateInfo = JSON.parse(fs.readFileSync(updateInfoPath));
 					updateInfo.showChangelog = false;
@@ -628,7 +630,7 @@ async function showChangelog(version) {
 
 // Check for post-update changelog on page load
 document.addEventListener('DOMContentLoaded', () => {
-	const updateInfoPath = path.join(__dirname, '..', 'config', 'update-info.json');
+	const updateInfoPath = path.join(appRoot, 'config', 'update-info.json');
 	if (fs.existsSync(updateInfoPath)) {
 		try {
 			const updateInfo = JSON.parse(fs.readFileSync(updateInfoPath));
