@@ -20,7 +20,7 @@ const marked = require("marked");
 // CONFIGURATION AND CONSTANTS
 // -------------------------------------
 // Load application configuration
-const config = JSON.parse(fs.readFileSync(configPath));
+let config = JSON.parse(fs.readFileSync(configPath));
 
 // Configure marked to open links in external browser
 marked.setOptions({
@@ -307,21 +307,29 @@ function filterContentByTab(tabType) {
 // -------------------------------------
 // UI SETUP
 // -------------------------------------
-// Initialize shortcut display
-document.getElementById("shortcut-pre").innerHTML = config.shortcut.pre;
-document.getElementById("shortcut-play").innerHTML = config.shortcut.play;
-document.getElementById("shortcut-next").innerHTML = config.shortcut.next;
+function applyConfigToUI(currentConfig) {
+  if (!currentConfig) return;
+  document.getElementById("shortcut-pre").innerHTML = currentConfig.shortcut.pre;
+  document.getElementById("shortcut-play").innerHTML = currentConfig.shortcut.play;
+  document.getElementById("shortcut-next").innerHTML = currentConfig.shortcut.next;
 
-// Apply saved panel settings
-if (config.panel.autoSave) {
-  document.getElementById("speed-btn").value = config.panel.speed;
-  document.getElementById("switch").checked = config.panel.longPressMode;
-  document.getElementById("delay-loop").value = config.panel.delayNext;
-  document.getElementById("delay-next-value").innerHTML = `Delay next: ${config.panel.delayNext}s`;
-} else {
-  // Load speed from config even if autoSave is off
-  document.getElementById("speed-btn").value = config.panel.speed;
+  if (currentConfig.panel.autoSave) {
+    document.getElementById("speed-btn").value = currentConfig.panel.speed;
+    document.getElementById("switch").checked = currentConfig.panel.longPressMode;
+    document.getElementById("delay-loop").value = currentConfig.panel.delayNext;
+    document.getElementById("delay-next-value").innerHTML = `Delay next: ${currentConfig.panel.delayNext}s`;
+  } else {
+    // Load speed from config even if autoSave is off
+    document.getElementById("speed-btn").value = currentConfig.panel.speed;
+  }
 }
+
+applyConfigToUI(config);
+
+ipcRenderer.on("config-updated", (_, updatedConfig) => {
+  config = updatedConfig;
+  applyConfigToUI(config);
+});
 
 // Configure search functionality
 const searchBar = document.getElementById("search-bar");

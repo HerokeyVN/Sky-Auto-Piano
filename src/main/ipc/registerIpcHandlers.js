@@ -13,6 +13,17 @@ import { ipcMain, dialog } from "electron/main";
 export function registerIpcHandlers({ windowController, configService, autoPlayService, updateService }) {
 	const appDirectory = windowController.appDirectory;
 
+	ipcMain.on("changeSetting", () => {
+		const updatedConfig = configService.reloadFromDisk();
+		const { mainWindow, editorWindow, settingWindow } = windowController;
+
+		for (const win of [mainWindow, editorWindow, settingWindow]) {
+			if (win && !win.isDestroyed()) {
+				win.webContents.send("config-updated", updatedConfig);
+			}
+		}
+	});
+
 	ipcMain.on("set-theme", (_, theme) => {
 		configService.setTheme(theme);
 
