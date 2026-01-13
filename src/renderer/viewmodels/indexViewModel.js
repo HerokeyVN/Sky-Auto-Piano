@@ -56,6 +56,8 @@ let playing = 0;    // Current playing sheet index
 let isPlay = false; // Playback state
 let maxPCB = 0;     // Maximum process bar value
 let loopMode = 0;   // Loop mode (0: off, 1: playlist, 2: single)
+let loopTimer = null; // Pending loop timer for auto-playback
+let manualStop = false; // Suppress auto-loop when user explicitly stops
 
 const listSheetPath = path.join(dataDirectory, "listSheet.json");
 
@@ -826,7 +828,14 @@ function btnNext() {
             document.getElementsByClassName("live-time")[0].innerHTML = `00:00`;
             let delay = document.getElementById("delay-loop").value;
             delay = delay == 0 ? 0.5 : delay;
-            setTimeout(btnPlay, delay * 1000);
+        if (loopTimer) {
+          clearTimeout(loopTimer);
+        }
+        loopTimer = setTimeout(() => {
+          if (!manualStop) {
+            btnPlay();
+          }
+        }, delay * 1000);
         }
     };
     if (listKeys[playing]) {
@@ -856,7 +865,21 @@ ipcRenderer.on("btn-next", btnNext);
  * Toggle playback state
  */
 function btnPlay() {
+  // If stopping, mark manual stop and clear pending auto-loop timers
+  if (isPlay) {
+    manualStop = true;
+    if (loopTimer) {
+      clearTimeout(loopTimer);
+      loopTimer = null;
+    }
+  }
+
   isPlay = !isPlay;
+
+  // Reset manualStop when starting playback
+  if (isPlay) {
+    manualStop = false;
+  }
   
   // Prepare data to send to main process
   let send = {
@@ -908,6 +931,12 @@ ipcRenderer.on("speed-changed", (event, newSpeed) => {
 
 // Handle playback completion
 ipcRenderer.on("stop-player", (event, data) => {
+  // Stop any pending loop timers
+  if (loopTimer) {
+    clearTimeout(loopTimer);
+    loopTimer = null;
+  }
+
   // Reset UI to initial state
   document.getElementById("btn-play").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heipkihght="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
     <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
@@ -918,20 +947,26 @@ ipcRenderer.on("stop-player", (event, data) => {
   document.getElementsByClassName("process-bar")[0].value = 0;
   document.getElementsByClassName("live-time")[0].innerHTML = "00:00";
   
+  // If user manually stopped, skip auto-looping
+  if (manualStop) {
+    manualStop = false;
+    return;
+  }
+
   // Handle loop modes
   if (loopMode == 1) {
     // Next sheet loop
     btnNext();
     let delay = document.getElementById("delay-loop").value;
     delay = delay == 0 ? 0.5 : delay;
-    setTimeout(btnPlay, delay * 1000);
+    loopTimer = setTimeout(btnPlay, delay * 1000);
     return;
   }
   if (loopMode == 2) {
     // Current sheet loop
     let delay = document.getElementById("delay-loop").value;
     delay = delay == 0 ? 0.5 : delay;
-    setTimeout(btnPlay, delay * 1000);
+    loopTimer = setTimeout(btnPlay, delay * 1000);
     return;
   }
 });
@@ -943,6 +978,11 @@ ipcRenderer.on("stop", (event, data) => {
     </svg>
     Play (<a id="shortcut-play">${config.shortcut.play}</a>)`;
   isPlay = false;
+  manualStop = true;
+  if (loopTimer) {
+    clearTimeout(loopTimer);
+    loopTimer = null;
+  }
   document.getElementById("process-bar").disabled = false;
 });
 
