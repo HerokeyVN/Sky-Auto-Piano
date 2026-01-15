@@ -454,7 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			fs.writeFileSync(configPath, JSON.stringify(config, null, 4));
 			notie.alert({
 				type: 1,
-				text: "Saved the settings. Please restart the software to apply the settings.",
+				text: "Settings saved and applied.",
 			});
 			ipcRenderer.send("changeSetting");
 		} catch (err) {

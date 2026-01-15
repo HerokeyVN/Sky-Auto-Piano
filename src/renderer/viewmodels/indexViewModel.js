@@ -20,7 +20,7 @@ const marked = require("marked");
 // CONFIGURATION AND CONSTANTS
 // -------------------------------------
 // Load application configuration
-const config = JSON.parse(fs.readFileSync(configPath));
+let config = JSON.parse(fs.readFileSync(configPath));
 
 // Configure marked to open links in external browser
 marked.setOptions({
@@ -56,6 +56,8 @@ let playing = 0;    // Current playing sheet index
 let isPlay = false; // Playback state
 let maxPCB = 0;     // Maximum process bar value
 let loopMode = 0;   // Loop mode (0: off, 1: playlist, 2: single)
+let loopTimer = null; // Pending loop timer for auto-playback
+let manualStop = false; // Suppress auto-loop when user explicitly stops
 
 const listSheetPath = path.join(dataDirectory, "listSheet.json");
 
@@ -307,21 +309,29 @@ function filterContentByTab(tabType) {
 // -------------------------------------
 // UI SETUP
 // -------------------------------------
-// Initialize shortcut display
-document.getElementById("shortcut-pre").innerHTML = config.shortcut.pre;
-document.getElementById("shortcut-play").innerHTML = config.shortcut.play;
-document.getElementById("shortcut-next").innerHTML = config.shortcut.next;
+function applyConfigToUI(currentConfig) {
+  if (!currentConfig) return;
+  document.getElementById("shortcut-pre").innerHTML = currentConfig.shortcut.pre;
+  document.getElementById("shortcut-play").innerHTML = currentConfig.shortcut.play;
+  document.getElementById("shortcut-next").innerHTML = currentConfig.shortcut.next;
 
-// Apply saved panel settings
-if (config.panel.autoSave) {
-  document.getElementById("speed-btn").value = config.panel.speed;
-  document.getElementById("switch").checked = config.panel.longPressMode;
-  document.getElementById("delay-loop").value = config.panel.delayNext;
-  document.getElementById("delay-next-value").innerHTML = `Delay next: ${config.panel.delayNext}s`;
-} else {
-  // Load speed from config even if autoSave is off
-  document.getElementById("speed-btn").value = config.panel.speed;
+  if (currentConfig.panel.autoSave) {
+    document.getElementById("speed-btn").value = currentConfig.panel.speed;
+    document.getElementById("switch").checked = currentConfig.panel.longPressMode;
+    document.getElementById("delay-loop").value = currentConfig.panel.delayNext;
+    document.getElementById("delay-next-value").innerHTML = `Delay next: ${currentConfig.panel.delayNext}s`;
+  } else {
+    // Load speed from config even if autoSave is off
+    document.getElementById("speed-btn").value = currentConfig.panel.speed;
+  }
 }
+
+applyConfigToUI(config);
+
+ipcRenderer.on("config-updated", (_, updatedConfig) => {
+  config = updatedConfig;
+  applyConfigToUI(config);
+});
 
 // Configure search functionality
 const searchBar = document.getElementById("search-bar");
@@ -818,7 +828,14 @@ function btnNext() {
             document.getElementsByClassName("live-time")[0].innerHTML = `00:00`;
             let delay = document.getElementById("delay-loop").value;
             delay = delay == 0 ? 0.5 : delay;
-            setTimeout(btnPlay, delay * 1000);
+        if (loopTimer) {
+          clearTimeout(loopTimer);
+        }
+        loopTimer = setTimeout(() => {
+          if (!manualStop) {
+            btnPlay();
+          }
+        }, delay * 1000);
         }
     };
     if (listKeys[playing]) {
@@ -848,7 +865,21 @@ ipcRenderer.on("btn-next", btnNext);
  * Toggle playback state
  */
 function btnPlay() {
+  // If stopping, mark manual stop and clear pending auto-loop timers
+  if (isPlay) {
+    manualStop = true;
+    if (loopTimer) {
+      clearTimeout(loopTimer);
+      loopTimer = null;
+    }
+  }
+
   isPlay = !isPlay;
+
+  // Reset manualStop when starting playback
+  if (isPlay) {
+    manualStop = false;
+  }
   
   // Prepare data to send to main process
   let send = {
@@ -900,30 +931,47 @@ ipcRenderer.on("speed-changed", (event, newSpeed) => {
 
 // Handle playback completion
 ipcRenderer.on("stop-player", (event, data) => {
-  // Reset UI to initial state
+  // Stop any pending loop timers
+  if (loopTimer) {
+    clearTimeout(loopTimer);
+    loopTimer = null;
+  }
+
+  // Reset play button and enable scrubber
   document.getElementById("btn-play").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heipkihght="20" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16">
     <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
     </svg>
     Play (<a id="shortcut-play">${config.shortcut.play}</a>)`;
   isPlay = false;
   document.getElementById("process-bar").disabled = false;
-  document.getElementsByClassName("process-bar")[0].value = 0;
-  document.getElementsByClassName("live-time")[0].innerHTML = "00:00";
-  
+
+  const shouldResetPosition = !manualStop;
+
+  if (shouldResetPosition) {
+    document.getElementsByClassName("process-bar")[0].value = 0;
+    document.getElementsByClassName("live-time")[0].innerHTML = "00:00";
+  }
+
+  // If user manually stopped, clear flag and bail
+  if (manualStop) {
+    manualStop = false;
+    return;
+  }
+
   // Handle loop modes
   if (loopMode == 1) {
     // Next sheet loop
     btnNext();
     let delay = document.getElementById("delay-loop").value;
     delay = delay == 0 ? 0.5 : delay;
-    setTimeout(btnPlay, delay * 1000);
+    loopTimer = setTimeout(btnPlay, delay * 1000);
     return;
   }
   if (loopMode == 2) {
     // Current sheet loop
     let delay = document.getElementById("delay-loop").value;
     delay = delay == 0 ? 0.5 : delay;
-    setTimeout(btnPlay, delay * 1000);
+    loopTimer = setTimeout(btnPlay, delay * 1000);
     return;
   }
 });
@@ -935,6 +983,11 @@ ipcRenderer.on("stop", (event, data) => {
     </svg>
     Play (<a id="shortcut-play">${config.shortcut.play}</a>)`;
   isPlay = false;
+  manualStop = true;
+  if (loopTimer) {
+    clearTimeout(loopTimer);
+    loopTimer = null;
+  }
   document.getElementById("process-bar").disabled = false;
 });
 
