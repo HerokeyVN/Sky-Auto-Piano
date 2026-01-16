@@ -67,11 +67,11 @@ export class AutoPlayService {
 			",": 12,
 			".": 13,
 			"/": 14,
+			".": 13,
 		};
-
 		const ks = new Hardware("Sky").keyboard;
 		const steps = Object.keys(keyMap);
-		const { longPressMode, speed, delayNext } = this.panel;
+		const { longPressMode, delayNext } = this.panel;
 		const config = this.configService.value;
 
 		for (let i = 1; i < steps.length; i++) {
@@ -82,7 +82,7 @@ export class AutoPlayService {
 			const currentStep = Number(steps[i]);
 			const previousStep = Number(steps[i - 1]);
 			let delay = currentStep - previousStep;
-			delay = Math.trunc(delay / speed);
+			delay = Math.trunc(delay / this.panel.speed);
 			let longPressDuration;
 
 			if (keyMap[currentStep].length === 0) {
@@ -123,10 +123,8 @@ export class AutoPlayService {
 	}
 
 	async #sendTimeProcess(totalDuration, sec, sessionId) {
-		const { speed } = this.panel;
-
 		for (let i = sec; i <= Math.trunc(totalDuration / 1000); i++) {
-			await new Promise((resolve) => setTimeout(resolve, Math.trunc(1000 / speed)));
+			await new Promise((resolve) => setTimeout(resolve, Math.trunc(1000 / this.panel.speed)));
 			if (!this.state.isPlaying || this.state.sessionId !== sessionId) {
 				return;
 			}
