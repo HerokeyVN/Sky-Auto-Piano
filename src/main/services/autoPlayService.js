@@ -89,31 +89,35 @@ export class AutoPlayService {
 				longPressDuration = delayNext * 1000;
 			}
 
-			for (let key of keyMap[previousStep]) {
-				if (config.keyboard.customKeyboard) {
-					key = config.keyboard.keys[keysID[key]];
+			new Promise((res, rej) => {
+				for (let key of keyMap[previousStep]) {
+					if (config.keyboard.customKeyboard) {
+						key = config.keyboard.keys[keysID[key]];
+					}
+					ks.sendKeys(
+						key,
+						longPressMode ? (longPressDuration ? longPressDuration : delay) - 35 : undefined,
+					);
 				}
-				ks.sendKeys(
-					key,
-					longPressMode ? (longPressDuration ? longPressDuration : delay) - 35 : undefined,
-				);
-			}
-
+				res();
+			});
 			await new Promise((resolve) => setTimeout(resolve, delay));
 		}
 
 		const lastStepKey = steps[steps.length - 1];
 		if (lastStepKey) {
-			for (let key of keyMap[lastStepKey]) {
-				let outputKey = key;
-				if (this.keyboard.customKeyboard) {
-					outputKey = this.keyboard.keys[keysID[key]];
+			new Promise((res, rej) => {
+				for (let key of keyMap[lastStepKey]) {
+					let outputKey = key;
+					if (this.keyboard.customKeyboard) {
+						outputKey = this.keyboard.keys[keysID[key]];
+					}
+					ks.sendKeys(
+						outputKey,
+						this.panel.longPressMode ? this.panel.delayNext * 1000 - 35 : undefined,
+					);
 				}
-				ks.sendKeys(
-					outputKey,
-					this.panel.longPressMode ? this.panel.delayNext * 1000 - 35 : undefined,
-				);
-			}
+			});
 		}
 
 		this.state.isPlaying = false;

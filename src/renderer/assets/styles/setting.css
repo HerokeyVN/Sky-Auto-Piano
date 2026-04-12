@@ -771,6 +771,21 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
     padding: 0;
 }
 
+.keyboard-tip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: -8px;
+    padding: 0 8px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.keyboard-tip i {
+    font-size: 14px;
+    color: var(--hover-color);
+}
+
 .key {
     position: relative;
     display: block;
@@ -1432,6 +1447,10 @@ body:not(.dark-mode) .tab-header {
 /* Ensure paragraphs read clearly in light mode */
 body:not(.dark-mode) p {
     color: #111111;
+}
+
+body:not(.dark-mode) .keyboard-tip {
+    color: #4b5563;
 }
 
 body:not(.dark-mode) .setting-card,
