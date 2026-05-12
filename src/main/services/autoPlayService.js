@@ -41,101 +41,113 @@ export class AutoPlayService {
 		}
 
 		this.state.isPlaying = true;
-		this.state.sessionId = `${data.lockTime}`;
+		this.state.sessionId = String(data.lockTime);
 
 		const mapKeys = Object.keys(data.keys);
 		const totalDuration = Number(mapKeys[mapKeys.length - 1] || 0);
 
-		void this.#autoPlay(data.keys, this.state.sessionId);
-		void this.#sendTimeProcess(totalDuration, data.sec, this.state.sessionId);
+		this._autoPlay(data.keys, this.state.sessionId, data.sec || 0);
+		this._sendTimeProcess(totalDuration, data.sec || 0, this.state.sessionId);
 	}
 
-	async #autoPlay(keyMap, sessionId) {
+	async _autoPlay(keyMap, sessionId, startSec) {
 		const keysID = {
-			y: 0,
-			u: 1,
-			i: 2,
-			o: 3,
-			p: 4,
-			h: 5,
-			j: 6,
-			k: 7,
-			l: 8,
-			";": 9,
-			n: 10,
-			m: 11,
-			",": 12,
-			".": 13,
-			"/": 14,
-			".": 13,
+			y: 0, u: 1, i: 2, o: 3, p: 4, h: 5, j: 6, k: 7,
+			l: 8, ";": 9, n: 10, m: 11, ",": 12, ".": 13, "/": 14
 		};
 		const ks = new Hardware("Sky").keyboard;
-		const steps = Object.keys(keyMap);
-		const { longPressMode, delayNext } = this.panel;
 		const config = this.configService.value;
+		const { longPressMode, delayNext } = this.panel;
+		const speed = this.panel.speed || 1;
 
-		for (let i = 1; i < steps.length; i++) {
-			if (!this.state.isPlaying || this.state.sessionId !== sessionId) {
-				return;
+		const startMs = startSec * 1000;
+		const syncCalibration = 1.003; 
+
+		const timeline = [];
+		const steps = Object.keys(keyMap).map(Number).sort((a, b) => a - b);
+
+		for (let i = 0; i < steps.length; i++) {
+			const currentStep = steps[i];
+			if (currentStep < startMs) continue;
+
+			const targetTimeOffset = (currentStep / speed) * syncCalibration;
+
+			let longPressDuration = delayNext * 1000;
+			if (i < steps.length - 1) {
+				longPressDuration = (steps[i + 1] - currentStep) / speed;
 			}
 
-			const currentStep = Number(steps[i]);
-			const previousStep = Number(steps[i - 1]);
-			let delay = currentStep - previousStep;
-			delay = Math.trunc(delay / this.panel.speed);
-			let longPressDuration;
+			let chordDelay = 0; 
 
-			if (keyMap[currentStep].length === 0) {
-				longPressDuration = delayNext * 1000;
+			for (let key of keyMap[currentStep]) {
+				let outputKey = config.keyboard.customKeyboard ? config.keyboard.keys[keysID[key]] : key;
+
+				let pressTime = 25;
+				if (longPressMode) {
+					pressTime = Math.max(25, longPressDuration - 35);
+				}
+
+				const finalTimeOffset = targetTimeOffset + chordDelay;
+
+				timeline.push({ timeOffset: finalTimeOffset, key: outputKey, type: true });
+				timeline.push({ timeOffset: finalTimeOffset + pressTime, key: outputKey, type: false });
+
+				chordDelay += 3; 
+			}
+		}
+
+		timeline.sort((a, b) => {
+			if (a.timeOffset === b.timeOffset) {
+				return a.type === b.type ? 0 : (a.type ? 1 : -1);
+			}
+			return a.timeOffset - b.timeOffset;
+		});
+
+		const activeKeys = new Set();
+		const startRealTime = performance.now() - (startMs / speed);
+
+		try {
+			for (let i = 0; i < timeline.length; i++) {
+				if (!this.state.isPlaying || this.state.sessionId !== sessionId) return;
+
+				const ev = timeline[i];
+				const absoluteTargetTime = startRealTime + ev.timeOffset;
+				let remaining = absoluteTargetTime - performance.now();
+
+				if (remaining > 3) {
+					await new Promise(r => setTimeout(r, remaining - 3));
+				}
+
+				while (performance.now() < absoluteTargetTime) {
+					if (!this.state.isPlaying || this.state.sessionId !== sessionId) return;
+				}
+
+				ks.toggleKey(ev.key, ev.type);
+				if (ev.type) activeKeys.add(ev.key);
+				else activeKeys.delete(ev.key);
 			}
 
-			new Promise((res, rej) => {
-				for (let key of keyMap[previousStep]) {
-					if (config.keyboard.customKeyboard) {
-						key = config.keyboard.keys[keysID[key]];
-					}
-					ks.sendKeys(
-						key,
-						longPressMode ? (longPressDuration ? longPressDuration : delay) - 35 : undefined,
-					);
-				}
-				res();
-			});
-			await new Promise((resolve) => setTimeout(resolve, delay));
-		}
+			await new Promise(r => setTimeout(r, 50));
 
-		const lastStepKey = steps[steps.length - 1];
-		if (lastStepKey) {
-			new Promise((res, rej) => {
-				for (let key of keyMap[lastStepKey]) {
-					let outputKey = key;
-					if (this.keyboard.customKeyboard) {
-						outputKey = this.keyboard.keys[keysID[key]];
-					}
-					ks.sendKeys(
-						outputKey,
-						this.panel.longPressMode ? this.panel.delayNext * 1000 - 35 : undefined,
-					);
-				}
-			});
-		}
-
-		this.state.isPlaying = false;
-		if (this.mainWindow && !this.mainWindow.isDestroyed()) {
-			this.mainWindow.webContents.send("stop-player");
+		} finally {
+			activeKeys.forEach(key => ks.toggleKey(key, false));
+			activeKeys.clear();
+			
+			this.state.isPlaying = false;
+			if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+				this.mainWindow.webContents.send("stop-player");
+			}
 		}
 	}
 
-	async #sendTimeProcess(totalDuration, sec, sessionId) {
+	async _sendTimeProcess(totalDuration, sec, sessionId) {
 		for (let i = sec; i <= Math.trunc(totalDuration / 1000); i++) {
-			await new Promise((resolve) => setTimeout(resolve, Math.trunc(1000 / this.panel.speed)));
-			if (!this.state.isPlaying || this.state.sessionId !== sessionId) {
-				return;
-			}
+			if (!this.state.isPlaying || this.state.sessionId !== sessionId) return;
 
 			if (this.mainWindow && !this.mainWindow.isDestroyed()) {
 				this.mainWindow.webContents.send("process-bar", i);
 			}
+			await new Promise((resolve) => setTimeout(resolve, Math.trunc(1000 / this.panel.speed)));
 		}
 	}
 }
