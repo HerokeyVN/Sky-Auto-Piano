@@ -8,6 +8,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node autoplay.js",
+    "test:jest": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
     "build": "electron-packager . SkyAutoPiano --platform=win32 --arch=x64 --overwrite"
   },
   "author": "HerokeyVN",
@@ -20,5 +21,8 @@
     "js-base64": "^3.7.5",
     "keysender": "^2.3.0",
     "marked": "^15.0.11"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }
