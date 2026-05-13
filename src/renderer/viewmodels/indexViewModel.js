@@ -945,7 +945,8 @@ ipcRenderer.on("stop-player", (event, data) => {
   isPlay = false;
   document.getElementById("process-bar").disabled = false;
 
-  const shouldResetPosition = !manualStop;
+  const manualStopEvent = data?.manualStop === true;
+  const shouldResetPosition = !(manualStopEvent || manualStop);
 
   if (shouldResetPosition) {
     document.getElementsByClassName("process-bar")[0].value = 0;
@@ -953,7 +954,7 @@ ipcRenderer.on("stop-player", (event, data) => {
   }
 
   // If user manually stopped, clear flag and bail
-  if (manualStop) {
+  if (manualStopEvent || manualStop) {
     manualStop = false;
     return;
   }

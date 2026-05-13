@@ -133,14 +133,13 @@ export class AutoPlayService {
 		};
 		const ks = new Hardware("Sky").keyboard;
 		const { longPressMode } = this.panel;
-		const baseSpeed = this._getSafeSpeed();
 		const delayNextMs = this._getSafeDelayNextMs();
-		const minPressTimeSong = 25 * baseSpeed;
-		const releaseTrimSong = 35 * baseSpeed;
-		const chordDelayStep = 3 * baseSpeed;
+		const minPressTimeSong = 25;
+		const releaseTrimSong = 35;
+		const chordDelayStep = 3;
 
 		const startMs = startSec * 1000;
-		const syncCalibration = 1.003; 
+		const syncCalibration = 1.003; // Audio sync calibration tuned from playback testing.
 		const startSongTime = startMs * syncCalibration;
 
 		const timeline = [];
@@ -160,7 +159,7 @@ export class AutoPlayService {
 
 			const targetSongTime = currentStep * syncCalibration;
 
-			let longPressSong = delayNextMs * baseSpeed;
+			let longPressSong = delayNextMs;
 			if (i < steps.length - 1) {
 				longPressSong = (steps[i + 1] - currentStep) * syncCalibration;
 			}

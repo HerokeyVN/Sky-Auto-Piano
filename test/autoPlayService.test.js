@@ -136,10 +136,12 @@ describe("AutoPlayService timeline", () => {
 		await playPromise;
 
 		const calibration = 1.003;
-		const firstDown = (1000 * calibration - 500) / 2 + 500;
-		const firstUp = firstDown + (25 / 2);
-		const secondDown = (2000 * calibration - 500) / 2 + 500;
-		const secondUp = secondDown + (25 / 2);
+		const firstSong = 1000 * calibration;
+		const secondSong = 2000 * calibration;
+		const firstDown = 500 + (firstSong - 500) / 2;
+		const firstUp = 500 + (firstSong + 25 - 500) / 2;
+		const secondDown = 500 + (secondSong - 500) / 2;
+		const secondUp = 500 + (secondSong + 25 - 500) / 2;
 
 		expectEventTimes(
 			events,
@@ -172,10 +174,12 @@ describe("AutoPlayService timeline", () => {
 		await playPromise;
 
 		const calibration = 1.003;
-		const firstDown = 500 + ((1000 * calibration) - 1000) / 0.5;
-		const firstUp = firstDown + (50 / 0.5);
-		const secondDown = 500 + ((2000 * calibration) - 1000) / 0.5;
-		const secondUp = secondDown + (50 / 0.5);
+		const firstSong = 1000 * calibration;
+		const secondSong = 2000 * calibration;
+		const firstDown = 500 + (firstSong - 1000) / 0.5;
+		const firstUp = 500 + (firstSong + 25 - 1000) / 0.5;
+		const secondDown = 500 + (secondSong - 1000) / 0.5;
+		const secondUp = 500 + (secondSong + 25 - 1000) / 0.5;
 
 		expectEventTimes(
 			events,
