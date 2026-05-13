@@ -119,13 +119,25 @@ Found a bug? Please report it by:
 3. Describing the expected behavior
 4. Including screenshots if applicable
 
-## 💬 Support
+## 🛡️ Code signing
 
-If you encounter any issues or have questions, please contact me via email: herokey2018@gmail.com
+Official Windows releases are distributed through [GitHub Releases](https://github.com/HerokeyVN/Sky-Auto-Piano/releases).
+
+This project is applying to use the [SignPath Foundation](https://signpath.org/) for code signing. Once approved, official Windows installer binaries will be signed using a SignPath Foundation certificate through a verifiable GitHub Actions build pipeline.
+
+Code signing helps users verify that downloaded installers are official builds from this open-source repository and have not been modified after signing.
+
+## 🔒 Privacy
+
+See [PRIVACY.md](PRIVACY.md) for the privacy policy.
 
 ## 📜 License
 
 This software is distributed under the MIT license. See the LICENSE file for more details.
+
+## 💬 Support
+
+If you encounter any issues or have questions, please contact me via email: herokey2018@gmail.com
 
 ## 🙏 Acknowledgements
 
