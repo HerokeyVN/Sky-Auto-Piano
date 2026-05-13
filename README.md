@@ -123,7 +123,7 @@ Found a bug? Please report it by:
 
 Official Windows releases are distributed through [GitHub Releases](https://github.com/HerokeyVN/Sky-Auto-Piano/releases).
 
-This project is applying to use the [SignPath Foundation](https://signpath.org/) for code signing. Once approved, official Windows installer binaries will be signed using a SignPath Foundation certificate through a verifiable GitHub Actions build pipeline.
+This project is applying to use the [SignPath Foundation](https://signpath.org/) for code signing. GitHub Actions currently builds unsigned installers; once approved, official Windows installer binaries will be signed using a SignPath Foundation certificate through a verifiable GitHub Actions build pipeline.
 
 Code signing helps users verify that downloaded installers are official builds from this open-source repository and have not been modified after signing.
 
