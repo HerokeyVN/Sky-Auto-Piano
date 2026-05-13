@@ -1,6 +1,9 @@
 const { ipcRenderer } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const appRoot = path.join(__dirname, '..', '..', '..');
+const dataDirectory = path.join(appRoot, 'data');
+const configPath = path.join(appRoot, 'config', 'config.json');
 
 document.addEventListener('DOMContentLoaded', () => {
     let currentActiveGrid = null;
@@ -17,11 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sheetIndex = urlParams.get('sheetIndex');    // Load and apply theme
     function loadTheme() {
         try {
-            const config = JSON.parse(
-                fs.readFileSync(path.join(__dirname, '..', 'config', 'config.json'), {
-                    encoding: 'utf8',
-                })
-            );
+            const config = JSON.parse(fs.readFileSync(configPath, { encoding: 'utf8' }));
             const theme = config.appTheme || 'dark';
             if (theme === 'dark') {
                 document.body.classList.add('dark-mode');
@@ -50,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sheetIndex !== null) {
         try {
             const listSheet = JSON.parse(
-                fs.readFileSync(path.join(__dirname, '..', 'data', 'listSheet.json'), {
+                fs.readFileSync(path.join(dataDirectory, 'listSheet.json'), {
                     encoding: 'utf8',
                 })
             );
@@ -59,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Load keymap data
             if (sheetData.keyMap) {
                 keyMapData = JSON.parse(
-                    fs.readFileSync(path.join(__dirname, '..', 'data', sheetData.keyMap), {
+                    fs.readFileSync(path.join(dataDirectory, sheetData.keyMap), {
                         encoding: 'utf8',
                     })
                 );
@@ -180,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Save keymap changes
             fs.writeFileSync(
-                path.join(__dirname, '..', 'data', sheetData.keyMap),
+                path.join(dataDirectory, sheetData.keyMap),
                 JSON.stringify(keyMapData),
                 { mode: 0o666 }
             );
@@ -337,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Read current listSheet.json
             const listSheet = JSON.parse(
-                fs.readFileSync(path.join(__dirname, '..', 'data', 'listSheet.json'), {
+                fs.readFileSync(path.join(dataDirectory, 'listSheet.json'), {
                     encoding: 'utf8',
                 })
             );
@@ -346,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
             listSheet[sheetIndex] = sheetData;
 
             fs.writeFileSync(
-                path.join(__dirname, '..', 'data', 'listSheet.json'),
+                path.join(dataDirectory, 'listSheet.json'),
                 JSON.stringify(listSheet, null, 4)
             );
             ipcRenderer.send('update-sheet-list', {
