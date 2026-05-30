@@ -11,7 +11,7 @@ jest.unstable_mockModule("keysender", () => ({
 	Hardware: jest.fn(() => ({ keyboard })),
 }));
 
-const { AutoPlayService } = await import("../src/main/services/autoPlayService.js");
+const { AutoPlayService } = await import("../src/main/services/autoPlayServiceStrict.js");
 
 function createService(panelOverrides = {}, keyboardOverrides = {}) {
 	const configService = {

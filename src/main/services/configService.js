@@ -16,6 +16,7 @@ export class ConfigService {
 				delayNext: 1,
 				autoSave: true,
 				minimizeOnPlay: true,
+				playbackMode: "lite",
 			},
 			keyboard: {
 				customKeyboard: false,

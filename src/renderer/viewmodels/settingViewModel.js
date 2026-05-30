@@ -120,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	// General settings
 	document.getElementById("switch-save-setting").checked = config.panel.autoSave;
 	document.getElementById("switch-minimize-on-play").checked = config.panel.minimizeOnPlay;
+	document.getElementById("playback-mode").value = config.panel.playbackMode || "lite";
 
 	// Keyboard settings
 	let i = 0;
@@ -416,6 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		// Save general settings
 		config.panel.autoSave = document.getElementById("switch-save-setting").checked;
 		config.panel.minimizeOnPlay = document.getElementById("switch-minimize-on-play").checked;
+		config.panel.playbackMode = document.getElementById("playback-mode").value;
 
 		// Save keyboard settings
 		let i = 0;

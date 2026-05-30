@@ -248,6 +248,39 @@ body {
     backdrop-filter: blur(10px);
 }
 
+.setting-select {
+    min-width: 100px;
+    padding: 10px 12px;
+    margin-left: 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--font-color);
+    font-size: 14px;
+    outline: none;
+}
+
+.setting-select:focus {
+    border-color: rgba(88, 142, 151, 0.6);
+    box-shadow: 0 0 0 2px rgba(88, 142, 151, 0.25);
+}
+
+.setting-select option {
+    background: #141618;
+    color: #f0f3f6;
+}
+
+body:not(.dark-mode) .setting-select {
+    background: #f4f6f9;
+    border-color: rgba(0, 0, 0, 0.12);
+    color: #1b1d1e;
+}
+
+body:not(.dark-mode) .setting-select option {
+    background: #ffffff;
+    color: #1b1d1e;
+}
+
 .setting-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
@@ -637,8 +670,8 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
 }
 
 .setting-icon {
-    width: 50px;
-    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
     background: linear-gradient(135deg, var(--hover-color), #4a90e2);
     border-radius: 12px;
     display: flex;
