@@ -15,6 +15,7 @@ const dataDirectory = path.join(appRoot, "data");
 const configPath = path.join(appRoot, "config", "config.json");
 const { Base64 } = require("js-base64");
 const marked = require("marked");
+const MidiParser = require("midi-parser-js");
 
 // -------------------------------------
 // CONFIGURATION AND CONSTANTS
@@ -353,6 +354,118 @@ if (searchBar && contentContainer) {
 // -------------------------------------
 // SHEET MANAGEMENT
 // -------------------------------------
+
+function parseABCToSkyFormat(text, fileName) {
+    const lines = text.split('\n');
+    const meta = lines[0].split(' ');
+    const bpm = parseInt(meta[1]) || 240;
+    const pitch = parseInt(meta[2]) || 0;
+    const bitsPerPage = parseInt(meta[3]) || 16;
+    const author = meta[4] || "Unknown";
+    const transcribedBy = meta[5] || "Unknown";
+    
+    const step = Math.floor(60000 / bpm);
+    let time = 0;
+    let notes = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        const tokens = lines[i].trim().split(/\s+/);
+        for (let token of tokens) {
+            if (token !== '.' && token !== '') {
+                const matches = token.match(/([A-C][1-5])/g);
+                if (matches) {
+                    for (let m of matches) {
+                        let group = m.charCodeAt(0) - 65;
+                        let num = parseInt(m[1]) - 1;
+                        let idx = group * 5 + num;
+                        notes.push({time, key: '1Key' + idx});
+                    }
+                }
+            }
+            time += step;
+        }
+    }
+    
+    return {
+        name: fileName,
+        author: author,
+        transcribedBy: transcribedBy,
+        isComposed: true,
+        bpm: bpm,
+        bitsPerPage: bitsPerPage,
+        pitchLevel: pitch,
+        isEncrypted: false,
+        songNotes: notes
+    };
+}
+
+function parseMidiToSkyFormat(midi, fileName) {
+    const midiToSky = {
+        60: 0, 62: 1, 64: 2, 65: 3, 67: 4, 69: 5, 71: 6,
+        72: 7, 74: 8, 76: 9, 77: 10, 79: 11, 81: 12, 83: 13,
+        84: 14
+    };
+    
+    let tempo = 500000;
+    let author = "Unknown";
+    let transcribedBy = "Unknown";
+    let songName = fileName;
+    
+    midi.track.forEach(track => {
+        if (!track.event) return;
+        track.event.forEach(e => {
+            if (e.type === 255) {
+                if (e.metaType === 81) tempo = e.data;
+                if (e.metaType === 2 && typeof e.data === 'string') {
+                    author = e.data.split(',')[0] || author;
+                    transcribedBy = e.data.split(',')[1] || transcribedBy;
+                }
+                if (e.metaType === 3 && typeof e.data === 'string') songName = e.data;
+            }
+        });
+    });
+    
+    let bpm = Math.round(60000000 / tempo);
+    let timeDivision = midi.timeDivision || 480;
+    let notes = [];
+    
+    midi.track.forEach(track => {
+        if (!track.event) return;
+        let absoluteTimeMs = 0;
+        track.event.forEach(e => {
+            absoluteTimeMs += e.deltaTime * (tempo / 1000) / timeDivision;
+            if (e.type === 9 && e.data && e.data[1] > 0) {
+                let note = e.data[0];
+                let skyKey = midiToSky[note];
+                if (skyKey !== undefined) {
+                    notes.push({ time: Math.round(absoluteTimeMs), key: '1Key' + skyKey });
+                } else {
+                    let closest = 0;
+                    let minDiff = 100;
+                    for (let k in midiToSky) {
+                        let diff = Math.abs(parseInt(k) - note);
+                        if (diff < minDiff) { minDiff = diff; closest = midiToSky[k]; }
+                    }
+                    notes.push({ time: Math.round(absoluteTimeMs), key: '1Key' + closest });
+                }
+            }
+        });
+    });
+    
+    notes.sort((a, b) => a.time - b.time);
+    
+    return {
+        name: songName,
+        author: author,
+        transcribedBy: transcribedBy,
+        isComposed: true,
+        bpm: bpm,
+        bitsPerPage: 16,
+        pitchLevel: 0,
+        isEncrypted: false,
+        songNotes: notes
+    };
+}
 // Add sheet event handler
 document
   .getElementsByClassName("btn-add")[0]
@@ -361,23 +474,44 @@ document
     let done = 0;
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      // Detect file encoding
-      let typeDetect = fs.readFileSync(file.path, { encoding: "utf8" })[0] != "[" ? "utf16le" : "utf8";
-      let text = decUTF16toUTF8(fs.readFileSync(file.path, { encoding: typeDetect }));
+      const ext = path.extname(file.path).toLowerCase();
+      let json = null;
 
-      // Parse sheet file
-      let json;
-      try {
-        if (text[0] != "[") throw new Error();
-        json = eval(text)[0];
-      } catch (_) {
-        if (files.length == 1) {
-          notie.alert({
-            type: 3,
-            text: "File Sheet is not in the format. Please check again!"
-          });
+      if (ext === '.mid' || ext === '.midi') {
+        try {
+          let fileArray = fs.readFileSync(file.path);
+          let midi = MidiParser.parse(fileArray);
+          json = parseMidiToSkyFormat(midi, path.basename(file.path, ext));
+        } catch (e) {
+          console.error("Failed to parse MIDI:", e);
+          if (files.length == 1) {
+            notie.alert({ type: 3, text: "File Sheet is not in the format. Please check again!" });
+          }
+          continue;
         }
-        continue;
+      } else {
+        // Detect file encoding
+        let typeDetect = fs.readFileSync(file.path, { encoding: "utf8" })[0] != "[" && fs.readFileSync(file.path, { encoding: "utf8" })[0] != "<" ? "utf16le" : "utf8";
+        let text = decUTF16toUTF8(fs.readFileSync(file.path, { encoding: typeDetect }));
+
+        // Parse sheet file
+        try {
+          if (text[0] === "[") {
+            json = eval(text)[0];
+          } else if (text.startsWith("<DontCopyThisLine>")) {
+            json = parseABCToSkyFormat(text, path.basename(file.path, ext));
+          } else {
+            throw new Error();
+          }
+        } catch (_) {
+          if (files.length == 1) {
+            notie.alert({
+              type: 3,
+              text: "File Sheet is not in the format. Please check again!"
+            });
+          }
+          continue;
+        }
       }
       
       // Check if the sheet is encrypted and decrypt if necessary
