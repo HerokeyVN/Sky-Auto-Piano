@@ -358,11 +358,23 @@ if (searchBar && contentContainer) {
 function parseABCToSkyFormat(text, fileName) {
     const lines = text.split('\n');
     const meta = lines[0].split(' ');
-    const bpm = parseInt(meta[1]) || 240;
-    const pitch = parseInt(meta[2]) || 0;
-    const bitsPerPage = parseInt(meta[3]) || 16;
-    const author = meta[4] || "Unknown";
-    const transcribedBy = meta[5] || "Unknown";
+    
+    let bpm, pitch, bitsPerPage, author, transcribedBy;
+    let hasDontCopy = meta[0] === "<DontCopyThisLine>";
+
+    if (hasDontCopy) {
+        bpm = parseInt(meta[1]) || 240;
+        pitch = parseInt(meta[2]) || 0;
+        bitsPerPage = parseInt(meta[3]) || 16;
+        author = meta[4] || "Unknown";
+        transcribedBy = meta[5] || "Unknown";
+    } else {
+        bpm = parseInt(meta[0]) || 240;
+        pitch = parseInt(meta[1]) || 0;
+        bitsPerPage = parseInt(meta[2]) || 16;
+        author = meta[3] || "Unknown";
+        transcribedBy = meta[4] || "Unknown";
+    }
     
     const step = Math.floor(60000 / bpm);
     let time = 0;
@@ -498,7 +510,7 @@ document
         try {
           if (text[0] === "[") {
             json = eval(text)[0];
-          } else if (text.startsWith("<DontCopyThisLine>")) {
+          } else if (text.startsWith("<DontCopyThisLine>") || text.match(/([A-C][1-5])/)) {
             json = parseABCToSkyFormat(text, path.basename(file.path, ext));
           } else {
             throw new Error();
