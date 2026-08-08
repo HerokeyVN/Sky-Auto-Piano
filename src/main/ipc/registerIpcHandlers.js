@@ -9,8 +9,9 @@ import { ipcMain, dialog } from "electron/main";
  * @param {import("../services/configService.js").ConfigService} deps.configService
  * @param {import("../services/autoPlayService.js").AutoPlayService} deps.autoPlayService
  * @param {import("../services/updateService.js").UpdateService} deps.updateService
+ * @param {import("../services/skySheetStoreService.js").SkySheetStoreService} deps.skySheetStoreService
  */
-export function registerIpcHandlers({ windowController, configService, autoPlayService, updateService }) {
+export function registerIpcHandlers({ windowController, configService, autoPlayService, updateService, skySheetStoreService }) {
 	const appDirectory = windowController.appDirectory;
 
 	ipcMain.on("changeSetting", () => {
@@ -143,4 +144,29 @@ export function registerIpcHandlers({ windowController, configService, autoPlayS
 			return { success: false, error: error.message };
 		}
 	});
+
+	ipcMain.handle("sky-sheet-store:list", async (_, args = {}) => {
+		try {
+			return await skySheetStoreService.listSheets(args);
+		} catch (error) {
+			console.error("IPC", "Failed to list Sky Sheet Store sheets", error);
+			throw normalizeIpcError(error, "Unable to connect to Sky Sheet Store.");
+		}
+	});
+
+	ipcMain.handle("sky-sheet-store:get-player-sheet", async (_, { id }) => {
+		try {
+			return await skySheetStoreService.getPlayerSheet(id);
+		} catch (error) {
+			console.error("IPC", "Failed to fetch Sky Sheet Store player sheet", error);
+			throw normalizeIpcError(error, "Unable to load this sheet. Please try again.");
+		}
+	});
+}
+
+function normalizeIpcError(error, fallbackMessage) {
+	const normalized = new Error(error?.message || fallbackMessage);
+	normalized.code = error?.code || "unknown_error";
+	normalized.status = error?.status || 500;
+	return normalized;
 }
