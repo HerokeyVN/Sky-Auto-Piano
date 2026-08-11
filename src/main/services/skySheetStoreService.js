@@ -46,7 +46,7 @@ export class SkySheetStoreService {
 			}
 		}
 
-		const response = await this.http.get("/api/v1/sheets", {
+		const response = await this.http.get("/api/v1/catalog/sheets", {
 			params: {
 				q: normalizedQuery || undefined,
 				limit: normalizedLimit,
@@ -77,18 +77,24 @@ export class SkySheetStoreService {
 		return mapped;
 	}
 
-	async getPlayerSheet(id) {
+	async getPlayerSheet(id, sourceType = "user") {
 		const normalizedId = typeof id === "string" ? id.trim() : "";
 		if (!UUID_PATTERN.test(normalizedId)) {
 			throw new Error("Invalid Sky Sheet Store sheet id.");
 		}
+		const normalizedSourceType = sourceType === "archive" ? "archive" : "user";
 
-		const cached = this.playerCache.get(normalizedId);
+		const cacheKey = `${normalizedSourceType}:${normalizedId}`;
+		const cached = this.playerCache.get(cacheKey);
 		if (cached && Date.now() - cached.timestamp < PLAYER_CACHE_TTL_MS) {
 			return cached.data;
 		}
 
-		const response = await this.http.get(`/api/v1/sheets/${normalizedId}/player`, {
+		const playerPath = normalizedSourceType === "archive"
+			? `/api/v1/archive/sheets/${normalizedId}/player`
+			: `/api/v1/sheets/${normalizedId}/player`;
+
+		const response = await this.http.get(playerPath, {
 			maxContentLength: MAX_PLAYER_RESPONSE_BYTES,
 			maxBodyLength: MAX_PLAYER_RESPONSE_BYTES,
 		});
@@ -99,7 +105,7 @@ export class SkySheetStoreService {
 		}
 
 		const mapped = this.#mapPlayerPayload(payload);
-		this.playerCache.set(normalizedId, {
+		this.playerCache.set(cacheKey, {
 			timestamp: Date.now(),
 			data: mapped,
 		});
@@ -134,10 +140,12 @@ export class SkySheetStoreService {
 			: null;
 
 		return {
+			sourceType: asTrimmedString(item?.sourceType || item?.source_type) || "user",
+			catalogKey: asTrimmedString(item?.catalogKey || item?.catalog_key) || `user:${id}`,
 			id,
 			title: asTrimmedString(item?.title) || "Unknown",
-			author: asTrimmedString(item?.author) || "Unknown",
-			transcribedBy: asTrimmedString(item?.transcribed_by || item?.transcribedBy) || "Unknown",
+			author: asTrimmedString(item?.author || item?.artistName || item?.artist_name) || "Unknown",
+			transcribedBy: asTrimmedString(item?.transcribed_by || item?.transcribedBy || item?.composerName || item?.composer_name) || "Unknown",
 			bpm: clampInteger(item?.bpm, 0, 2000, 0),
 			bitsPerPage: clampInteger(item?.bits_per_page || item?.bitsPerPage, 0, 128, 0),
 			pitchLevel: clampInteger(item?.pitch_level || item?.pitchLevel, -12, 12, 0),
@@ -150,14 +158,16 @@ export class SkySheetStoreService {
 				? item.tags.map((tag) => asTrimmedString(tag)).filter(Boolean)
 				: [],
 			originCountryCode: asTrimmedString(item?.originCountryCode) || "",
-			accessMode: asTrimmedString(item?.accessMode) || "downloadable",
+			accessMode: asTrimmedString(item?.accessMode || item?.access_mode) || "downloadable",
 			protectionMode: asTrimmedString(item?.protectionMode) || "none",
 			isProtected: Boolean(item?.isProtected),
-			isDownloadable: Boolean(item?.isDownloadable),
+			isDownloadable: item?.isDownloadable !== undefined ? Boolean(item.isDownloadable) : (item?.is_downloadable !== undefined ? Boolean(item.is_downloadable) : true),
 			viewerActionState: asTrimmedString(item?.viewerActionState) || "",
 			creator,
 			coverUrl,
-			sourceUrl: `${SKY_SHEET_STORE_SITE_BASE_URL}/sheets/${id}`,
+			sourceUrl: (asTrimmedString(item?.sourceType || item?.source_type) === "archive")
+				? `${SKY_SHEET_STORE_SITE_BASE_URL}/sheets/archive/${id}`
+				: `${SKY_SHEET_STORE_SITE_BASE_URL}/sheets/${id}`,
 		};
 	}
 

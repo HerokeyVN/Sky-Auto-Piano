@@ -988,10 +988,48 @@ body:not(.dark-mode) .nav-tab.active {
   font-weight: 700;
 }
 
-.store-load-more {
+.store-pagination {
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 10px;
   padding-top: 4px;
+}
+
+.store-page-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.store-page-btn {
+  border: 0;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: #ffffff;
+  background: #334155;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+}
+
+.store-page-btn:hover {
+  transform: translateY(-1px);
+}
+
+.store-page-btn.active {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.2);
+}
+
+.store-page-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 body:not(.dark-mode) .store-card,

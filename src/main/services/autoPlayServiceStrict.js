@@ -1,5 +1,21 @@
 import { Hardware } from "keysender";
 
+const keySenderAliases = {
+	esc: "escape",
+	pageup: "pageUp",
+	pagedown: "pageDown",
+	numadd: "num+",
+	numsub: "num-",
+	nummult: "num*",
+	numdiv: "num/",
+	numdec: "num.",
+};
+
+function normalizeKeySenderKey(key) {
+	const normalized = String(key || "").trim();
+	return keySenderAliases[normalized.toLowerCase()] || normalized;
+}
+
 export class AutoPlayService {
 	constructor(configService) {
 		this.configService = configService;
@@ -58,7 +74,7 @@ export class AutoPlayService {
 			return rawKey;
 		}
 
-		return this.keyboard.keys[mappedIndex] ?? rawKey;
+		return normalizeKeySenderKey(this.keyboard.keys[mappedIndex] ?? rawKey);
 	}
 
 	_sleep(ms) {

@@ -154,9 +154,9 @@ export function registerIpcHandlers({ windowController, configService, autoPlayS
 		}
 	});
 
-	ipcMain.handle("sky-sheet-store:get-player-sheet", async (_, { id }) => {
+	ipcMain.handle("sky-sheet-store:get-player-sheet", async (_, { id, sourceType }) => {
 		try {
-			return await skySheetStoreService.getPlayerSheet(id);
+			return await skySheetStoreService.getPlayerSheet(id, sourceType);
 		} catch (error) {
 			console.error("IPC", "Failed to fetch Sky Sheet Store player sheet", error);
 			throw normalizeIpcError(error, "Unable to load this sheet. Please try again.");

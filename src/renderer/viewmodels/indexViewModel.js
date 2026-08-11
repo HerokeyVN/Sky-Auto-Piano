@@ -47,11 +47,12 @@ const storeState = {
 	items: [],
 	query: "",
 	loading: false,
-	loadingMore: false,
+	loadingPage: false,
 	error: "",
 	limit: 20,
 	offset: 0,
 	total: 0,
+	page: 1,
 	searchGeneration: 0,
 	playingItemId: "",
 	savingItemId: "",
@@ -143,7 +144,7 @@ function setupSearch() {
 				clearTimeout(storeState.searchTimer);
 			}
 			storeState.searchTimer = setTimeout(() => {
-				void fetchStoreSheets({ reset: true, refresh: false });
+				void fetchStoreSheets({ page: 1, refresh: false });
 			}, STORE_SEARCH_DEBOUNCE_MS);
 			return;
 		}
@@ -183,11 +184,25 @@ function setupContentEvents() {
 			switch (action) {
 				case "refresh":
 				case "retry":
-					void fetchStoreSheets({ reset: true, refresh: true });
+					void fetchStoreSheets({ page: 1, refresh: true });
 					return;
-				case "load-more":
-					void fetchStoreSheets({ reset: false, refresh: true });
+				case "page-prev":
+					if (storeState.page > 1) {
+						void fetchStoreSheets({ page: storeState.page - 1, refresh: false });
+					}
 					return;
+				case "page-next":
+					if (storeState.page < getStoreTotalPages()) {
+						void fetchStoreSheets({ page: storeState.page + 1, refresh: false });
+					}
+					return;
+				case "page": {
+					const page = Number(storeAction.getAttribute("data-store-page"));
+					if (Number.isInteger(page) && page > 0 && page !== storeState.page) {
+						void fetchStoreSheets({ page, refresh: false });
+					}
+					return;
+				}
 				case "play":
 				case "save": {
 					const sheetId = storeAction.getAttribute("data-sheet-id");
@@ -401,7 +416,7 @@ function setActiveTab(tabType) {
 	}
 
 	if (isStore && !storeState.hasLoaded) {
-		void fetchStoreSheets({ reset: true, refresh: false });
+		void fetchStoreSheets({ page: 1, refresh: false });
 	}
 
 	renderContent();
@@ -499,11 +514,36 @@ function renderStoreResultsMarkup() {
 	}
 
 	const cards = storeState.items.map((item) => renderStoreCardMarkup(item)).join("");
-	const showLoadMore = storeState.items.length < storeState.total;
-	const footer = showLoadMore
-		? `<div class="store-load-more"><button class="store-toolbar-btn" data-store-action="load-more" ${storeState.loadingMore ? "disabled" : ""}>${storeState.loadingMore ? "Loading..." : "Load More"}</button></div>`
-		: "";
-	return `<div class="store-card-list">${cards}</div>${footer}`;
+	return `<div class="store-card-list">${cards}</div>${renderStorePaginationMarkup()}`;
+}
+
+function renderStorePaginationMarkup() {
+	const totalPages = getStoreTotalPages();
+	if (totalPages <= 1) return "";
+
+	const currentPage = Math.min(storeState.page, totalPages);
+	let startPage = Math.max(1, currentPage - 2);
+	const endPage = Math.min(totalPages, startPage + 4);
+	startPage = Math.max(1, endPage - 4);
+
+	const pageButtons = [];
+	for (let page = startPage; page <= endPage; page++) {
+		pageButtons.push(
+			`<button class="store-page-btn ${page === currentPage ? "active" : ""}" data-store-action="page" data-store-page="${page}" ${storeState.loadingPage || page === currentPage ? "disabled" : ""}>${page}</button>`
+		);
+	}
+
+	return `
+		<div class="store-pagination">
+			<button class="store-page-btn" data-store-action="page-prev" ${storeState.loadingPage || currentPage <= 1 ? "disabled" : ""}>Prev</button>
+			<div class="store-page-list">${pageButtons.join("")}</div>
+			<button class="store-page-btn" data-store-action="page-next" ${storeState.loadingPage || currentPage >= totalPages ? "disabled" : ""}>Next</button>
+		</div>
+	`;
+}
+
+function getStoreTotalPages() {
+	return Math.max(1, Math.ceil(storeState.total / storeState.limit));
 }
 
 function renderStoreCardMarkup(item) {
@@ -572,24 +612,21 @@ function shouldShowLocalSheet(sheetData, searchTerm, favorites, recentPlays) {
 		(sheetData.author || "").toLowerCase().includes(searchTerm);
 }
 
-async function fetchStoreSheets({ reset, refresh }) {
-	if (!reset) {
-		if (storeState.loadingMore) return;
-		if (storeState.loading) return;
-		if (storeState.total > 0 && storeState.items.length >= storeState.total) return;
-	}
-
-	const nextOffset = reset ? 0 : storeState.items.length;
+async function fetchStoreSheets({ page = 1, refresh }) {
+	const safePage = Number.isInteger(page) && page > 0 ? page : 1;
+	const nextOffset = (safePage - 1) * storeState.limit;
 	const requestQuery = storeState.query;
-	const requestGeneration = reset ? storeState.searchGeneration + 1 : storeState.searchGeneration;
+	const requestGeneration = safePage === 1 ? storeState.searchGeneration + 1 : storeState.searchGeneration;
+	const isInitialPage = safePage === 1;
 
-	if (reset) {
+	if (isInitialPage) {
 		storeState.searchGeneration = requestGeneration;
 		storeState.loading = true;
-		storeState.loadingMore = false;
+		storeState.loadingPage = false;
 		storeState.error = "";
 	} else {
-		storeState.loadingMore = true;
+		if (storeState.loading || storeState.loadingPage) return;
+		storeState.loadingPage = true;
 	}
 
 	renderContent();
@@ -604,33 +641,27 @@ async function fetchStoreSheets({ reset, refresh }) {
 
 		if (requestGeneration !== storeState.searchGeneration || requestQuery !== storeState.query) return;
 
-		if (reset) {
-			storeState.items = response.items;
-		} else {
-			const existingIds = new Set(storeState.items.map((item) => item.id));
-			const nextItems = response.items.filter((item) => !existingIds.has(item.id));
-			storeState.items = storeState.items.concat(nextItems);
-		}
-
-		storeState.offset = storeState.items.length;
+		storeState.items = response.items;
+		storeState.page = safePage;
+		storeState.offset = nextOffset;
 		storeState.total = response.total;
 		storeState.hasLoaded = true;
 	} catch (error) {
 		if (requestGeneration !== storeState.searchGeneration || requestQuery !== storeState.query) return;
-		if (reset) {
+		if (isInitialPage) {
 			storeState.error = normalizeRendererError(error, "Unable to connect to Sky Sheet Store.");
 		} else {
 			notie.alert({
 				type: 3,
-				text: normalizeRendererError(error, "Unable to load more sheets. Please try again."),
+				text: normalizeRendererError(error, "Unable to load this page. Please try again."),
 			});
 		}
 	} finally {
 		if (requestGeneration === storeState.searchGeneration && requestQuery === storeState.query) {
-			if (reset) {
+			if (isInitialPage) {
 				storeState.loading = false;
 			}
-			storeState.loadingMore = false;
+			storeState.loadingPage = false;
 			if (activeTab === STORE_TAB) renderContent();
 		}
 	}
@@ -650,7 +681,7 @@ async function playStoreSheet(sheetId) {
 	renderContent();
 
 	try {
-		const prepared = await prepareStoreSheet(sheetId, item);
+	const prepared = await prepareStoreSheet(sheetId, item);
 		if (isPlay) {
 			btnPlay();
 		}
@@ -714,7 +745,10 @@ async function prepareStoreSheet(sheetId, item) {
 	const cached = storeState.cache.get(sheetId);
 	if (cached) return cached;
 
-	const payload = await ipcRenderer.invoke("sky-sheet-store:get-player-sheet", { id: sheetId });
+	const payload = await ipcRenderer.invoke("sky-sheet-store:get-player-sheet", {
+		id: sheetId,
+		sourceType: item?.sourceType || "user",
+	});
 	const normalizedSheet = normalizeStorePlayerPayload(payload, item);
 	const keyMap = mapStoreRuntimeNotesToAutoPianoKeyMap(payload.runtime.notes, payload.player.bitsPerPage);
 	const prepared = {
@@ -730,6 +764,7 @@ async function prepareStoreSheet(sheetId, item) {
 			isComposed: normalizedSheet.isComposed,
 			source: "sky-sheet-store",
 			sourceId: sheetId,
+			sourceType: item?.sourceType || "user",
 			sourceUrl: item.sourceUrl,
 		},
 	};
@@ -882,6 +917,13 @@ function mapStoreRuntimeNotesToAutoPianoKeyMap(runtimeNotes, bitsPerPage) {
 }
 
 function getStoreAvailability(item) {
+	if (item.sourceType === "archive") {
+		return {
+			canPlay: true,
+			canSave: true,
+			message: "",
+		};
+	}
 	if (item.accessMode === "web_only") {
 		return {
 			canPlay: false,

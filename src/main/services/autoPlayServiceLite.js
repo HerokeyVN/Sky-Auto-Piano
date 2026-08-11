@@ -1,5 +1,21 @@
 import { Hardware } from "keysender";
 
+const keySenderAliases = {
+	esc: "escape",
+	pageup: "pageUp",
+	pagedown: "pageDown",
+	numadd: "num+",
+	numsub: "num-",
+	nummult: "num*",
+	numdiv: "num/",
+	numdec: "num.",
+};
+
+function normalizeKeySenderKey(key) {
+	const normalized = String(key || "").trim();
+	return keySenderAliases[normalized.toLowerCase()] || normalized;
+}
+
 export class AutoPlayService {
 	constructor(configService) {
 		this.configService = configService;
@@ -94,8 +110,8 @@ export class AutoPlayService {
 				if (config.keyboard.customKeyboard) {
 					key = config.keyboard.keys[keysID[key]];
 				}
-				ks.sendKeys(
-					key,
+				ks.sendKey(
+					normalizeKeySenderKey(key),
 					longPressMode ? (longPressDuration ? longPressDuration : delay) - 35 : undefined,
 				);
 			}
@@ -110,8 +126,8 @@ export class AutoPlayService {
 				if (this.keyboard.customKeyboard) {
 					outputKey = this.keyboard.keys[keysID[key]];
 				}
-				ks.sendKeys(
-					outputKey,
+				ks.sendKey(
+					normalizeKeySenderKey(outputKey),
 					this.panel.longPressMode ? this.panel.delayNext * 1000 - 35 : undefined,
 				);
 			}

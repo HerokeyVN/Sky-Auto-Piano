@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Keyboard settings
 	let i = 0;
 	for (let dom of document.getElementsByClassName("keys")) {
-		dom.value = config.keyboard.keys[i++];
+		applyKeyboardInputValue(dom, config.keyboard.keys[i++]);
 	}
 	document.getElementById("switch-custom-keyboard").checked =
 		config.keyboard.customKeyboard;
@@ -337,6 +337,158 @@ const keyMap = {
 	"bracketright": "]"
 };
 
+const keyboardKeyAliases = {
+	KeyA: { value: "a", label: "A" },
+	KeyB: { value: "b", label: "B" },
+	KeyC: { value: "c", label: "C" },
+	KeyD: { value: "d", label: "D" },
+	KeyE: { value: "e", label: "E" },
+	KeyF: { value: "f", label: "F" },
+	KeyG: { value: "g", label: "G" },
+	KeyH: { value: "h", label: "H" },
+	KeyI: { value: "i", label: "I" },
+	KeyJ: { value: "j", label: "J" },
+	KeyK: { value: "k", label: "K" },
+	KeyL: { value: "l", label: "L" },
+	KeyM: { value: "m", label: "M" },
+	KeyN: { value: "n", label: "N" },
+	KeyO: { value: "o", label: "O" },
+	KeyP: { value: "p", label: "P" },
+	KeyQ: { value: "q", label: "Q" },
+	KeyR: { value: "r", label: "R" },
+	KeyS: { value: "s", label: "S" },
+	KeyT: { value: "t", label: "T" },
+	KeyU: { value: "u", label: "U" },
+	KeyV: { value: "v", label: "V" },
+	KeyW: { value: "w", label: "W" },
+	KeyX: { value: "x", label: "X" },
+	KeyY: { value: "y", label: "Y" },
+	KeyZ: { value: "z", label: "Z" },
+	Digit0: { value: "0", label: "0" },
+	Digit1: { value: "1", label: "1" },
+	Digit2: { value: "2", label: "2" },
+	Digit3: { value: "3", label: "3" },
+	Digit4: { value: "4", label: "4" },
+	Digit5: { value: "5", label: "5" },
+	Digit6: { value: "6", label: "6" },
+	Digit7: { value: "7", label: "7" },
+	Digit8: { value: "8", label: "8" },
+	Digit9: { value: "9", label: "9" },
+	Numpad0: { value: "num0", label: "N0" },
+	Numpad1: { value: "num1", label: "N1" },
+	Numpad2: { value: "num2", label: "N2" },
+	Numpad3: { value: "num3", label: "N3" },
+	Numpad4: { value: "num4", label: "N4" },
+	Numpad5: { value: "num5", label: "N5" },
+	Numpad6: { value: "num6", label: "N6" },
+	Numpad7: { value: "num7", label: "N7" },
+	Numpad8: { value: "num8", label: "N8" },
+	Numpad9: { value: "num9", label: "N9" },
+	NumpadAdd: { value: "num+", label: "N+" },
+	NumpadSubtract: { value: "num-", label: "N-" },
+	NumpadMultiply: { value: "num*", label: "N*" },
+	NumpadDivide: { value: "num/", label: "N/" },
+	NumpadDecimal: { value: "num.", label: "N." },
+	Space: { value: "space", label: "Spc" },
+	Enter: { value: "enter", label: "Ent" },
+	Escape: { value: "escape", label: "Esc" },
+	Backspace: { value: "backspace", label: "Bksp" },
+	Delete: { value: "delete", label: "Del" },
+	Insert: { value: "insert", label: "Ins" },
+	Home: { value: "home", label: "Home" },
+	End: { value: "end", label: "End" },
+	PageUp: { value: "pageUp", label: "PgU" },
+	PageDown: { value: "pageDown", label: "PgD" },
+	ArrowUp: { value: "up", label: "Up" },
+	ArrowDown: { value: "down", label: "Dn" },
+	ArrowLeft: { value: "left", label: "Lt" },
+	ArrowRight: { value: "right", label: "Rt" },
+	Minus: { value: "-", label: "-" },
+	Equal: { value: "=", label: "=" },
+	BracketLeft: { value: "[", label: "[" },
+	BracketRight: { value: "]", label: "]" },
+	Backslash: { value: "\\", label: "\\" },
+	Semicolon: { value: ";", label: ";" },
+	Quote: { value: "'", label: "'" },
+	Comma: { value: ",", label: "," },
+	Period: { value: ".", label: "." },
+	Slash: { value: "/", label: "/" },
+	Backquote: { value: "`", label: "`" },
+};
+
+const keyboardValueLabels = {
+	space: "Spc",
+	enter: "Ent",
+	escape: "Esc",
+	backspace: "Bksp",
+	delete: "Del",
+	insert: "Ins",
+	home: "Home",
+	end: "End",
+	pageUp: "PgU",
+	pageDown: "PgD",
+	up: "Up",
+	down: "Dn",
+	left: "Lt",
+	right: "Rt",
+	num0: "N0",
+	num1: "N1",
+	num2: "N2",
+	num3: "N3",
+	num4: "N4",
+	num5: "N5",
+	num6: "N6",
+	num7: "N7",
+	num8: "N8",
+	num9: "N9",
+	"num+": "N+",
+	"num-": "N-",
+	"num*": "N*",
+	"num/": "N/",
+	"num.": "N.",
+};
+
+const keyboardLegacyValueAliases = {
+	esc: "escape",
+	pageup: "pageUp",
+	pagedown: "pageDown",
+	numadd: "num+",
+	numsub: "num-",
+	nummult: "num*",
+	numdiv: "num/",
+	numdec: "num.",
+};
+
+function normalizeKeyboardMappingValue(value) {
+	const raw = String(value || "").trim();
+	const lowered = raw.toLowerCase();
+	if (!lowered) return "";
+	if (keyboardLegacyValueAliases[lowered]) return keyboardLegacyValueAliases[lowered];
+	const canonical = Object.keys(keyboardValueLabels).find((key) => key.toLowerCase() === lowered);
+	if (canonical) return canonical;
+	if (lowered.length === 1) return lowered;
+	return raw;
+}
+
+function getKeyboardDisplayLabel(value) {
+	const normalized = normalizeKeyboardMappingValue(value);
+	if (!normalized) return "";
+	if (keyboardValueLabels[normalized]) return keyboardValueLabels[normalized];
+	if (normalized.length === 1) return normalized.toUpperCase();
+	return normalized;
+}
+
+function applyKeyboardInputValue(input, value) {
+	const normalized = normalizeKeyboardMappingValue(value);
+	input.dataset.keyValue = normalized;
+	input.value = getKeyboardDisplayLabel(normalized);
+	input.title = normalized || "";
+}
+
+function resolveKeyboardKeyFromEvent(event) {
+	return keyboardKeyAliases[event.code] || null;
+}
+
 // Function to convert shortcut to keysender format
 function convertToKeysenderFormat(shortcut) {
 	return shortcut.split("+").map(key => {
@@ -350,6 +502,17 @@ function convertToKeysenderFormat(shortcut) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+	for (const input of document.getElementsByClassName("keys")) {
+		input.readOnly = true;
+		input.addEventListener("keydown", (event) => {
+			const resolved = resolveKeyboardKeyFromEvent(event);
+			if (!resolved) return;
+
+			event.preventDefault();
+			applyKeyboardInputValue(input, resolved.value);
+		});
+	}
+
 	for (let id of [
 		"pre-shortcut-setting",
 		"play-shortcut-setting",
@@ -422,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		// Save keyboard settings
 		let i = 0;
 		for (let dom of document.getElementsByClassName("keys")) {
-			config.keyboard.keys[i++] = dom.value;
+			config.keyboard.keys[i++] = normalizeKeyboardMappingValue(dom.dataset.keyValue || dom.value);
 		}
 		config.keyboard.customKeyboard = document.getElementById("switch-custom-keyboard").checked;
 

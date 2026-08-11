@@ -842,15 +842,17 @@ body.dark-mode .block-updates-dialog .dialog-btn.confirm-btn span {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 25px;
+    width: 38px;
+    min-width: 38px;
     height: 25px;
     text-align: center;
     background: transparent;
     border: none;
     color: var(--font-color);
-    font-size: 16px;
+    font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0;
     outline: none;
 }
 
