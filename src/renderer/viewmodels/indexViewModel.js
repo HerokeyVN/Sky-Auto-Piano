@@ -15,7 +15,7 @@ const LOCAL_TABS = new Set(["all-songs", "favorite", "recent-play"]);
 const STORE_SEARCH_DEBOUNCE_MS = 300;
 const MAX_REMOTE_DURATION_MS = 15 * 60 * 1000;
 const MAX_REMOTE_NOTE_COUNT = 20000;
-const STORE_KEY_PATTERN = /^([0-9]+)Key([0-9]+)$/;
+const SKY_KEY_PATTERN = /^([0-9]+)Key([0-9]+)$/;
 const LOCAL_SEARCH_PLACEHOLDER = "Search the music sheet or author name...";
 const STORE_SEARCH_PLACEHOLDER = "Search title, artist, or transcriber...";
 
@@ -28,6 +28,7 @@ const keys = [
 let config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
 let listSheet = [];
 let listKeys = [];
+let listSheetPayloads = [];
 let isPlay = false;
 let maxPCB = 0;
 let loopMode = 0;
@@ -40,6 +41,7 @@ let currentPlayback = {
 	type: "none",
 	index: null,
 	keyMap: null,
+	notes: null,
 	sheet: null,
 };
 
@@ -383,6 +385,7 @@ function loadLocalSheets() {
 		}
 
 		listKeys = new Array(listSheet.length);
+		listSheetPayloads = new Array(listSheet.length);
 		renderContent();
 
 		if (listSheet.length > 0) {
@@ -446,7 +449,10 @@ function renderLocalLibrary() {
 		card.setAttribute("data-index", String(index));
 		card.innerHTML = `
 			<div class="sheet-info" sheetID="${sheetData.keyMap.split(".json")[0]}">
-				<h3 class="name-sheet">${escapeHtml(sheetData.name)}</h3>
+				<div class="sheet-title-row">
+					<h3 class="name-sheet">${escapeHtml(sheetData.name)}</h3>
+					${renderHoldBadge(sheetData.hasHoldNotes)}
+				</div>
 				<div class="info-lines">
 					<div class="info-item">
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="icon author-icon"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M14 14s-1-1.5-6-1.5S2 14 2 14s1-4 6-4 6 4 6 4z"/></svg>
@@ -498,6 +504,11 @@ function renderStoreBrowser() {
 			<div class="store-results">${stateMarkup}</div>
 		</section>
 	`;
+}
+
+function renderHoldBadge(hasHoldNotes, className = "sheet-badge") {
+	if (!hasHoldNotes) return "";
+	return `<span class="${className}">Hold</span>`;
 }
 
 function renderStoreResultsMarkup() {
@@ -681,7 +692,7 @@ async function playStoreSheet(sheetId) {
 	renderContent();
 
 	try {
-	const prepared = await prepareStoreSheet(sheetId, item);
+		const prepared = await prepareStoreSheet(sheetId, item);
 		if (isPlay) {
 			btnPlay();
 		}
@@ -689,6 +700,7 @@ async function playStoreSheet(sheetId) {
 			type: "remote",
 			index: null,
 			keyMap: prepared.keyMap,
+			notes: prepared.playbackNotes,
 			sheet: prepared.displaySheet,
 		});
 		btnPlay();
@@ -750,10 +762,14 @@ async function prepareStoreSheet(sheetId, item) {
 		sourceType: item?.sourceType || "user",
 	});
 	const normalizedSheet = normalizeStorePlayerPayload(payload, item);
-	const keyMap = mapStoreRuntimeNotesToAutoPianoKeyMap(payload.runtime.notes, payload.player.bitsPerPage);
+	const playbackNotes = buildPlaybackNotesFromSongNotes(normalizedSheet.songNotes, normalizedSheet.bitsPerPage);
+	const keyMap = buildKeyMapFromPlaybackNotes(playbackNotes);
+	const hasHoldNotes = hasSongNotesWithHold(normalizedSheet.songNotes);
 	const prepared = {
 		normalizedSheet,
 		keyMap,
+		playbackNotes: hasHoldNotes ? playbackNotes : null,
+		hasHoldNotes,
 		displaySheet: {
 			name: normalizedSheet.name,
 			author: normalizedSheet.author,
@@ -766,6 +782,7 @@ async function prepareStoreSheet(sheetId, item) {
 			sourceId: sheetId,
 			sourceType: item?.sourceType || "user",
 			sourceUrl: item.sourceUrl,
+			hasHoldNotes,
 		},
 	};
 
@@ -797,6 +814,7 @@ function normalizeStorePlayerPayload(payload, item) {
 	}
 
 	const songNotes = flattenStoreRuntimeNotes(payload.runtime.notes, bitsPerPage);
+	const hasHoldNotes = hasSongNotesWithHold(songNotes);
 	return {
 		name: title,
 		author: (payload.sheet.author || item.author || "Unknown").trim() || "Unknown",
@@ -807,6 +825,7 @@ function normalizeStorePlayerPayload(payload, item) {
 		pitchLevel,
 		isEncrypted: false,
 		songNotes,
+		hasHoldNotes,
 	};
 }
 
@@ -853,67 +872,11 @@ function flattenStoreRuntimeNotes(runtimeNotes, bitsPerPage) {
 }
 
 function mapStoreRuntimeKeyToAutoPianoKey(storeKey, bitsPerPage) {
-	const key = typeof storeKey === "string" ? storeKey.trim() : "";
-	const match = STORE_KEY_PATTERN.exec(key);
-	if (!match) return null;
-
-	const keyIndex = Number(match[2]);
-	const safeBitsPerPage = Number(bitsPerPage);
-	if (!Number.isFinite(safeBitsPerPage) || safeBitsPerPage <= 0 || safeBitsPerPage > 128) {
-		return null;
-	}
-	if (!Number.isInteger(keyIndex) || keyIndex < 0 || keyIndex >= safeBitsPerPage) {
-		return null;
-	}
-	if (keyIndex > 14) {
-		return null;
-	}
-	return keys[keyIndex] || null;
+	return mapSongKeyToAutoPianoKey(storeKey, bitsPerPage);
 }
 
 function mapStoreRuntimeNotesToAutoPianoKeyMap(runtimeNotes, bitsPerPage) {
-	const keyMap = {};
-
-	for (const group of runtimeNotes) {
-		const timeMs = Number(group?.timeMs);
-		if (!Number.isFinite(timeMs) || timeMs < 0 || timeMs > MAX_REMOTE_DURATION_MS) {
-			throw new Error("The downloaded sheet is invalid.");
-		}
-
-		if (!keyMap[timeMs]) {
-			keyMap[timeMs] = [];
-		}
-
-		const dedupe = new Set(keyMap[timeMs]);
-		for (const key of Array.isArray(group?.keys) ? group.keys : []) {
-			const autoKey = mapStoreRuntimeKeyToAutoPianoKey(key, bitsPerPage);
-			if (!autoKey) {
-				throw new Error("The downloaded sheet is invalid.");
-			}
-			if (!dedupe.has(autoKey)) {
-				dedupe.add(autoKey);
-				keyMap[timeMs].push(autoKey);
-			}
-		}
-	}
-
-	const timestamps = Object.keys(keyMap).map(Number).sort((a, b) => a - b);
-	if (!timestamps.length) {
-		throw new Error("The downloaded sheet is invalid.");
-	}
-
-	const normalized = {};
-	if (!timestamps.includes(0)) {
-		normalized[0] = [];
-	}
-
-	for (const timestamp of timestamps) {
-		normalized[timestamp] = keyMap[timestamp];
-	}
-
-	const lastTimestamp = timestamps[timestamps.length - 1];
-	normalized[(Math.trunc(lastTimestamp / 1000) + 1) * 1000] = [];
-	return normalized;
+	return buildKeyMapFromPlaybackNotes(buildPlaybackNotesFromSongNotes(flattenStoreRuntimeNotes(runtimeNotes, bitsPerPage), bitsPerPage));
 }
 
 function getStoreAvailability(item) {
@@ -964,12 +927,16 @@ async function selectLocalSheet(index, { trackRecentPlay = true } = {}) {
 	if (!sheetData) return;
 
 	try {
-		const keyMap = await getLocalKeyMap(index);
+		const payload = await getLocalSheetPayload(index);
 		setPlaybackTarget({
 			type: "local",
 			index,
-			keyMap,
-			sheet: sheetData,
+			keyMap: payload.keyMap,
+			notes: payload.hasHoldNotes ? payload.playbackNotes : null,
+			sheet: {
+				...sheetData,
+				hasHoldNotes: Boolean(sheetData.hasHoldNotes || payload.hasHoldNotes),
+			},
 		});
 		if (trackRecentPlay) addToRecentPlays(sheetData.name);
 	} catch (error) {
@@ -978,25 +945,34 @@ async function selectLocalSheet(index, { trackRecentPlay = true } = {}) {
 	}
 }
 
-function setPlaybackTarget({ type, index, keyMap, sheet }) {
+function setPlaybackTarget({ type, index, keyMap, notes = null, sheet }) {
 	currentPlayback = {
 		type,
 		index,
 		keyMap,
+		notes,
 		sheet,
 	};
 	updateFooter({ ...sheet, keys: keyMap });
 }
 
-async function getLocalKeyMap(index) {
-	if (listKeys[index]) return listKeys[index];
+async function getLocalSheetPayload(index) {
+	if (listSheetPayloads[index]) return listSheetPayloads[index];
 	const sheet = listSheet[index];
 	if (!sheet) throw new Error("Sheet not found.");
 
 	const data = await fs.promises.readFile(path.join(dataDirectory, sheet.keyMap), { encoding: "utf8" });
 	const parsed = JSON.parse(data);
-	listKeys[index] = parsed;
-	return parsed;
+	const payload = parseStoredSheetPayload(parsed, sheet.bitsPerPage);
+	listKeys[index] = payload.keyMap;
+	listSheetPayloads[index] = payload;
+	return payload;
+}
+
+async function reloadLocalSheetPayload(index) {
+	listKeys[index] = undefined;
+	listSheetPayloads[index] = undefined;
+	return getLocalSheetPayload(index);
 }
 
 function deleteLocalSheet(index) {
@@ -1006,6 +982,7 @@ function deleteLocalSheet(index) {
 	fs.unlinkSync(path.join(dataDirectory, sheetData.keyMap));
 	listSheet.splice(index, 1);
 	listKeys.splice(index, 1);
+	listSheetPayloads.splice(index, 1);
 	fs.writeFileSync(listSheetPath, JSON.stringify(listSheet, null, 4), { mode: 0o666 });
 
 	if (currentPlayback.type === "local") {
@@ -1014,7 +991,7 @@ function deleteLocalSheet(index) {
 				const nextIndex = Math.max(0, Math.min(index, listSheet.length - 1));
 				void selectLocalSheet(nextIndex, { trackRecentPlay: false });
 			} else {
-				currentPlayback = { type: "none", index: null, keyMap: null, sheet: null };
+				currentPlayback = { type: "none", index: null, keyMap: null, notes: null, sheet: null };
 				clearFooter();
 			}
 		} else if (currentPlayback.index > index) {
@@ -1159,6 +1136,202 @@ function parseJsonSheetText(text) {
 	}
 
 	return unwrapParsedSheet(JSON.parse(toRelaxedJson(unwrapped)));
+}
+
+function parseStoredSheetPayload(parsed, bitsPerPage) {
+	if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+		throw new Error("Invalid sheet payload.");
+	}
+
+	const rawKeyMap = parsed.keyMap && typeof parsed.keyMap === "object" ? parsed.keyMap : parsed;
+	const keyMap = normalizeStoredKeyMap(rawKeyMap);
+	const normalizedSongNotes = Array.isArray(parsed.songNotes)
+		? normalizeSongNotes(parsed.songNotes, bitsPerPage)
+		: null;
+	const playbackNotes = normalizedSongNotes
+		? buildPlaybackNotesFromSongNotes(normalizedSongNotes, bitsPerPage)
+		: null;
+
+	return {
+		keyMap,
+		songNotes: normalizedSongNotes,
+		playbackNotes,
+		hasHoldNotes: hasSongNotesWithHold(normalizedSongNotes),
+	};
+}
+
+function normalizeStoredKeyMap(rawKeyMap) {
+	if (!rawKeyMap || typeof rawKeyMap !== "object" || Array.isArray(rawKeyMap)) {
+		throw new Error("Invalid keymap payload.");
+	}
+
+	const normalized = {};
+	const timestamps = Object.keys(rawKeyMap)
+		.map((time) => Number(time))
+		.filter((time) => Number.isFinite(time) && time >= 0)
+		.sort((a, b) => a - b);
+
+	for (const time of timestamps) {
+		const stepKeys = Array.isArray(rawKeyMap[time]) ? rawKeyMap[time] : [];
+		const dedupe = new Set();
+		normalized[time] = [];
+		for (const key of stepKeys) {
+			const safeKey = typeof key === "string" ? key.trim() : "";
+			if (!safeKey || !keys.includes(safeKey) || dedupe.has(safeKey)) continue;
+			dedupe.add(safeKey);
+			normalized[time].push(safeKey);
+		}
+	}
+
+	return normalized;
+}
+
+function resolveBitsPerPage(bitsPerPage) {
+	const safeBitsPerPage = Number(bitsPerPage);
+	if (Number.isFinite(safeBitsPerPage) && safeBitsPerPage > 0 && safeBitsPerPage <= 128) {
+		return Math.trunc(safeBitsPerPage);
+	}
+	return 16;
+}
+
+function hasSongNotesWithHold(songNotes) {
+	return Array.isArray(songNotes) && songNotes.some((note) => Number(note?.hold) > 0);
+}
+
+function normalizeSongNotes(songNotes, bitsPerPage) {
+	if (!Array.isArray(songNotes) || !songNotes.length) {
+		throw new Error("The sheet file is not valid, please try again with another file!");
+	}
+
+	const safeBitsPerPage = resolveBitsPerPage(bitsPerPage);
+	const normalized = [];
+
+	for (const note of songNotes) {
+		const time = Number(note?.time);
+		if (!Number.isFinite(time) || time < 0 || time > MAX_REMOTE_DURATION_MS) {
+			throw new Error("The sheet file is not valid, please try again with another file!");
+		}
+
+		const key = typeof note?.key === "string" ? note.key.trim() : "";
+		if (!mapSongKeyToAutoPianoKey(key, safeBitsPerPage)) {
+			throw new Error("The sheet file is not valid, please try again with another file!");
+		}
+
+		const normalizedNote = {
+			time: Math.trunc(time),
+			key,
+		};
+
+		const hold = Number(note?.hold);
+		if (Number.isFinite(hold) && hold > 0) {
+			normalizedNote.hold = Math.trunc(hold);
+		}
+
+		normalized.push(normalizedNote);
+		if (normalized.length > MAX_REMOTE_NOTE_COUNT) {
+			throw new Error("The sheet file is not valid, please try again with another file!");
+		}
+	}
+
+	normalized.sort((a, b) => a.time - b.time || a.key.localeCompare(b.key));
+	return normalized;
+}
+
+function mapSongKeyToAutoPianoKey(songKey, bitsPerPage) {
+	const key = typeof songKey === "string" ? songKey.trim() : "";
+	const match = SKY_KEY_PATTERN.exec(key);
+	if (!match) return null;
+
+	const keyIndex = Number(match[2]);
+	const safeBitsPerPage = resolveBitsPerPage(bitsPerPage);
+	if (!Number.isInteger(keyIndex) || keyIndex < 0 || keyIndex >= safeBitsPerPage || keyIndex > 14) {
+		return null;
+	}
+
+	return keys[keyIndex] || null;
+}
+
+function buildPlaybackNotesFromSongNotes(songNotes, bitsPerPage) {
+	const safeBitsPerPage = resolveBitsPerPage(bitsPerPage);
+	const byPlaybackKey = new Map();
+
+	for (const note of songNotes) {
+		const playbackKey = mapSongKeyToAutoPianoKey(note.key, safeBitsPerPage);
+		if (!playbackKey) {
+			throw new Error("The sheet file is not valid, please try again with another file!");
+		}
+
+		const mapKey = `${note.time}:${playbackKey}`;
+		const existing = byPlaybackKey.get(mapKey);
+		if (existing) {
+			if (note.hold && (!existing.hold || note.hold > existing.hold)) {
+				existing.hold = note.hold;
+			}
+			continue;
+		}
+
+		byPlaybackKey.set(mapKey, {
+			time: note.time,
+			key: playbackKey,
+			...(note.hold ? { hold: note.hold } : {}),
+		});
+	}
+
+	return [...byPlaybackKey.values()].sort((a, b) => a.time - b.time || a.key.localeCompare(b.key));
+}
+
+function buildKeyMapFromPlaybackNotes(playbackNotes) {
+	if (!Array.isArray(playbackNotes) || !playbackNotes.length) {
+		throw new Error("The sheet file is not valid, please try again with another file!");
+	}
+
+	const keyMap = {};
+	let maxSongTime = 0;
+
+	for (const note of playbackNotes) {
+		if (!keyMap[note.time]) {
+			keyMap[note.time] = [];
+		}
+		if (!keyMap[note.time].includes(note.key)) {
+			keyMap[note.time].push(note.key);
+		}
+
+		const endTime = note.time + (Number(note.hold) > 0 ? Number(note.hold) : 0);
+		if (endTime > maxSongTime) {
+			maxSongTime = endTime;
+		}
+	}
+
+	const timestamps = Object.keys(keyMap).map(Number).sort((a, b) => a - b);
+	if (!timestamps.length) {
+		throw new Error("The sheet file is not valid, please try again with another file!");
+	}
+
+	const normalized = {};
+	if (!timestamps.includes(0)) {
+		normalized[0] = [];
+	}
+
+	for (const timestamp of timestamps) {
+		normalized[timestamp] = keyMap[timestamp];
+	}
+
+	const lastSongTime = Math.max(maxSongTime, timestamps[timestamps.length - 1]);
+	normalized[(Math.trunc(lastSongTime / 1000) + 1) * 1000] = [];
+	return normalized;
+}
+
+function prepareSheetForStorage(json) {
+	const normalizedSongNotes = normalizeSongNotes(json.songNotes, json.bitsPerPage);
+	const playbackNotes = buildPlaybackNotesFromSongNotes(normalizedSongNotes, json.bitsPerPage);
+	const keyMap = buildKeyMapFromPlaybackNotes(playbackNotes);
+
+	return {
+		songNotes: normalizedSongNotes,
+		playbackNotes,
+		keyMap,
+		hasHoldNotes: hasSongNotesWithHold(normalizedSongNotes),
+	};
 }
 
 function unwrapParsedSheet(parsed) {
@@ -1333,24 +1506,16 @@ function encSheet(json, extraMeta = {}) {
 		}
 	}
 
-	const tempEnc = {};
+	const prepared = prepareSheetForStorage(json);
 	const fileName = `${Base64.encode(random(1, 9999) + String(json.name || "").replace(/[^a-zA-Z0-9]/g, "-"))}.json`;
-
-	for (const note of json.songNotes) {
-		if (!tempEnc[note.time]) tempEnc[note.time] = [];
-		tempEnc[note.time].push(keys[parseInt(String(note.key).split("Key")[1], 10)]);
-	}
-
-	const timestamps = Object.keys(tempEnc);
-	if (!timestamps.length) {
-		return { errCode: 4, msg: "The sheet file is not valid, please try again with another file!" };
-	}
-
-	tempEnc[(Math.trunc(Number(timestamps[timestamps.length - 1]) / 1000) + 1) * 1000] = [];
 
 	fs.writeFileSync(
 		path.join(dataDirectory, fileName),
-		JSON.stringify(!tempEnc["0"] ? { 0: [], ...tempEnc } : tempEnc),
+		JSON.stringify({
+			version: 2,
+			keyMap: prepared.keyMap,
+			songNotes: prepared.songNotes,
+		}),
 		{ mode: 0o666 },
 	);
 
@@ -1363,12 +1528,15 @@ function encSheet(json, extraMeta = {}) {
 		pitchLevel: json.pitchLevel,
 		isComposed: json.isComposed,
 		keyMap: fileName,
+		hasHoldNotes: prepared.hasHoldNotes,
 		...(extraMeta.source ? {
 			source: extraMeta.source,
 			sourceId: extraMeta.sourceId || "",
 			sourceUrl: extraMeta.sourceUrl || "",
 		} : {}),
 	});
+	listKeys.push(prepared.keyMap);
+	listSheetPayloads.push(prepared);
 
 	fs.writeFileSync(listSheetPath, JSON.stringify(listSheet, null, 4), { mode: 0o666 });
 	return undefined;
@@ -1383,7 +1551,7 @@ function updateFooter(info) {
 	const lastDelay = Number(delayMap[delayMap.length - 1] || 0);
 	document.getElementById("process-bar").max = Math.trunc(lastDelay / 1000);
 	maxPCB = Math.trunc(lastDelay / 1000);
-	document.getElementsByClassName("name-playing")[0].innerHTML = info.name;
+	document.getElementsByClassName("name-playing")[0].innerHTML = `${escapeHtml(info.name)}${renderHoldBadge(info.hasHoldNotes, "footer-hold-badge")}`;
 	document.getElementById("process-bar").value = 0;
 	document.getElementsByClassName("live-time")[0].innerHTML = "00:00";
 
@@ -1470,6 +1638,7 @@ function btnPlay() {
 
 	ipcRenderer.send("play", {
 		keys: sec2array(Number(document.getElementById("process-bar").value), currentPlayback.keyMap),
+		notes: currentPlayback.notes || undefined,
 		sec: Number(document.getElementById("process-bar").value),
 		lockTime: `${new Date().getTime()}`,
 		isPlay,
@@ -1628,39 +1797,45 @@ ipcRenderer.on("update-progress", (_, data) => {
 ipcRenderer.on("sheet-list-updated", (_, { index, data }) => {
 	listSheet[index] = data;
 	if (currentPlayback.type === "local" && currentPlayback.index === index) {
-		fs.readFile(path.join(dataDirectory, data.keyMap), { encoding: "utf8" }, (err, keymapData) => {
-			if (err) {
-				console.error("Error reloading keymap after sheet update:", err);
-				return;
-			}
-			listKeys[index] = JSON.parse(keymapData);
-			setPlaybackTarget({
-				type: "local",
-				index,
-				keyMap: listKeys[index],
-				sheet: data,
+		void getLocalSheetPayload(index)
+			.then((payload) => {
+				setPlaybackTarget({
+					type: "local",
+					index,
+					keyMap: payload.keyMap,
+					notes: payload.hasHoldNotes ? payload.playbackNotes : null,
+					sheet: {
+						...data,
+						hasHoldNotes: Boolean(data.hasHoldNotes || payload.hasHoldNotes),
+					},
+				});
+			})
+			.catch((error) => {
+				console.error("Error reloading keymap after sheet update:", error);
 			});
-		});
 	}
 	renderContent();
 });
 
 ipcRenderer.on("keymap-updated", (_, { index }) => {
-	fs.readFile(path.join(dataDirectory, listSheet[index].keyMap), { encoding: "utf8" }, (err, data) => {
-		if (err) {
-			console.error("Error reloading keymap:", err);
-			return;
-		}
-		listKeys[index] = JSON.parse(data);
-		if (currentPlayback.type === "local" && currentPlayback.index === index) {
-			setPlaybackTarget({
-				type: "local",
-				index,
-				keyMap: listKeys[index],
-				sheet: listSheet[index],
-			});
-		}
-	});
+	void reloadLocalSheetPayload(index)
+		.then((payload) => {
+			if (currentPlayback.type === "local" && currentPlayback.index === index) {
+				setPlaybackTarget({
+					type: "local",
+					index,
+					keyMap: payload.keyMap,
+					notes: payload.hasHoldNotes ? payload.playbackNotes : null,
+					sheet: {
+						...listSheet[index],
+						hasHoldNotes: Boolean(listSheet[index]?.hasHoldNotes || payload.hasHoldNotes),
+					},
+				});
+			}
+		})
+		.catch((error) => {
+			console.error("Error reloading keymap:", error);
+		});
 });
 
 ipcRenderer.on("winLog", (_, msg) => {

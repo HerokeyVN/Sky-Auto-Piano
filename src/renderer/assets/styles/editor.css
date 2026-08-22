@@ -158,6 +158,16 @@ body:not(.dark-mode) .music-info {
     gap: 8px;
 }
 
+.hold-note-banner {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(59, 130, 246, 0.14);
+    color: var(--font-color);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
 .editable-field {
     font-size: 13px;
     color: var(--font-color);
@@ -383,6 +393,11 @@ body:not(.dark-mode) .music-info {
     font-size: 14px;
     transition: background-color 0.2s;
     width: 100px;
+}
+
+.edit-buttons button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
 }
 
 .save-btn {

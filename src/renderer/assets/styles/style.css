@@ -52,6 +52,33 @@ body:not(.dark-mode) .content .card {
   color: var(--font-color);
 }
 
+.card .sheet-info .sheet-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.card .sheet-info .sheet-title-row .name-sheet {
+  margin-bottom: 0;
+}
+
+.sheet-badge,
+.footer-hold-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.14);
+  color: var(--font-color);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .card .sheet-info .info-lines {
   display: grid;
   grid-auto-rows: min-content;
@@ -160,6 +187,13 @@ body:not(.dark-mode) .footer {
 .name-playing {
   margin-bottom: 15px;
   font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-hold-badge {
+  margin-left: 0;
 }
 
 /* Process bar (progress slider) */

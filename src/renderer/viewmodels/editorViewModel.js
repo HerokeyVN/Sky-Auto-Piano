@@ -13,7 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentEditingField = null;
     let originalValue = '';
     let keyMapData = null;
+    let sheetPayload = null;
     let hasUnsavedChanges = false;
+    let isHoldSheet = false;
+    const keyOrder = ['y', 'u', 'i', 'o', 'p', 'h', 'j', 'k', 'l', ';', 'n', 'm', ',', '.', '/'];
+    const skyKeyPattern = /^([0-9]+)Key([0-9]+)$/;
 
     // Get the sheet index from the URL parameters
     const urlParams = new URLSearchParams(window.location.search);
@@ -57,14 +61,18 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Load keymap data
             if (sheetData.keyMap) {
-                keyMapData = JSON.parse(
+                const parsedPayload = JSON.parse(
                     fs.readFileSync(path.join(dataDirectory, sheetData.keyMap), {
                         encoding: 'utf8',
                     })
                 );
+                sheetPayload = parseStoredSheetPayload(parsedPayload, sheetData.bitsPerPage);
+                keyMapData = sheetPayload.keyMap;
+                isHoldSheet = Boolean(sheetData.hasHoldNotes || sheetPayload.hasHoldNotes);
             }
             
             updateFieldValues(sheetData);
+            updateHoldEditorState();
             // Generate grid boxes
             generateGridBoxes(keyMapData);
             // Initialize grid with keymap data
@@ -92,6 +100,125 @@ document.addEventListener('DOMContentLoaded', () => {
                 field.querySelector('.field-value').textContent = fields[fieldType];
             }
         });
+    }
+
+    function resolveBitsPerPage(bitsPerPage) {
+        const safeBitsPerPage = Number(bitsPerPage);
+        if (Number.isFinite(safeBitsPerPage) && safeBitsPerPage > 0 && safeBitsPerPage <= 128) {
+            return Math.trunc(safeBitsPerPage);
+        }
+        return 16;
+    }
+
+    function hasSongNotesWithHold(songNotes) {
+        return Array.isArray(songNotes) && songNotes.some(note => Number(note?.hold) > 0);
+    }
+
+    function normalizeStoredKeyMap(rawKeyMap) {
+        if (!rawKeyMap || typeof rawKeyMap !== 'object' || Array.isArray(rawKeyMap)) {
+            throw new Error('Invalid keymap payload.');
+        }
+
+        const normalized = {};
+        const timestamps = Object.keys(rawKeyMap)
+            .map((time) => Number(time))
+            .filter((time) => Number.isFinite(time) && time >= 0)
+            .sort((a, b) => a - b);
+
+        timestamps.forEach((time) => {
+            const keysAtTime = Array.isArray(rawKeyMap[time]) ? rawKeyMap[time] : [];
+            const dedupe = new Set();
+            normalized[time] = [];
+            keysAtTime.forEach((key) => {
+                const safeKey = typeof key === 'string' ? key.trim() : '';
+                if (!safeKey || !keyOrder.includes(safeKey) || dedupe.has(safeKey)) return;
+                dedupe.add(safeKey);
+                normalized[time].push(safeKey);
+            });
+        });
+
+        return normalized;
+    }
+
+    function normalizeSongNotes(songNotes, bitsPerPage) {
+        if (!Array.isArray(songNotes) || !songNotes.length) {
+            throw new Error('Invalid song notes payload.');
+        }
+
+        const safeBitsPerPage = resolveBitsPerPage(bitsPerPage);
+        const normalized = songNotes.map((note) => {
+            const time = Number(note?.time);
+            const key = typeof note?.key === 'string' ? note.key.trim() : '';
+            const hold = Number(note?.hold);
+            const match = skyKeyPattern.exec(key);
+
+            if (!Number.isFinite(time) || time < 0 || !match) {
+                throw new Error('Invalid song notes payload.');
+            }
+
+            const keyIndex = Number(match[2]);
+            if (!Number.isInteger(keyIndex) || keyIndex < 0 || keyIndex >= safeBitsPerPage || keyIndex > 14) {
+                throw new Error('Invalid song notes payload.');
+            }
+
+            return {
+                time: Math.trunc(time),
+                key,
+                ...(Number.isFinite(hold) && hold > 0 ? { hold: Math.trunc(hold) } : {}),
+            };
+        });
+
+        normalized.sort((a, b) => a.time - b.time || a.key.localeCompare(b.key));
+        return normalized;
+    }
+
+    function parseStoredSheetPayload(parsed, bitsPerPage) {
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            throw new Error('Invalid sheet payload.');
+        }
+
+        const rawKeyMap = parsed.keyMap && typeof parsed.keyMap === 'object' ? parsed.keyMap : parsed;
+        return {
+            keyMap: normalizeStoredKeyMap(rawKeyMap),
+            songNotes: Array.isArray(parsed.songNotes) ? normalizeSongNotes(parsed.songNotes, bitsPerPage) : null,
+            hasHoldNotes: hasSongNotesWithHold(parsed.songNotes),
+        };
+    }
+
+    function getSongNotesFromKeyMapData(currentKeyMapData) {
+        const songNotes = [];
+        if (!currentKeyMapData) return songNotes;
+
+        Object.keys(currentKeyMapData).forEach((time) => {
+            currentKeyMapData[time].forEach((key) => {
+                const keyIndex = keyOrder.indexOf(key);
+                if (keyIndex === -1) return;
+                songNotes.push({ time: Number(time), key: `1Key${keyIndex}` });
+            });
+        });
+
+        songNotes.sort((a, b) => a.time - b.time || a.key.localeCompare(b.key));
+        return songNotes;
+    }
+
+    function updateHoldEditorState() {
+        const holdBanner = document.getElementById('hold-note-banner');
+        const saveBtn = document.querySelector('#keyboard .save-btn');
+        const cancelBtn = document.querySelector('#keyboard .cancel-btn');
+
+        if (holdBanner) {
+            holdBanner.hidden = !isHoldSheet;
+        }
+
+        if (saveBtn) {
+            saveBtn.disabled = isHoldSheet;
+            saveBtn.title = isHoldSheet ? 'Hold sheets are read-only in the current editor.' : '';
+        }
+
+        if (cancelBtn) {
+            cancelBtn.disabled = isHoldSheet;
+            cancelBtn.title = isHoldSheet ? 'Hold sheets are read-only in the current editor.' : '';
+        }
     }
 
     function generateGridBoxes(keyMapData) {
@@ -174,15 +301,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveKeyMapChanges() {
-        if (!hasUnsavedChanges || !sheetData || !keyMapData) return;
+        if (isHoldSheet || !hasUnsavedChanges || !sheetData || !keyMapData) return;
 
         try {
-            // Save keymap changes
+            const songNotes = getSongNotesFromKeyMapData(keyMapData);
             fs.writeFileSync(
                 path.join(dataDirectory, sheetData.keyMap),
-                JSON.stringify(keyMapData),
+                JSON.stringify({
+                    version: 2,
+                    keyMap: keyMapData,
+                    songNotes,
+                }),
                 { mode: 0o666 }
             );
+            sheetPayload = {
+                keyMap: keyMapData,
+                songNotes,
+                hasHoldNotes: false,
+            };
+            sheetData.hasHoldNotes = false;
             ipcRenderer.send('keymap-updated', {
                 index: parseInt(sheetIndex)
             });
@@ -206,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gridBoxes.forEach(box => {
             box.addEventListener('click', () => {
                 const timeMs = box.getAttribute('data-time');
-                if (!keyMapData[timeMs]) {
+                if (!isHoldSheet && !keyMapData[timeMs]) {
                     keyMapData[timeMs] = [];
                 }
                 
@@ -225,7 +362,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Show edit buttons
                 const buttons = document.querySelector('#keyboard .edit-buttons');
-                buttons.classList.add('visible');
+                if (!isHoldSheet) {
+                    buttons.classList.add('visible');
+                }
             });
         });
     }
@@ -258,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update keyboard click handler
     keyboardKeys.forEach(key => {
         key.addEventListener('click', () => {
-            if (!currentActiveGrid || !keyMapData) return;
+            if (isHoldSheet || !currentActiveGrid || !keyMapData) return;
             
             const keyValue = key.querySelector('input').value.toLowerCase();
             const timeMs = currentActiveGrid.getAttribute('data-time');
@@ -284,6 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add event listeners for editable fields
     editableFields.forEach(field => {
         field.addEventListener('click', () => {
+            if (isHoldSheet) return;
             startEditing(field);
         });
     });
@@ -393,6 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveBtn = document.querySelector('#keyboard .save-btn');
     if (saveBtn) {
         saveBtn.addEventListener('click', () => {
+            if (isHoldSheet) return;
             if (currentEditingField) {
                 saveEditing();
             } else if (hasUnsavedChanges) {
@@ -404,6 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelBtn = document.querySelector('#keyboard .cancel-btn');
     if (cancelBtn) {
         cancelBtn.addEventListener('click', () => {
+            if (isHoldSheet) return;
             if (currentEditingField) {
                 cancelEditing();
             } else if (hasUnsavedChanges) {
@@ -461,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (validKeys[key] && currentActiveGrid && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (!isHoldSheet && validKeys[key] && currentActiveGrid && !e.ctrlKey && !e.altKey && !e.metaKey) {
             e.preventDefault(); // Prevent default key behavior
 
             const timeMs = currentActiveGrid.getAttribute('data-time');
@@ -513,20 +655,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add export logic
     function getOriginalSheetFormat(sheetData, keyMapData) {
-        // Map keyMapData back to songNotes array
-        const keyOrder = ['y', 'u', 'i', 'o', 'p', 'h', 'j', 'k', 'l', ';', 'n', 'm', ',', '.', '/'];
-        let songNotes = [];
-        if (keyMapData) {
-            Object.keys(keyMapData).forEach(time => {
-                keyMapData[time].forEach(key => {
-                    const keyIndex = keyOrder.indexOf(key);
-                    if (keyIndex !== -1) {
-                        songNotes.push({ time: Number(time), key: `1Key${keyIndex}` });
-                    }
-                });
-            });
-            songNotes.sort((a, b) => a.time - b.time || a.key.localeCompare(b.key));
-        }
+        const songNotes = Array.isArray(sheetPayload?.songNotes) && sheetPayload.songNotes.length
+            ? sheetPayload.songNotes
+            : getSongNotesFromKeyMapData(keyMapData);
         // Compose the original format object
         return [{
             name: sheetData.name || 'Untitled',
