@@ -205,6 +205,15 @@ body {
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.tab-header-copy {
+    min-width: 0;
 }
 
 .tab-header h2 {
@@ -225,6 +234,48 @@ body {
     color: rgba(255, 255, 255, 0.7);
     font-size: 16px;
     line-height: 1.5;
+}
+
+.tab-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.header-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--hover-color), #4a90e2);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(74, 144, 226, 0.22);
+}
+
+.header-action-btn.secondary {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: none;
+}
+
+.header-action-btn:hover {
+    transform: translateY(-2px);
+}
+
+.header-action-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.header-action-btn i,
+.header-action-btn span {
+    color: inherit;
 }
 
 /* -------------------------------------

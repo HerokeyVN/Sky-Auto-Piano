@@ -145,6 +145,22 @@ export function registerIpcHandlers({ windowController, configService, autoPlayS
 		}
 	});
 
+	ipcMain.handle("show-settings-export-dialog", async (_, args = {}) => {
+		const win = windowController.settingWindow ?? windowController.mainWindow;
+		return dialog.showSaveDialog(win, {
+			defaultPath: args.defaultPath,
+			filters: [{ name: "JSON File", extensions: ["json"] }],
+		});
+	});
+
+	ipcMain.handle("show-settings-import-dialog", async () => {
+		const win = windowController.settingWindow ?? windowController.mainWindow;
+		return dialog.showOpenDialog(win, {
+			properties: ["openFile"],
+			filters: [{ name: "JSON File", extensions: ["json"] }],
+		});
+	});
+
 	ipcMain.handle("sky-sheet-store:list", async (_, args = {}) => {
 		try {
 			return await skySheetStoreService.listSheets(args);

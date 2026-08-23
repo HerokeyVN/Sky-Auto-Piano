@@ -18,6 +18,21 @@ const marked = require('marked');
 
 // Load current configuration
 var config = JSON.parse(fs.readFileSync(configPath));
+const shortcutFieldIds = [
+	"pre-shortcut-setting",
+	"play-shortcut-setting",
+	"next-shortcut-setting",
+	"increase-speed-shortcut-setting",
+	"decrease-speed-shortcut-setting",
+];
+
+function cloneValue(value) {
+	return JSON.parse(JSON.stringify(value));
+}
+
+function isFiniteNumber(value) {
+	return typeof value === "number" && Number.isFinite(value);
+}
 
 // Configure marked to open links in external browser
 marked.setOptions({
@@ -117,29 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // LOAD SETTINGS
 // -------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-	// General settings
-	document.getElementById("switch-save-setting").checked = config.panel.autoSave;
-	document.getElementById("switch-minimize-on-play").checked = config.panel.minimizeOnPlay;
-	document.getElementById("playback-mode").value = config.panel.playbackMode || "lite";
-
-	// Keyboard settings
-	let i = 0;
-	for (let dom of document.getElementsByClassName("keys")) {
-		applyKeyboardInputValue(dom, config.keyboard.keys[i++]);
-	}
-	document.getElementById("switch-custom-keyboard").checked =
-		config.keyboard.customKeyboard;
-
-	// Shortcut settings
-	document.getElementById("pre-shortcut-setting").value = config.shortcut.pre;
-	document.getElementById("play-shortcut-setting").value = config.shortcut.play;
-	document.getElementById("next-shortcut-setting").value = config.shortcut.next;
-	document.getElementById("increase-speed-shortcut-setting").value = config.shortcut.increaseSpeed;
-	document.getElementById("decrease-speed-shortcut-setting").value = config.shortcut.decreaseSpeed;
-
-	// Update settings
-	document.getElementById("switch-block-update").checked =
-		config.update?.blockUpdate ?? false;
+	applyConfigToForm(config);
 		
 	// Add event listener for block updates switch with confirmation dialog
 	document.getElementById("switch-block-update").addEventListener("change", (event) => {
@@ -489,6 +482,146 @@ function resolveKeyboardKeyFromEvent(event) {
 	return keyboardKeyAliases[event.code] || null;
 }
 
+function applyConfigToForm(nextConfig) {
+	document.getElementById("switch-save-setting").checked = Boolean(nextConfig.panel.autoSave);
+	document.getElementById("switch-minimize-on-play").checked = Boolean(nextConfig.panel.minimizeOnPlay);
+	document.getElementById("playback-mode").value = nextConfig.panel.playbackMode || "lite";
+
+	let i = 0;
+	for (const dom of document.getElementsByClassName("keys")) {
+		applyKeyboardInputValue(dom, nextConfig.keyboard.keys[i++]);
+	}
+	document.getElementById("switch-custom-keyboard").checked = Boolean(nextConfig.keyboard.customKeyboard);
+
+	document.getElementById("pre-shortcut-setting").value = nextConfig.shortcut.pre;
+	document.getElementById("play-shortcut-setting").value = nextConfig.shortcut.play;
+	document.getElementById("next-shortcut-setting").value = nextConfig.shortcut.next;
+	document.getElementById("increase-speed-shortcut-setting").value = nextConfig.shortcut.increaseSpeed;
+	document.getElementById("decrease-speed-shortcut-setting").value = nextConfig.shortcut.decreaseSpeed;
+
+	document.getElementById("switch-block-update").checked = Boolean(nextConfig.update?.blockUpdate ?? false);
+}
+
+function buildConfigFromForm() {
+	const nextConfig = cloneValue(config);
+
+	nextConfig.panel.autoSave = document.getElementById("switch-save-setting").checked;
+	nextConfig.panel.minimizeOnPlay = document.getElementById("switch-minimize-on-play").checked;
+	nextConfig.panel.playbackMode = document.getElementById("playback-mode").value;
+
+	let i = 0;
+	for (const dom of document.getElementsByClassName("keys")) {
+		nextConfig.keyboard.keys[i++] = normalizeKeyboardMappingValue(dom.dataset.keyValue || dom.value);
+	}
+	nextConfig.keyboard.customKeyboard = document.getElementById("switch-custom-keyboard").checked;
+
+	nextConfig.shortcut.pre = document.getElementById("pre-shortcut-setting").value.trim();
+	nextConfig.shortcut.play = document.getElementById("play-shortcut-setting").value.trim();
+	nextConfig.shortcut.next = document.getElementById("next-shortcut-setting").value.trim();
+	nextConfig.shortcut.increaseSpeed = document.getElementById("increase-speed-shortcut-setting").value.trim();
+	nextConfig.shortcut.decreaseSpeed = document.getElementById("decrease-speed-shortcut-setting").value.trim();
+
+	nextConfig.update = nextConfig.update || {};
+	nextConfig.update.blockUpdate = document.getElementById("switch-block-update").checked;
+
+	return nextConfig;
+}
+
+function validateShortcutConfig(shortcutConfig) {
+	const seen = new Set();
+	for (const key of Object.keys(shortcutConfig)) {
+		const value = String(shortcutConfig[key] || "").trim();
+		if (!value) {
+			return { ok: false, message: "Unable to save the settings, a shortcut is empty!" };
+		}
+		if (seen.has(value)) {
+			return { ok: false, message: "Unable to save the settings, the shortcut has been duplicated!" };
+		}
+		seen.add(value);
+	}
+	return { ok: true };
+}
+
+function normalizeImportedConfig(importedConfig) {
+	if (!importedConfig || typeof importedConfig !== "object" || Array.isArray(importedConfig)) {
+		throw new Error("The selected settings file is invalid.");
+	}
+
+	const nextConfig = cloneValue(config);
+
+	if (importedConfig.panel && typeof importedConfig.panel === "object" && !Array.isArray(importedConfig.panel)) {
+		const panel = importedConfig.panel;
+		if (typeof panel.longPressMode === "boolean") nextConfig.panel.longPressMode = panel.longPressMode;
+		if (isFiniteNumber(panel.speed) && panel.speed >= 0.1 && panel.speed <= 5) nextConfig.panel.speed = panel.speed;
+		if (isFiniteNumber(panel.delayNext) && panel.delayNext >= 0) nextConfig.panel.delayNext = panel.delayNext;
+		if (typeof panel.autoSave === "boolean") nextConfig.panel.autoSave = panel.autoSave;
+		if (typeof panel.minimizeOnPlay === "boolean") nextConfig.panel.minimizeOnPlay = panel.minimizeOnPlay;
+		if (["lite", "strict"].includes(panel.playbackMode)) nextConfig.panel.playbackMode = panel.playbackMode;
+	}
+
+	if (importedConfig.keyboard && typeof importedConfig.keyboard === "object" && !Array.isArray(importedConfig.keyboard)) {
+		const keyboard = importedConfig.keyboard;
+		if (typeof keyboard.customKeyboard === "boolean") nextConfig.keyboard.customKeyboard = keyboard.customKeyboard;
+		if (Array.isArray(keyboard.keys)) {
+			nextConfig.keyboard.keys = nextConfig.keyboard.keys.map((fallback, index) => {
+				const incoming = keyboard.keys[index];
+				return incoming === undefined ? fallback : normalizeKeyboardMappingValue(incoming) || fallback;
+			});
+		}
+	}
+
+	if (importedConfig.shortcut && typeof importedConfig.shortcut === "object" && !Array.isArray(importedConfig.shortcut)) {
+		const shortcut = importedConfig.shortcut;
+		for (const key of ["pre", "play", "next", "increaseSpeed", "decreaseSpeed"]) {
+			if (typeof shortcut[key] === "string" && shortcut[key].trim()) {
+				nextConfig.shortcut[key] = shortcut[key].trim();
+			}
+		}
+	}
+
+	if (importedConfig.update && typeof importedConfig.update === "object" && !Array.isArray(importedConfig.update)) {
+		if (typeof importedConfig.update.blockUpdate === "boolean") {
+			nextConfig.update.blockUpdate = importedConfig.update.blockUpdate;
+		}
+	}
+
+	if (typeof importedConfig.appTheme === "string" && ["light", "dark"].includes(importedConfig.appTheme)) {
+		nextConfig.appTheme = importedConfig.appTheme;
+	}
+
+	return nextConfig;
+}
+
+function persistConfig(nextConfig, successMessage) {
+	const shortcutValidation = validateShortcutConfig(nextConfig.shortcut);
+	if (!shortcutValidation.ok) {
+		notie.alert({
+			type: 3,
+			text: shortcutValidation.message,
+		});
+		return false;
+	}
+
+	try {
+		fs.writeFileSync(configPath, JSON.stringify(nextConfig, null, 4));
+		config = nextConfig;
+		applyConfigToForm(config);
+		notie.alert({
+			type: 1,
+			text: successMessage,
+		});
+		ipcRenderer.send("changeSetting");
+		return true;
+	} catch (err) {
+		console.log(err);
+		notie.alert({
+			type: 3,
+			text: "Can't save the settings!",
+		});
+		return false;
+	}
+}
+
 // Function to convert shortcut to keysender format
 function convertToKeysenderFormat(shortcut) {
 	return shortcut.split("+").map(key => {
@@ -513,13 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	for (let id of [
-		"pre-shortcut-setting",
-		"play-shortcut-setting",
-		"next-shortcut-setting",
-		"increase-speed-shortcut-setting",
-		"decrease-speed-shortcut-setting",
-	]) {
+	for (let id of shortcutFieldIds) {
 		// Handle key release - format the shortcut string
 		document.getElementById(id).addEventListener("keyup", (data) => {
 			let dom = document.getElementById(id);
@@ -577,56 +704,58 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById("btn-save-setting").addEventListener("click", () => {
-		// Save general settings
-		config.panel.autoSave = document.getElementById("switch-save-setting").checked;
-		config.panel.minimizeOnPlay = document.getElementById("switch-minimize-on-play").checked;
-		config.panel.playbackMode = document.getElementById("playback-mode").value;
+		persistConfig(buildConfigFromForm(), "Settings saved and applied.");
+	});
 
-		// Save keyboard settings
-		let i = 0;
-		for (let dom of document.getElementsByClassName("keys")) {
-			config.keyboard.keys[i++] = normalizeKeyboardMappingValue(dom.dataset.keyValue || dom.value);
-		}
-		config.keyboard.customKeyboard = document.getElementById("switch-custom-keyboard").checked;
-
-		// Save and validate shortcut settings
-		let arrShortcut = [];
-		config.shortcut.pre = document.getElementById("pre-shortcut-setting").value;
-		config.shortcut.play = document.getElementById("play-shortcut-setting").value;
-		config.shortcut.next = document.getElementById("next-shortcut-setting").value;
-		config.shortcut.increaseSpeed = document.getElementById("increase-speed-shortcut-setting").value;
-		config.shortcut.decreaseSpeed = document.getElementById("decrease-speed-shortcut-setting").value;
-
-		// Check for duplicate shortcuts
-		for (let key in config.shortcut) {
-			if (arrShortcut.indexOf(config.shortcut[key]) != -1) {
-				return notie.alert({
-					type: 3,
-					text: "Unable to save the settings, the shortcut has been duplicated!",
-				});
-			}
-			arrShortcut.push(config.shortcut[key]);
-		}
-
-		// Save update settings
-		if (!config.update) {
-			config.update = {};
-		}
-		config.update.blockUpdate = document.getElementById("switch-block-update").checked;
-
-		// Write config to file
-		try {
-			fs.writeFileSync(configPath, JSON.stringify(config, null, 4));
-			notie.alert({
-				type: 1,
-				text: "Settings saved and applied.",
-			});
-			ipcRenderer.send("changeSetting");
-		} catch (err) {
-			console.log(err);
+	document.getElementById("btn-export-setting").addEventListener("click", async () => {
+		const nextConfig = buildConfigFromForm();
+		const shortcutValidation = validateShortcutConfig(nextConfig.shortcut);
+		if (!shortcutValidation.ok) {
 			notie.alert({
 				type: 3,
-				text: "Can't save the settings!",
+				text: shortcutValidation.message,
+			});
+			return;
+		}
+
+		const { filePath, canceled } = await ipcRenderer.invoke("show-settings-export-dialog", {
+			defaultPath: `sky-auto-piano-settings-v${packageJson.version}.json`,
+		});
+		if (canceled || !filePath) return;
+
+		const result = await ipcRenderer.invoke("save-exported-file", {
+			filePath,
+			content: JSON.stringify(nextConfig, null, 4),
+		});
+
+		if (!result?.success) {
+			notie.alert({
+				type: 3,
+				text: result?.error || "Can't export the settings!",
+			});
+			return;
+		}
+
+		notie.alert({
+			type: 1,
+			text: "Settings exported successfully.",
+		});
+	});
+
+	document.getElementById("btn-import-setting").addEventListener("click", async () => {
+		const { canceled, filePaths } = await ipcRenderer.invoke("show-settings-import-dialog");
+		if (canceled || !Array.isArray(filePaths) || !filePaths[0]) return;
+
+		try {
+			const rawContent = fs.readFileSync(filePaths[0], "utf8");
+			const importedConfig = JSON.parse(rawContent);
+			const normalizedConfig = normalizeImportedConfig(importedConfig);
+			persistConfig(normalizedConfig, "Settings imported and applied.");
+		} catch (error) {
+			console.error("Failed to import settings:", error);
+			notie.alert({
+				type: 3,
+				text: "The selected settings file is invalid.",
 			});
 		}
 	});
