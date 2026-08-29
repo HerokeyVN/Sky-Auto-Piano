@@ -178,6 +178,24 @@ export function registerIpcHandlers({ windowController, configService, autoPlayS
 			throw normalizeIpcError(error, "Unable to load this sheet. Please try again.");
 		}
 	});
+
+	ipcMain.handle("sky-sheet-store:record-player-start", async (_, { id, sourceType }) => {
+		try {
+			return await skySheetStoreService.recordPlayerStart(id, sourceType);
+		} catch (error) {
+			console.warn("IPC", "Failed to record Sky Sheet Store player start", error);
+			return { tracked: false, reason: error?.code || "track_player_start_failed" };
+		}
+	});
+
+	ipcMain.handle("sky-sheet-store:record-download", async (_, { id, sourceType }) => {
+		try {
+			return await skySheetStoreService.recordDownload(id, sourceType);
+		} catch (error) {
+			console.warn("IPC", "Failed to record Sky Sheet Store download", error);
+			return { tracked: false, reason: error?.code || "track_download_failed" };
+		}
+	});
 }
 
 function normalizeIpcError(error, fallbackMessage) {

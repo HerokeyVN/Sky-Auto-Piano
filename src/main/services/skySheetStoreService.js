@@ -7,6 +7,7 @@ const LIST_CACHE_TTL_MS = 30_000;
 const PLAYER_CACHE_TTL_MS = 120_000;
 const MAX_LIST_RESPONSE_BYTES = 256 * 1024;
 const MAX_PLAYER_RESPONSE_BYTES = 600 * 1024;
+const MAX_DOWNLOAD_RESPONSE_BYTES = 2 * 1024 * 1024;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export class SkySheetStoreService {
@@ -78,10 +79,7 @@ export class SkySheetStoreService {
 	}
 
 	async getPlayerSheet(id, sourceType = "user") {
-		const normalizedId = typeof id === "string" ? id.trim() : "";
-		if (!UUID_PATTERN.test(normalizedId)) {
-			throw new Error("Invalid Sky Sheet Store sheet id.");
-		}
+		const normalizedId = this.#normalizeSheetId(id);
 		const normalizedSourceType = sourceType === "archive" ? "archive" : "user";
 
 		const cacheKey = `${normalizedSourceType}:${normalizedId}`;
@@ -112,6 +110,54 @@ export class SkySheetStoreService {
 		return mapped;
 	}
 
+	async recordPlayerStart(id, sourceType = "user") {
+		const normalizedId = this.#normalizeSheetId(id);
+		const normalizedSourceType = sourceType === "archive" ? "archive" : "user";
+
+		if (normalizedSourceType === "archive") {
+			return {
+				tracked: false,
+				reason: "archive_player_events_unavailable",
+			};
+		}
+
+		const response = await this.http.post(`/api/v1/sheets/${normalizedId}/open`, null, {
+			maxContentLength: MAX_PLAYER_RESPONSE_BYTES,
+			maxBodyLength: MAX_PLAYER_RESPONSE_BYTES,
+		});
+
+		this.#parseResponse(response);
+		return { tracked: true };
+	}
+
+	async recordDownload(id, sourceType = "user") {
+		const normalizedId = this.#normalizeSheetId(id);
+		const normalizedSourceType = sourceType === "archive" ? "archive" : "user";
+		const downloadPath = normalizedSourceType === "archive"
+			? `/api/v1/archive/sheets/${normalizedId}/download`
+			: `/api/v1/sheets/${normalizedId}/download`;
+
+		const response = await this.http.get(downloadPath, {
+			responseType: "arraybuffer",
+			headers: {
+				Accept: "application/json,text/plain,*/*",
+			},
+			maxContentLength: MAX_DOWNLOAD_RESPONSE_BYTES,
+			maxBodyLength: MAX_DOWNLOAD_RESPONSE_BYTES,
+		});
+
+		this.#parseStatusOnly(response);
+		return { tracked: true };
+	}
+
+	#normalizeSheetId(id) {
+		const normalizedId = typeof id === "string" ? id.trim() : "";
+		if (!UUID_PATTERN.test(normalizedId)) {
+			throw new Error("Invalid Sky Sheet Store sheet id.");
+		}
+		return normalizedId;
+	}
+
 	#parseResponse(response) {
 		if (response.status >= 200 && response.status < 300) {
 			return response.data;
@@ -121,6 +167,18 @@ export class SkySheetStoreService {
 		const backendCode = response.data?.error;
 		const error = new Error(backendMessage || "Sky Sheet Store request failed.");
 		error.code = backendCode || `http_${response.status}`;
+		error.status = response.status;
+		throw error;
+	}
+
+	#parseStatusOnly(response) {
+		if (response.status >= 200 && response.status < 300) {
+			return;
+		}
+
+		const parsedError = parseErrorPayload(response.data);
+		const error = new Error(parsedError.message || "Sky Sheet Store request failed.");
+		error.code = parsedError.code || `http_${response.status}`;
 		error.status = response.status;
 		throw error;
 	}
@@ -151,6 +209,8 @@ export class SkySheetStoreService {
 			pitchLevel: clampInteger(item?.pitch_level || item?.pitchLevel, -12, 12, 0),
 			durationMs: clampInteger(item?.duration_ms || item?.durationMs, 0, 15 * 60 * 1000, 0),
 			noteCount: clampInteger(item?.note_count || item?.noteCount, 0, 20_000, 0),
+			playCount: clampInteger(item?.play_count || item?.playCount || item?.playerOpenCount || item?.player_open_count, 0, Number.MAX_SAFE_INTEGER, 0),
+			downloadCount: clampInteger(item?.download_count || item?.downloadCount, 0, Number.MAX_SAFE_INTEGER, 0),
 			difficulty: asTrimmedString(item?.difficulty) || "Unknown",
 			priceAmount: clampInteger(item?.price_amount || item?.priceAmount, 0, Number.MAX_SAFE_INTEGER, 0),
 			currency: asTrimmedString(item?.currency) || "USD",
@@ -240,6 +300,29 @@ export class SkySheetStoreService {
 		} catch (_) {
 			return "";
 		}
+	}
+}
+
+function parseErrorPayload(data) {
+	if (!data) return {};
+	if (typeof data === "object" && !Buffer.isBuffer(data)) {
+		return {
+			message: asTrimmedString(data.message),
+			code: asTrimmedString(data.error),
+		};
+	}
+
+	const text = Buffer.isBuffer(data) ? data.toString("utf8") : "";
+	if (!text) return {};
+
+	try {
+		const parsed = JSON.parse(text);
+		return {
+			message: asTrimmedString(parsed?.message),
+			code: asTrimmedString(parsed?.error),
+		};
+	} catch (_) {
+		return { message: text.slice(0, 160) };
 	}
 }
 

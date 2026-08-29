@@ -571,10 +571,11 @@ function renderStoreCardMarkup(item) {
 		item.difficulty || "Unknown",
 		item.bpm ? `${item.bpm} BPM` : "Unknown BPM",
 		item.noteCount ? `${item.noteCount} notes` : "Unknown notes",
-		item.accessMode === "web_only" ? "Web only" : "Downloadable",
-		item.priceAmount > 0 ? "Paid" : "Free",
+		item.accessMode === "web_only" ? "Web only" : "",
+		item.priceAmount > 0 ? "Paid" : "",
 	]
 		.concat(item.tags.slice(0, 3))
+		.filter(Boolean)
 		.map((badge) => `<span class="store-badge">${escapeHtml(badge)}</span>`)
 		.join("");
 
@@ -704,6 +705,7 @@ async function playStoreSheet(sheetId) {
 			sheet: prepared.displaySheet,
 		});
 		btnPlay();
+		void trackStorePlayerStart(item);
 	} catch (error) {
 		notie.alert({
 			type: 3,
@@ -740,6 +742,7 @@ async function saveStoreSheet(sheetId) {
 			notie.alert({ type: 3, text: result.msg });
 		} else {
 			notie.alert({ type: 1, text: "Saved to Library." });
+			void trackStoreDownload(item);
 			if (LOCAL_TABS.has(activeTab)) renderContent();
 		}
 	} catch (error) {
@@ -750,6 +753,32 @@ async function saveStoreSheet(sheetId) {
 	} finally {
 		storeState.savingItemId = "";
 		if (activeTab === STORE_TAB) renderContent();
+	}
+}
+
+async function trackStorePlayerStart(item) {
+	if (!item?.id) return;
+
+	try {
+		await ipcRenderer.invoke("sky-sheet-store:record-player-start", {
+			id: item.id,
+			sourceType: item.sourceType || "user",
+		});
+	} catch (error) {
+		console.warn("Failed to record Sky Sheet Store player start", error);
+	}
+}
+
+async function trackStoreDownload(item) {
+	if (!item?.id) return;
+
+	try {
+		await ipcRenderer.invoke("sky-sheet-store:record-download", {
+			id: item.id,
+			sourceType: item.sourceType || "user",
+		});
+	} catch (error) {
+		console.warn("Failed to record Sky Sheet Store download", error);
 	}
 }
 
