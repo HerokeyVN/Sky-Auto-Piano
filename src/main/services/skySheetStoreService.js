@@ -1,4 +1,5 @@
 import axios from "axios";
+import { randomUUID } from "crypto";
 
 const SKY_SHEET_STORE_API_BASE_URL = "https://api.skysheet.store";
 const SKY_SHEET_STORE_SITE_BASE_URL = "https://skysheet.store";
@@ -14,6 +15,7 @@ export class SkySheetStoreService {
 	constructor() {
 		this.listCache = new Map();
 		this.playerCache = new Map();
+		this.anonymousUserId = randomUUID();
 		this.http = axios.create({
 			baseURL: SKY_SHEET_STORE_API_BASE_URL,
 			timeout: DEFAULT_TIMEOUT_MS,
@@ -122,6 +124,7 @@ export class SkySheetStoreService {
 		}
 
 		const response = await this.http.post(`/api/v1/sheets/${normalizedId}/open`, null, {
+			headers: this.#anonymousHeaders(),
 			maxContentLength: MAX_PLAYER_RESPONSE_BYTES,
 			maxBodyLength: MAX_PLAYER_RESPONSE_BYTES,
 		});
@@ -141,6 +144,7 @@ export class SkySheetStoreService {
 			responseType: "arraybuffer",
 			headers: {
 				Accept: "application/json,text/plain,*/*",
+				...this.#anonymousHeaders(),
 			},
 			maxContentLength: MAX_DOWNLOAD_RESPONSE_BYTES,
 			maxBodyLength: MAX_DOWNLOAD_RESPONSE_BYTES,
@@ -156,6 +160,12 @@ export class SkySheetStoreService {
 			throw new Error("Invalid Sky Sheet Store sheet id.");
 		}
 		return normalizedId;
+	}
+
+	#anonymousHeaders() {
+		return {
+			"X-Anonymous-User-Id": this.anonymousUserId,
+		};
 	}
 
 	#parseResponse(response) {
