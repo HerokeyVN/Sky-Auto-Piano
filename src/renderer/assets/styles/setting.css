@@ -278,6 +278,11 @@ body {
     color: inherit;
 }
 
+.setting-control .header-action-btn {
+    text-decoration: none;
+    white-space: nowrap;
+}
+
 /* -------------------------------------
    SETTINGS GRID AND CARDS
    ------------------------------------- */
