@@ -2,6 +2,7 @@ const { ipcRenderer } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const appRoot = path.join(__dirname, '..', '..', '..');
+const { SheetCodec } = require(path.join(appRoot, 'src', 'common', 'sheetCodec.cjs'));
 const dataDirectory = path.join(appRoot, 'data');
 const configPath = path.join(appRoot, 'config', 'config.json');
 
@@ -17,8 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let hasUnsavedChanges = false;
     let isHoldSheet = false;
     const keyOrder = ['y', 'u', 'i', 'o', 'p', 'h', 'j', 'k', 'l', ';', 'n', 'm', ',', '.', '/'];
-    const skyKeyPattern = /^([0-9]+)Key([0-9]+)$/;
-
     // Get the sheet index from the URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const sheetIndex = urlParams.get('sheetIndex');    // Load and apply theme
@@ -102,87 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function resolveBitsPerPage(bitsPerPage) {
-        const safeBitsPerPage = Number(bitsPerPage);
-        if (Number.isFinite(safeBitsPerPage) && safeBitsPerPage > 0 && safeBitsPerPage <= 128) {
-            return Math.trunc(safeBitsPerPage);
-        }
-        return 16;
-    }
-
-    function hasSongNotesWithHold(songNotes) {
-        return Array.isArray(songNotes) && songNotes.some(note => Number(note?.hold) > 0);
-    }
-
-    function normalizeStoredKeyMap(rawKeyMap) {
-        if (!rawKeyMap || typeof rawKeyMap !== 'object' || Array.isArray(rawKeyMap)) {
-            throw new Error('Invalid keymap payload.');
-        }
-
-        const normalized = {};
-        const timestamps = Object.keys(rawKeyMap)
-            .map((time) => Number(time))
-            .filter((time) => Number.isFinite(time) && time >= 0)
-            .sort((a, b) => a - b);
-
-        timestamps.forEach((time) => {
-            const keysAtTime = Array.isArray(rawKeyMap[time]) ? rawKeyMap[time] : [];
-            const dedupe = new Set();
-            normalized[time] = [];
-            keysAtTime.forEach((key) => {
-                const safeKey = typeof key === 'string' ? key.trim() : '';
-                if (!safeKey || !keyOrder.includes(safeKey) || dedupe.has(safeKey)) return;
-                dedupe.add(safeKey);
-                normalized[time].push(safeKey);
-            });
-        });
-
-        return normalized;
-    }
-
-    function normalizeSongNotes(songNotes, bitsPerPage) {
-        if (!Array.isArray(songNotes) || !songNotes.length) {
-            throw new Error('Invalid song notes payload.');
-        }
-
-        const safeBitsPerPage = resolveBitsPerPage(bitsPerPage);
-        const normalized = songNotes.map((note) => {
-            const time = Number(note?.time);
-            const key = typeof note?.key === 'string' ? note.key.trim() : '';
-            const hold = Number(note?.hold);
-            const match = skyKeyPattern.exec(key);
-
-            if (!Number.isFinite(time) || time < 0 || !match) {
-                throw new Error('Invalid song notes payload.');
-            }
-
-            const keyIndex = Number(match[2]);
-            if (!Number.isInteger(keyIndex) || keyIndex < 0 || keyIndex >= safeBitsPerPage || keyIndex > 14) {
-                throw new Error('Invalid song notes payload.');
-            }
-
-            return {
-                time: Math.trunc(time),
-                key,
-                ...(Number.isFinite(hold) && hold > 0 ? { hold: Math.trunc(hold) } : {}),
-            };
-        });
-
-        normalized.sort((a, b) => a.time - b.time || a.key.localeCompare(b.key));
-        return normalized;
-    }
-
     function parseStoredSheetPayload(parsed, bitsPerPage) {
-        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-            throw new Error('Invalid sheet payload.');
-        }
-
-        const rawKeyMap = parsed.keyMap && typeof parsed.keyMap === 'object' ? parsed.keyMap : parsed;
-        return {
-            keyMap: normalizeStoredKeyMap(rawKeyMap),
-            songNotes: Array.isArray(parsed.songNotes) ? normalizeSongNotes(parsed.songNotes, bitsPerPage) : null,
-            hasHoldNotes: hasSongNotesWithHold(parsed.songNotes),
-        };
+        return SheetCodec.loadStored(parsed, { bitsPerPage });
     }
 
     function getSongNotesFromKeyMapData(currentKeyMapData) {

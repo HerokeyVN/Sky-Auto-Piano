@@ -75,7 +75,7 @@ describe("AutoPlayService timeline", () => {
 			2000: ["u"],
 		};
 
-		const playPromise = service._autoPlay(keyMap, "s1", 0);
+		const playPromise = service._autoPlay(keyMap, null, "s1", 0);
 		await jest.runAllTimersAsync();
 		await playPromise;
 
@@ -99,7 +99,7 @@ describe("AutoPlayService timeline", () => {
 			1000: ["y"],
 		};
 
-		const playPromise = service._autoPlay(keyMap, "s1", 0);
+		const playPromise = service._autoPlay(keyMap, null, "s1", 0);
 		await jest.runAllTimersAsync();
 		await playPromise;
 
@@ -131,7 +131,7 @@ describe("AutoPlayService timeline", () => {
 			service.configService.value.panel.speed = 2;
 		}, 500);
 
-		const playPromise = service._autoPlay(keyMap, "s1", 0);
+		const playPromise = service._autoPlay(keyMap, null, "s1", 0);
 		await jest.runAllTimersAsync();
 		await playPromise;
 
@@ -169,7 +169,7 @@ describe("AutoPlayService timeline", () => {
 			service.configService.value.panel.speed = 0.5;
 		}, 500);
 
-		const playPromise = service._autoPlay(keyMap, "s1", 0);
+		const playPromise = service._autoPlay(keyMap, null, "s1", 0);
 		await jest.runAllTimersAsync();
 		await playPromise;
 
