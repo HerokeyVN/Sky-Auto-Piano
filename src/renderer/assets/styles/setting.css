@@ -1661,4 +1661,153 @@ body > .update-prompt .version-info:hover::before {
     left: auto !important;
     transition: none !important;
 }
+
+@media not all {
+/* macOS-inspired content controls. Sidebar navigation remains unchanged. */
+.main-content,
+.main-content button,
+.main-content input,
+.main-content select,
+.save-button,
+.block-updates-dialog,
+body > .update-prompt {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+}
+
+.setting-card {
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--background-color) 92%, #ffffff 8%);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07), 0 8px 24px rgba(0, 0, 0, 0.05);
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.setting-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(10, 132, 255, 0.32);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+.header-action-btn,
+.check-update-btn,
+.save-button,
+.dialog-btn,
+.update-btn {
+    min-height: 34px;
+    padding: 7px 14px;
+    border: 1px solid #0071e3;
+    border-radius: 8px;
+    color: #ffffff;
+    background: linear-gradient(180deg, #168cff, #0071e3);
+    box-shadow: 0 1px 2px rgba(0, 71, 160, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 80ms ease;
+}
+
+.header-action-btn:hover,
+.check-update-btn:hover,
+.save-button:hover,
+.dialog-btn:hover,
+.update-btn:hover:not(:disabled) {
+    transform: none;
+    border-color: #0068d1;
+    background: linear-gradient(180deg, #0a84ff, #0068d1);
+}
+
+.header-action-btn:active,
+.check-update-btn:active,
+.save-button:active,
+.dialog-btn:active,
+.update-btn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.header-action-btn.secondary,
+.dialog-btn.cancel-btn,
+.update-btn.secondary,
+body:not(.dark-mode) .header-action-btn.secondary {
+    border-color: rgba(148, 163, 184, 0.34);
+    color: var(--font-color);
+    background: rgba(120, 120, 128, 0.11);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.header-action-btn.secondary:hover,
+.dialog-btn.cancel-btn:hover,
+.update-btn.secondary:hover,
+body:not(.dark-mode) .header-action-btn.secondary:hover {
+    border-color: rgba(10, 132, 255, 0.42);
+    color: var(--font-color);
+    background: rgba(10, 132, 255, 0.1);
+}
+
+.setting-select,
+.shortcut-item input {
+    border: 1px solid rgba(148, 163, 184, 0.34);
+    border-radius: 8px;
+    color: var(--font-color);
+    background: rgba(120, 120, 128, 0.1);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.setting-select:focus,
+.shortcut-item input:focus {
+    outline: none;
+    border-color: #0a84ff;
+    box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.22);
+}
+
+.toggle-slider {
+    background: rgba(120, 120, 128, 0.32);
+    box-shadow: inset 0 0 0 1px rgba(120, 120, 128, 0.16);
+}
+
+.toggle-switch input:checked + .toggle-slider,
+body:not(.dark-mode) .toggle-switch input:checked + .toggle-slider {
+    background: #34c759;
+}
+
+.block-updates-dialog,
+.update-prompt-content {
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--background-color) 88%, transparent);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
+    backdrop-filter: blur(24px) saturate(150%);
+}
+
+body:not(.dark-mode) .setting-card {
+    background: rgba(255, 255, 255, 0.92);
+}
+
+body.dark-mode .setting-card {
+    background: rgba(44, 44, 46, 0.78);
+}
+
+}
+
+/* Compact settings controls; sidebar navigation is intentionally unchanged. */
+.header-action-btn,
+.dialog-btn,
+.update-btn {
+    min-height: 36px;
+    padding: 7px 12px;
+    font-size: 13px;
+}
+
+.check-update-btn,
+.save-button {
+    min-height: 38px;
+    padding: 8px 14px;
+    font-size: 13px;
+}
+
+.setting-select,
+.shortcut-item input {
+    min-height: 36px;
+    padding: 7px 10px;
+    font-size: 13px;
+}
   
