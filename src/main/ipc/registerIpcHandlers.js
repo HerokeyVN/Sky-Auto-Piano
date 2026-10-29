@@ -16,9 +16,9 @@ export function registerIpcHandlers({ windowController, configService, autoPlayS
 
 	ipcMain.on("changeSetting", () => {
 		const updatedConfig = configService.reloadFromDisk();
-		const { mainWindow, editorWindow, settingWindow } = windowController;
+		const { mainWindow, editorWindow, settingsWindow } = windowController;
 
-		for (const win of [mainWindow, editorWindow, settingWindow]) {
+		for (const win of [mainWindow, editorWindow, settingsWindow]) {
 			if (win && !win.isDestroyed()) {
 				win.webContents.send("config-updated", updatedConfig);
 			}
@@ -154,7 +154,7 @@ export function registerIpcHandlers({ windowController, configService, autoPlayS
 	});
 
 	ipcMain.handle("show-settings-export-dialog", async (_, args = {}) => {
-		const win = windowController.settingWindow ?? windowController.mainWindow;
+		const win = windowController.settingsWindow ?? windowController.mainWindow;
 		return dialog.showSaveDialog(win, {
 			defaultPath: args.defaultPath,
 			filters: [{ name: "JSON File", extensions: ["json"] }],
@@ -162,7 +162,7 @@ export function registerIpcHandlers({ windowController, configService, autoPlayS
 	});
 
 	ipcMain.handle("show-settings-import-dialog", async () => {
-		const win = windowController.settingWindow ?? windowController.mainWindow;
+		const win = windowController.settingsWindow ?? windowController.mainWindow;
 		return dialog.showOpenDialog(win, {
 			properties: ["openFile"],
 			filters: [{ name: "JSON File", extensions: ["json"] }],
