@@ -1,11 +1,11 @@
-﻿const { ipcRenderer, shell } = require("electron");
+const { ipcRenderer, shell } = require("electron");
 const fs = require("fs");
 const path = require("path");
 const { Base64 } = require("js-base64");
 const marked = require("marked");
-const MidiParser = require("midi-parser-js");
 
 const appRoot = path.join(__dirname, "..", "..", "..");
+const { SheetCodec } = require(path.join(appRoot, "src", "common", "sheetCodec.cjs"));
 const dataDirectory = path.join(appRoot, "data");
 const configPath = path.join(appRoot, "config", "config.json");
 const listSheetPath = path.join(dataDirectory, "listSheet.json");
@@ -17,7 +17,10 @@ const LOCAL_TABS = new Set(["all-songs", "favorite", "recent-play", PLAYLISTS_TA
 const STORE_SEARCH_DEBOUNCE_MS = 300;
 const MAX_REMOTE_DURATION_MS = 15 * 60 * 1000;
 const MAX_REMOTE_NOTE_COUNT = 20000;
-const SKY_KEY_PATTERN = /^([0-9]+)Key([0-9]+)$/;
+// Sky Music Studio exports unprefixed keys (for example, "Key5").
+// Treat those as the first page while retaining support for the existing
+// page-prefixed sheet format (for example, "1Key5").
+const SKY_KEY_PATTERN = /^(?:([0-9]+))?Key([0-9]+)$/;
 const LOCAL_SEARCH_PLACEHOLDER = "Search the music sheet or author name...";
 const STORE_SEARCH_PLACEHOLDER = "Search title, artist, or transcriber...";
 
@@ -42,6 +45,10 @@ let loopTimer = null;
 let manualStop = false;
 let activeTab = "all-songs";
 let localSearchQuery = "";
+let bulkMode = false;
+let bulkPlaylistId = "";
+let bulkVisibleSheetKeys = [];
+const bulkSelectedSheetKeys = new Set();
 
 let currentPlayback = {
 	type: "none",
@@ -80,6 +87,7 @@ const contentContainer = document.querySelector(".content");
 const searchContainer = document.querySelector(".search-container");
 const searchBar = document.getElementById("search-bar");
 const addButton = document.querySelector(".btn-add");
+const scrollTopButton = document.getElementById("scroll-top-btn");
 
 document.addEventListener("click", (event) => {
 	const target = event.target.closest("a");
@@ -353,6 +361,159 @@ function removeSheetFromPlaylists(sheetKeyMap) {
 	if (changed) savePlaylists();
 }
 
+function setBulkMode(enabled) {
+	bulkMode = Boolean(enabled);
+	if (!bulkMode) {
+		bulkSelectedSheetKeys.clear();
+		bulkPlaylistId = "";
+	} else if (!playlists.some((playlist) => playlist.id === bulkPlaylistId)) {
+		bulkPlaylistId = playlists[0]?.id || "";
+	}
+	closeLocalActionMenus();
+	renderContent();
+}
+
+function toggleBulkSheet(sheetKeyMap) {
+	if (!sheetKeyMap) return;
+	if (bulkSelectedSheetKeys.has(sheetKeyMap)) bulkSelectedSheetKeys.delete(sheetKeyMap);
+	else bulkSelectedSheetKeys.add(sheetKeyMap);
+	renderContent();
+}
+
+function toggleAllVisibleSheets() {
+	const allSelected = bulkVisibleSheetKeys.length > 0
+		&& bulkVisibleSheetKeys.every((key) => bulkSelectedSheetKeys.has(key));
+	for (const key of bulkVisibleSheetKeys) {
+		if (allSelected) bulkSelectedSheetKeys.delete(key);
+		else bulkSelectedSheetKeys.add(key);
+	}
+	renderContent();
+}
+
+function addBulkSelectionToPlaylist() {
+	const playlist = playlists.find((item) => item.id === bulkPlaylistId);
+	if (!playlist) {
+		notie.alert({ type: 2, text: "Create or select a playlist first." });
+		return;
+	}
+	const selectedSheets = listSheet.filter((sheet) => bulkSelectedSheetKeys.has(sheet.keyMap));
+	if (!selectedSheets.length) return;
+
+	let added = 0;
+	for (const sheet of selectedSheets) {
+		if (playlist.sheetKeys.includes(sheet.keyMap)) continue;
+		playlist.sheetKeys.push(sheet.keyMap);
+		added++;
+	}
+	if (added > 0) savePlaylists();
+	notie.alert({
+		type: added > 0 ? 1 : 2,
+		text: added > 0
+			? `Added ${added} sheet${added === 1 ? "" : "s"} to ${playlist.name}.`
+			: `All selected sheets are already in ${playlist.name}.`,
+	});
+}
+
+function deleteBulkSelection() {
+	const selectedSheets = listSheet.filter((sheet) => bulkSelectedSheetKeys.has(sheet.keyMap));
+	if (!selectedSheets.length) return;
+	if (!window.confirm(`Delete ${selectedSheets.length} selected sheet${selectedSheets.length === 1 ? "" : "s"}? This cannot be undone.`)) return;
+
+	const deletedKeys = new Set();
+	const failedNames = [];
+	for (const sheet of selectedSheets) {
+		try {
+			const sheetPath = path.resolve(dataDirectory, sheet.keyMap);
+			const relativePath = path.relative(dataDirectory, sheetPath);
+			if (!relativePath || relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+				throw new Error("Invalid sheet file path.");
+			}
+			if (fs.existsSync(sheetPath)) fs.unlinkSync(sheetPath);
+			deletedKeys.add(sheet.keyMap);
+		} catch (error) {
+			console.error("Failed to delete sheet:", sheet.name, error);
+			failedNames.push(sheet.name || sheet.keyMap);
+		}
+	}
+	if (!deletedKeys.size) {
+		notie.alert({ type: 3, text: `Unable to delete the selected sheets. ${failedNames[0] || ""}`.trim() });
+		return;
+	}
+
+	const previousPlaybackKey = currentPlayback.type === "local" ? currentPlayback.sheet?.keyMap : null;
+	const nextSheets = [];
+	const nextKeys = [];
+	const nextPayloads = [];
+	listSheet.forEach((sheet, index) => {
+		if (deletedKeys.has(sheet.keyMap)) return;
+		nextSheets.push(sheet);
+		nextKeys.push(listKeys[index]);
+		nextPayloads.push(listSheetPayloads[index]);
+	});
+	listSheet = nextSheets;
+	listKeys = nextKeys;
+	listSheetPayloads = nextPayloads;
+
+	for (const playlist of playlists) {
+		playlist.sheetKeys = playlist.sheetKeys.filter((key) => !deletedKeys.has(key));
+	}
+	savePlaylists();
+	fs.writeFileSync(listSheetPath, JSON.stringify(listSheet, null, 4), { mode: 0o666 });
+
+	bulkSelectedSheetKeys.clear();
+	bulkMode = false;
+	bulkPlaylistId = "";
+	if (previousPlaybackKey && deletedKeys.has(previousPlaybackKey)) {
+		if (listSheet.length) void selectLocalSheet(0, { trackRecentPlay: false });
+		else {
+			currentPlayback = { type: "none", index: null, keyMap: null, notes: null, sheet: null };
+			clearFooter();
+		}
+	} else if (previousPlaybackKey) {
+		currentPlayback.index = listSheet.findIndex((sheet) => sheet.keyMap === previousPlaybackKey);
+	}
+	renderContent();
+
+	notie.alert({
+		type: failedNames.length ? 2 : 1,
+		text: failedNames.length
+			? `Deleted ${deletedKeys.size} sheet(s). Failed: ${failedNames.join(", ")}.`
+			: `Deleted ${deletedKeys.size} sheet${deletedKeys.size === 1 ? "" : "s"}.`,
+	});
+}
+
+function renderBulkToolbar() {
+	const selectedCount = bulkSelectedSheetKeys.size;
+	const allVisibleSelected = bulkVisibleSheetKeys.length > 0
+		&& bulkVisibleSheetKeys.every((key) => bulkSelectedSheetKeys.has(key));
+	const playlistOptions = playlists.map((playlist) =>
+		`<option value="${escapeAttribute(playlist.id)}" ${playlist.id === bulkPlaylistId ? "selected" : ""}>${escapeHtml(playlist.name)}</option>`
+	).join("");
+
+	return `<div class="bulk-toolbar">
+		<div class="bulk-selection-control">
+			<button type="button" class="bulk-select-all" data-bulk-action="select-visible" aria-pressed="${allVisibleSelected}" aria-label="${allVisibleSelected ? "Clear visible selection" : "Select all visible sheets"}" title="${allVisibleSelected ? "Clear visible selection" : "Select all visible sheets"}" ${bulkVisibleSheetKeys.length ? "" : "disabled"}>
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-square" viewBox="0 0 16 16" aria-hidden="true"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>${allVisibleSelected ? '<path d="M10.97 4.97a.75.75 0 0 1 1.071 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/>' : ""}</svg>
+			</button>
+			<span class="bulk-selection-summary"><strong>${selectedCount}</strong> selected</span>
+		</div>
+		<div class="bulk-toolbar-actions">
+			<select class="bulk-playlist-select" data-bulk-playlist-select aria-label="Target playlist" ${playlists.length ? "" : "disabled"}>
+				${playlistOptions || `<option value="">No playlists</option>`}
+			</select>
+			<button type="button" class="bulk-btn primary" data-bulk-action="add-playlist" ${selectedCount && playlists.length ? "" : "disabled"}>Add to playlist</button>
+			<button type="button" class="bulk-btn danger" data-bulk-action="delete" ${selectedCount ? "" : "disabled"}>Delete</button>
+			<button type="button" class="bulk-btn" data-bulk-action="cancel">Done</button>
+		</div>
+	</div>`;
+}
+
+function updateScrollTopButton() {
+	if (!scrollTopButton) return;
+	const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+	scrollTopButton.hidden = scrollTop < 280;
+}
+
 function openPlaylistPicker(sheetIndex = null, renameId = "") {
 	if (sheetIndex !== null && !listSheet[sheetIndex]) return;
 	playlistPickerSheetIndex = sheetIndex;
@@ -396,19 +557,19 @@ function renderPlaylistPicker() {
 	}
 	list.innerHTML = playlists.map((playlist) => {
 		const added = playlist.sheetKeys.includes(sheet.keyMap);
-		return `<div class="playlist-picker-row"><span>${escapeHtml(playlist.name)}</span><button class="store-action-btn" data-playlist-modal-action="add" data-playlist-id="${escapeAttribute(playlist.id)}" ${added ? "disabled" : ""}>${added ? "Added" : "Add"}</button></div>`;
+		return `<div class="playlist-picker-row"><span>${escapeHtml(playlist.name)}</span><button class="store-action-btn primary" data-playlist-modal-action="add" data-playlist-id="${escapeAttribute(playlist.id)}" ${added ? "disabled" : ""}>${added ? "Added" : "Add"}</button></div>`;
 	}).join("");
 }
 
 function renderPlaylists() {
 	const activePlaylist = getActivePlaylist();
 	if (activePlaylist) {
-		contentContainer.innerHTML = `<section class="playlist-browser"><div class="playlist-toolbar playlist-detail-toolbar"><button class="store-toolbar-btn" data-playlist-action="back">Back</button><div class="playlist-detail-heading"><h2 class="playlist-title">${escapeHtml(activePlaylist.name)}</h2><p class="playlist-subtitle">${getPlaylistSheetIndices(activePlaylist).length} sheets</p></div><span class="playlist-detail-spacer" aria-hidden="true"></span></div></section>`;
+		contentContainer.innerHTML = `<section class="playlist-browser"><div class="playlist-toolbar playlist-detail-toolbar"><button class="store-toolbar-btn playlist-back-btn" data-playlist-action="back" aria-label="Back" title="Back"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/></svg></button><div class="playlist-detail-heading"><h2 class="playlist-title">${escapeHtml(activePlaylist.name)}</h2><p class="playlist-subtitle">${getPlaylistSheetIndices(activePlaylist).length} sheets</p></div><span class="playlist-detail-spacer" aria-hidden="true"></span></div></section>`;
 		renderLocalLibrary(getPlaylistSheetIndices(activePlaylist), { preserveContent: true });
 		return;
 	}
 
-	const cards = playlists.map((playlist) => `<article class="playlist-card" data-playlist-action="open" data-playlist-id="${escapeAttribute(playlist.id)}"><div><h3>${escapeHtml(playlist.name)}</h3><p>${getPlaylistSheetIndices(playlist).length} sheets</p></div><div class="playlist-card-actions"><button class="playlist-icon-btn" data-playlist-action="rename" data-playlist-id="${escapeAttribute(playlist.id)}" aria-label="Rename playlist">Rename</button><button class="playlist-icon-btn danger" data-playlist-action="delete" data-playlist-id="${escapeAttribute(playlist.id)}" aria-label="Delete playlist">Delete</button></div></article>`).join("");
+	const cards = playlists.map((playlist) => `<article class="playlist-card" data-playlist-action="open" data-playlist-id="${escapeAttribute(playlist.id)}"><div class="playlist-card-info"><h3>${escapeHtml(playlist.name)}</h3><p>${getPlaylistSheetIndices(playlist).length} sheets</p></div><div class="playlist-card-actions"><div class="local-actions-menu"><button type="button" class="local-actions-toggle" aria-label="Playlist actions"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" class="bi bi-three-dots-vertical local-actions-more-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/></svg><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x local-actions-close-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/></svg></button><div class="local-actions-popover"><button type="button" class="local-action-item" data-playlist-action="rename" data-playlist-id="${escapeAttribute(playlist.id)}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" class="bi bi-pencil" viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325"/></svg><span>Rename</span></button><button type="button" class="local-action-item danger" data-playlist-action="delete" data-playlist-id="${escapeAttribute(playlist.id)}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" class="bi bi-trash3" viewBox="0 0 16 16" fill="currentColor"><path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H2.506a.58.58 0 0 0-.01 0H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1h-.995a.59.59 0 0 0-.01 0zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47ZM8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/></svg><span>Delete</span></button></div></div></div></article>`).join("");
 	contentContainer.innerHTML = `<section class="playlist-browser"><div class="playlist-toolbar"><div><h2 class="playlist-title">Playlists</h2></div><button class="store-toolbar-btn" data-playlist-action="create">New Playlist</button></div><div class="playlist-card-list">${cards || `<div class="store-state-card"><div class="store-state-title">No playlists yet.</div><div class="store-state-copy">Create a playlist, then add sheets from your library.</div></div>`}</div></section>`;
 }
 
@@ -449,6 +610,35 @@ function handlePlaylistAction(actionButton) {
 }
 function setupContentEvents() {
 	contentContainer.addEventListener("click", async (event) => {
+		const bulkSelect = event.target.closest("[data-bulk-select]");
+		if (bulkSelect) {
+			event.preventDefault();
+			toggleBulkSheet(bulkSelect.getAttribute("data-bulk-select"));
+			return;
+		}
+
+		const bulkAction = event.target.closest("[data-bulk-action]");
+		if (bulkAction) {
+			event.preventDefault();
+			switch (bulkAction.getAttribute("data-bulk-action")) {
+				case "toggle":
+				case "cancel":
+					setBulkMode(!bulkMode);
+					return;
+				case "select-visible":
+					toggleAllVisibleSheets();
+					return;
+				case "add-playlist":
+					addBulkSelectionToPlaylist();
+					return;
+				case "delete":
+					deleteBulkSelection();
+					return;
+				default:
+					return;
+			}
+		}
+
 		const clickedActionMenu = event.target.closest(".local-actions-menu");
 		const actionToggle = event.target.closest(".local-actions-toggle");
 		if (actionToggle) {
@@ -464,6 +654,12 @@ function setupContentEvents() {
 
 		const playlistAction = event.target.closest("[data-playlist-action]");
 		if (playlistAction) {
+			if (clickedActionMenu) {
+				if (playlistAction === clickedActionMenu.closest(".playlist-card")) {
+					return;
+				}
+				closeLocalActionMenus();
+			}
 			event.preventDefault();
 			handlePlaylistAction(playlistAction);
 			return;
@@ -557,13 +753,37 @@ function setupContentEvents() {
 		if (localCard) {
 			const index = Number(localCard.getAttribute("data-index"));
 			if (Number.isInteger(index) && index >= 0 && index < listSheet.length) {
+				if (bulkMode) {
+					toggleBulkSheet(listSheet[index].keyMap);
+					return;
+				}
 				void selectLocalSheet(index, { trackRecentPlay: true });
 			}
 		}
 	});
 
+	contentContainer.addEventListener("change", (event) => {
+		const select = event.target.closest("[data-bulk-playlist-select]");
+		if (!select) return;
+		bulkPlaylistId = select.value;
+	});
+
+	scrollTopButton?.addEventListener("click", () => {
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	});
+
+	document.addEventListener("click", (event) => {
+		if (!event.target.closest(".local-actions-menu")) {
+			closeLocalActionMenus();
+		}
+	});
+
 	window.addEventListener("resize", () => closeLocalActionMenus());
-	window.addEventListener("scroll", () => closeLocalActionMenus(), true);
+	window.addEventListener("scroll", () => {
+		closeLocalActionMenus();
+		updateScrollTopButton();
+	}, true);
+	updateScrollTopButton();
 }
 
 function closeLocalActionMenus(exceptMenu = null) {
@@ -572,7 +792,7 @@ function closeLocalActionMenus(exceptMenu = null) {
 		menu.classList.remove("open", "open-up", "open-down");
 		const popover = menu.querySelector(".local-actions-popover");
 		if (popover) popover.style.removeProperty("--popover-shift");
-		const card = menu.closest(".card");
+		const card = menu.closest(".card, .playlist-card");
 		if (card) card.classList.remove("local-action-card-open");
 	});
 }
@@ -583,7 +803,7 @@ function openLocalActionMenu(menu) {
 	if (!popover || !toggle) return;
 
 	menu.classList.add("open");
-	const card = menu.closest(".card");
+	const card = menu.closest(".card, .playlist-card");
 	if (card) card.classList.add("local-action-card-open");
 
 	popover.style.setProperty("--popover-shift", "0px");
@@ -804,6 +1024,11 @@ function setActiveTab(tabType) {
 		storeState.query = searchBar.value.trim();
 	}
 
+	if (activeTab !== tabType && bulkMode) {
+		bulkMode = false;
+		bulkPlaylistId = "";
+		bulkSelectedSheetKeys.clear();
+	}
 	activeTab = tabType;
 	document.querySelectorAll(".nav-tab").forEach((tab) => {
 		tab.classList.toggle("active", tab.getAttribute("data-tab") === tabType);
@@ -843,28 +1068,47 @@ function renderLocalLibrary(sheetIndexes = null, { preserveContent = false } = {
 	const favorites = getFavorites();
 	const recentPlays = getRecentPlays();
 	const fragment = document.createDocumentFragment();
+	const availableSheetKeys = new Set(listSheet.map((sheet) => sheet.keyMap));
+	for (const selectedKey of bulkSelectedSheetKeys) {
+		if (!availableSheetKeys.has(selectedKey)) bulkSelectedSheetKeys.delete(selectedKey);
+	}
+	const indexes = Array.isArray(sheetIndexes) ? sheetIndexes : listSheet.map((_, index) => index);
+	const visibleIndexes = indexes.filter((index) => {
+		const sheetData = listSheet[index];
+		return sheetData && shouldShowLocalSheet(sheetData, searchTerm, favorites, recentPlays);
+	});
+	bulkVisibleSheetKeys = visibleIndexes.map((index) => listSheet[index].keyMap);
 
 	if (!preserveContent) contentContainer.innerHTML = "";
 	if (activeTab !== PLAYLISTS_TAB) {
 		const header = document.createElement("div");
 		header.className = "library-header";
-		header.innerHTML = `<h2>${getLocalTabTitle()}</h2>`;
+		header.innerHTML = `<h2>${getLocalTabTitle()}</h2><button type="button" class="bulk-mode-toggle ${bulkMode ? "active" : ""}" data-bulk-action="toggle">${bulkMode ? "Exit multi-select" : "Multi-select"}</button>`;
 		contentContainer.appendChild(header);
+	} else {
+		const entry = document.createElement("div");
+		entry.className = "bulk-entry-row";
+		entry.innerHTML = `<button type="button" class="bulk-mode-toggle ${bulkMode ? "active" : ""}" data-bulk-action="toggle">${bulkMode ? "Exit multi-select" : "Multi-select"}</button>`;
+		contentContainer.appendChild(entry);
+	}
+	if (bulkMode) {
+		const toolbar = document.createElement("div");
+		toolbar.innerHTML = renderBulkToolbar();
+		contentContainer.appendChild(toolbar.firstElementChild);
 	}
 
-	const indexes = Array.isArray(sheetIndexes) ? sheetIndexes : listSheet.map((_, index) => index);
-	indexes.forEach((index) => {
+	visibleIndexes.forEach((index) => {
 		const sheetData = listSheet[index];
-		if (!sheetData) return;
-		if (!shouldShowLocalSheet(sheetData, searchTerm, favorites, recentPlays)) return;
 		const activePlaylist = getActivePlaylist();
 		const playlistSheetPosition = activePlaylist ? activePlaylist.sheetKeys.indexOf(sheetData.keyMap) : -1;
 		const canMoveInPlaylist = activeTab === PLAYLISTS_TAB && activePlaylistId && playlistSheetPosition !== -1;
+		const isBulkSelected = bulkSelectedSheetKeys.has(sheetData.keyMap);
 		const card = document.createElement("div");
-		card.className = "card";
+		card.className = `card${isBulkSelected ? " bulk-selected" : ""}${bulkMode ? " bulk-selectable" : ""}`;
 		card.setAttribute("data-local-card", "true");
 		card.setAttribute("data-index", String(index));
 		card.innerHTML = `
+			${bulkMode ? `<button type="button" class="bulk-sheet-check" data-bulk-select="${escapeAttribute(sheetData.keyMap)}" aria-pressed="${isBulkSelected}" aria-label="${isBulkSelected ? "Deselect" : "Select"} ${escapeAttribute(sheetData.name)}"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-square" viewBox="0 0 16 16" aria-hidden="true"><path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>${isBulkSelected ? '<path d="M10.97 4.97a.75.75 0 0 1 1.071 1.05l-3.992 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425z"/>' : ""}</svg></button>` : ""}
 			<div class="sheet-info" sheetID="${sheetData.keyMap.split(".json")[0]}">
 				<div class="sheet-title-row">
 					<h3 class="name-sheet">${escapeHtml(sheetData.name)}</h3>
@@ -888,7 +1132,7 @@ function renderLocalLibrary(sheetIndexes = null, { preserveContent = false } = {
 					</div>
 				</div>
 			</div>
-			<div class="menu-btn local-menu-btn">
+			<div class="menu-btn local-menu-btn" ${bulkMode ? "hidden" : ""}>
 				<div class="local-actions-menu">
 					<button type="button" class="local-actions-toggle" aria-label="Sheet actions">
 						<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" class="bi bi-three-dots-vertical local-actions-more-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0"/></svg>
@@ -1044,8 +1288,8 @@ function renderStoreCardMarkup(item) {
 					${statusCopy}
 				</div>
 				<div class="store-card-actions">
-					<button class="store-action-btn primary" data-store-action="play" data-sheet-id="${item.id}" ${disabledPlay ? "disabled" : ""}>${isPlayingItem ? "Preparing..." : "Play"}</button>
-					<button class="store-action-btn" data-store-action="save" data-sheet-id="${item.id}" ${disabledSave ? "disabled" : ""}>${isSavingItem ? "Saving..." : "Save to Library"}</button>
+					<button class="store-action-btn play" data-store-action="play" data-sheet-id="${item.id}" ${disabledPlay ? "disabled" : ""}><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-play-fill" viewBox="0 0 16 16"><path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/></svg><span>${isPlayingItem ? "Preparing..." : "Play"}</span></button>
+					<button class="store-action-btn" data-store-action="save" data-sheet-id="${item.id}" ${disabledSave ? "disabled" : ""}><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-music-note-list" viewBox="0 0 16 16"><path d="M12 13c0 1.105-1.12 2-2.5 2S7 14.105 7 13s1.12-2 2.5-2 2.5.895 2.5 2"/><path fill-rule="evenodd" d="M12 3v10h-1V3z"/><path d="M11 2.82a1 1 0 0 1 .804-.98l3-.6A1 1 0 0 1 16 2.22V4l-5 1z"/><path fill-rule="evenodd" d="M0 11.5a.5.5 0 0 1 .5-.5H4a.5.5 0 0 1 0 1H.5a.5.5 0 0 1-.5-.5m0-4A.5.5 0 0 1 .5 7H8a.5.5 0 0 1 0 1H.5a.5.5 0 0 1-.5-.5m0-4A.5.5 0 0 1 .5 3H8a.5.5 0 0 1 0 1H.5a.5.5 0 0 1-.5-.5"/></svg><span>${isSavingItem ? "Saving..." : "Save Sheet"}</span></button>
 				</div>
 			</div>
 		</article>
@@ -1511,68 +1755,32 @@ function getRecentPlays() {
 document.getElementsByClassName("btn-add")[0].addEventListener("change", (event) => {
 	const { files } = event.target;
 	let done = 0;
+	const failures = [];
 
 	for (let i = 0; i < files.length; i++) {
 		const file = files[i];
-		const ext = path.extname(file.path).toLowerCase();
-		let json = null;
-
-		if (ext === ".mid" || ext === ".midi") {
-			try {
-				const fileArray = fs.readFileSync(file.path);
-				const midi = MidiParser.parse(fileArray);
-				json = parseMidiToSkyFormat(midi, path.basename(file.path, ext));
-			} catch (error) {
-				console.error("Failed to parse MIDI:", error);
-				if (files.length === 1) {
-					notie.alert({ type: 3, text: "File Sheet is not in the format. Please check again!" });
-				}
-				continue;
-			}
-		} else {
-			const utf8Text = fs.readFileSync(file.path, { encoding: "utf8" });
-			const typeDetect = utf8Text[0] !== "[" && utf8Text[0] !== "<" && utf8Text[0] !== "{"
-				? "utf16le"
-				: "utf8";
-			const text = decUTF16toUTF8(fs.readFileSync(file.path, { encoding: typeDetect }));
-
-			try {
-				if (text[0] === "[" || text[0] === "{") {
-					json = parseJsonSheetText(text);
-				} else if (text.startsWith("<DontCopyThisLine>") || text.match(/([A-C][1-5])/)) {
-					json = parseABCToSkyFormat(text, path.basename(file.path, ext));
-				} else {
-					throw new Error("Unsupported sheet format.");
-				}
-			} catch (error) {
-				if (files.length === 1) {
-					notie.alert({ type: 3, text: "File Sheet is not in the format. Please check again!" });
-				}
-				continue;
-			}
-		}
-
-		if (json.isEncrypted === true || (Array.isArray(json.songNotes) && typeof json.songNotes[0] === "number")) {
-			try {
-				json.songNotes = decodeNums(json.songNotes);
-				json.isEncrypted = false;
-			} catch (decryptErr) {
-				console.error("Failed to decrypt sheet:", json.name, decryptErr);
-				if (files.length === 1) {
-					notie.alert({ type: 3, text: "Failed to decrypt the sheet. It might be corrupted." });
-				}
-				continue;
-			}
+		let decoded;
+		try {
+			decoded = SheetCodec.parse({
+				content: fs.readFileSync(file.path),
+				fileName: path.basename(file.path),
+			});
+		} catch (error) {
+			console.error("Failed to import sheet:", file.name, error);
+			failures.push({ fileName: file.name, message: getSheetImportErrorMessage(error) });
+			continue;
 		}
 
 		let result;
 		try {
-			result = encSheet(json);
+			const stored = SheetCodec.loadStored(decoded.storage, { bitsPerPage: decoded.sheet.bitsPerPage });
+			result = encSheet(decoded.sheet, {}, {
+				...stored,
+				bitsPerPage: decoded.sheet.bitsPerPage,
+			});
 		} catch (error) {
 			console.error(error);
-			if (files.length === 1) {
-				notie.alert({ type: 3, text: "File Sheet is not in the format. Please check again!" });
-			}
+			failures.push({ fileName: file.name, message: getSheetImportErrorMessage(error) });
 			continue;
 		}
 
@@ -1581,9 +1789,7 @@ document.getElementsByClassName("btn-add")[0].addEventListener("change", (event)
 			continue;
 		}
 
-		if (files.length === 1) {
-			notie.alert({ type: 3, text: result.msg });
-		}
+		failures.push({ fileName: file.name, message: result.msg });
 	}
 
 	renderContent();
@@ -1591,83 +1797,27 @@ document.getElementsByClassName("btn-add")[0].addEventListener("change", (event)
 	if (files.length > 1) {
 		notie.alert({
 			type: done > 0 ? 1 : 3,
-			text: `Complete import! Success: ${done}. Error: ${files.length - done}`,
+			text: failures.length
+				? `Import complete. Success: ${done}. Failed: ${failures.length}. ${failures[0].fileName}: ${failures[0].message}`
+				: `Import complete. Success: ${done}.`,
 		});
+	} else if (failures.length) {
+		notie.alert({ type: 3, text: failures[0].message });
 	} else if (done > 0) {
-		notie.alert({ type: 1, text: "Complete import!" });
+		notie.alert({ type: 1, text: "Sheet imported successfully." });
 	}
 
 	event.target.value = "";
 });
 
-function parseJsonSheetText(text) {
-	const normalized = typeof text === "string" ? text.trim().replace(/^\uFEFF/, "") : "";
-	if (!normalized) throw new Error("Invalid sheet JSON.");
-
-	const candidates = [normalized];
-	const unwrapped = normalized.replace(/^\(\s*/, "").replace(/\s*\);?\s*$/, "");
-	if (unwrapped !== normalized) candidates.push(unwrapped);
-
-	for (const candidate of candidates) {
-		try {
-			return unwrapParsedSheet(JSON.parse(candidate));
-		} catch (_) {
-			// Try the next safe candidate.
-		}
-	}
-
-	return unwrapParsedSheet(JSON.parse(toRelaxedJson(unwrapped)));
+function getSheetImportErrorMessage(error) {
+	if (typeof error?.userMessage === "string" && error.userMessage.trim()) return error.userMessage.trim();
+	if (typeof error?.message === "string" && error.message.trim()) return error.message.trim();
+	return "The selected sheet could not be imported.";
 }
 
 function parseStoredSheetPayload(parsed, bitsPerPage) {
-	if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-		throw new Error("Invalid sheet payload.");
-	}
-
-	const rawKeyMap = parsed.keyMap && typeof parsed.keyMap === "object" ? parsed.keyMap : parsed;
-	const compatibleBitsPerPage = Array.isArray(parsed.songNotes)
-		? resolveCompatibleBitsPerPage(parsed.songNotes, bitsPerPage)
-		: resolveBitsPerPage(bitsPerPage);
-	const keyMap = normalizeStoredKeyMap(rawKeyMap);
-	const normalizedSongNotes = Array.isArray(parsed.songNotes)
-		? normalizeSongNotes(parsed.songNotes, compatibleBitsPerPage)
-		: null;
-	const playbackNotes = normalizedSongNotes
-		? buildPlaybackNotesFromSongNotes(normalizedSongNotes, compatibleBitsPerPage)
-		: null;
-
-	return {
-		keyMap,
-		songNotes: normalizedSongNotes,
-		playbackNotes,
-		hasHoldNotes: hasSongNotesWithHold(normalizedSongNotes),
-	};
-}
-
-function normalizeStoredKeyMap(rawKeyMap) {
-	if (!rawKeyMap || typeof rawKeyMap !== "object" || Array.isArray(rawKeyMap)) {
-		throw new Error("Invalid keymap payload.");
-	}
-
-	const normalized = {};
-	const timestamps = Object.keys(rawKeyMap)
-		.map((time) => Number(time))
-		.filter((time) => Number.isFinite(time) && time >= 0)
-		.sort((a, b) => a - b);
-
-	for (const time of timestamps) {
-		const stepKeys = Array.isArray(rawKeyMap[time]) ? rawKeyMap[time] : [];
-		const dedupe = new Set();
-		normalized[time] = [];
-		for (const key of stepKeys) {
-			const safeKey = typeof key === "string" ? key.trim() : "";
-			if (!safeKey || !keys.includes(safeKey) || dedupe.has(safeKey)) continue;
-			dedupe.add(safeKey);
-			normalized[time].push(safeKey);
-		}
-	}
-
-	return normalized;
+	return SheetCodec.loadStored(parsed, { bitsPerPage });
 }
 
 function resolveBitsPerPage(bitsPerPage) {
@@ -1678,77 +1828,8 @@ function resolveBitsPerPage(bitsPerPage) {
 	return 16;
 }
 
-function resolveCompatibleBitsPerPage(songNotes, bitsPerPage) {
-	const safeBitsPerPage = resolveBitsPerPage(bitsPerPage);
-	const maxKeyIndex = getMaxSongNoteKeyIndex(songNotes);
-	if (maxKeyIndex === null || maxKeyIndex < safeBitsPerPage) {
-		return safeBitsPerPage;
-	}
-	if (maxKeyIndex <= 14) {
-		return maxKeyIndex + 1;
-	}
-	return safeBitsPerPage;
-}
-
-function getMaxSongNoteKeyIndex(songNotes) {
-	if (!Array.isArray(songNotes)) return null;
-	let maxKeyIndex = -1;
-
-	for (const note of songNotes) {
-		const key = typeof note?.key === "string" ? note.key.trim() : "";
-		const match = SKY_KEY_PATTERN.exec(key);
-		if (!match) continue;
-
-		const keyIndex = Number(match[2]);
-		if (Number.isInteger(keyIndex) && keyIndex > maxKeyIndex) {
-			maxKeyIndex = keyIndex;
-		}
-	}
-
-	return maxKeyIndex >= 0 ? maxKeyIndex : null;
-}
-
 function hasSongNotesWithHold(songNotes) {
 	return Array.isArray(songNotes) && songNotes.some((note) => Number(note?.hold) > 0);
-}
-
-function normalizeSongNotes(songNotes, bitsPerPage) {
-	if (!Array.isArray(songNotes) || !songNotes.length) {
-		throw new Error("The sheet file is not valid, please try again with another file!");
-	}
-
-	const safeBitsPerPage = resolveBitsPerPage(bitsPerPage);
-	const normalized = [];
-
-	for (const note of songNotes) {
-		const time = Number(note?.time);
-		if (!Number.isFinite(time) || time < 0 || time > MAX_REMOTE_DURATION_MS) {
-			throw new Error("The sheet file is not valid, please try again with another file!");
-		}
-
-		const key = typeof note?.key === "string" ? note.key.trim() : "";
-		if (!mapSongKeyToAutoPianoKey(key, safeBitsPerPage)) {
-			throw new Error("The sheet file is not valid, please try again with another file!");
-		}
-
-		const normalizedNote = {
-			time: Math.trunc(time),
-			key,
-		};
-
-		const hold = Number(note?.hold);
-		if (Number.isFinite(hold) && hold > 0) {
-			normalizedNote.hold = Math.trunc(hold);
-		}
-
-		normalized.push(normalizedNote);
-		if (normalized.length > MAX_REMOTE_NOTE_COUNT) {
-			throw new Error("The sheet file is not valid, please try again with another file!");
-		}
-	}
-
-	normalized.sort((a, b) => a.time - b.time || a.key.localeCompare(b.key));
-	return normalized;
 }
 
 function mapSongKeyToAutoPianoKey(songKey, bitsPerPage) {
@@ -1835,177 +1916,7 @@ function buildKeyMapFromPlaybackNotes(playbackNotes) {
 	return normalized;
 }
 
-function prepareSheetForStorage(json) {
-	const compatibleBitsPerPage = resolveCompatibleBitsPerPage(json.songNotes, json.bitsPerPage);
-	const normalizedSongNotes = normalizeSongNotes(json.songNotes, compatibleBitsPerPage);
-	const playbackNotes = buildPlaybackNotesFromSongNotes(normalizedSongNotes, compatibleBitsPerPage);
-	const keyMap = buildKeyMapFromPlaybackNotes(playbackNotes);
-
-	return {
-		songNotes: normalizedSongNotes,
-		playbackNotes,
-		keyMap,
-		bitsPerPage: compatibleBitsPerPage,
-		hasHoldNotes: hasSongNotesWithHold(normalizedSongNotes),
-	};
-}
-
-function unwrapParsedSheet(parsed) {
-	if (Array.isArray(parsed)) {
-		if (!parsed.length) throw new Error("Empty sheet array.");
-		return parsed[0];
-	}
-	if (parsed && typeof parsed === "object") {
-		return parsed;
-	}
-	throw new Error("Invalid sheet JSON.");
-}
-
-function toRelaxedJson(value) {
-	return value
-		.replace(/([{,]\s*)([A-Za-z_$][\w$]*)(\s*:)/g, '$1"$2"$3')
-		.replace(/'([^'\\]*(?:\\.[^'\\]*)*)'/g, (_, inner) => JSON.stringify(unescapeSingleQuotedString(inner)))
-		.replace(/,\s*([}\]])/g, "$1");
-}
-
-function unescapeSingleQuotedString(value) {
-	return value
-		.replace(/\\\\/g, "\\")
-		.replace(/\\'/g, "'")
-		.replace(/\\"/g, '"');
-}
-
-function parseABCToSkyFormat(text, fileName) {
-	const lines = text.split("\n");
-	const meta = lines[0].split(" ");
-
-	let bpm;
-	let pitch;
-	let bitsPerPage;
-	let author;
-	let transcribedBy;
-	const hasDontCopy = meta[0] === "<DontCopyThisLine>";
-
-	if (hasDontCopy) {
-		bpm = parseInt(meta[1], 10) || 240;
-		pitch = parseInt(meta[2], 10) || 0;
-		bitsPerPage = parseInt(meta[3], 10) || 16;
-		author = meta[4] || "Unknown";
-		transcribedBy = meta[5] || "Unknown";
-	} else {
-		bpm = parseInt(meta[0], 10) || 240;
-		pitch = parseInt(meta[1], 10) || 0;
-		bitsPerPage = parseInt(meta[2], 10) || 16;
-		author = meta[3] || "Unknown";
-		transcribedBy = meta[4] || "Unknown";
-	}
-
-	const step = Math.floor(60000 / bpm);
-	let time = 0;
-	const notes = [];
-
-	for (let i = 1; i < lines.length; i++) {
-		const tokens = lines[i].trim().split(/\s+/);
-		for (const token of tokens) {
-			if (token !== "." && token !== "") {
-				const matches = token.match(/([A-C][1-5])/g);
-				if (matches) {
-					for (const match of matches) {
-						const group = match.charCodeAt(0) - 65;
-						const num = parseInt(match[1], 10) - 1;
-						const index = group * 5 + num;
-						notes.push({ time, key: `1Key${index}` });
-					}
-				}
-			}
-			time += step;
-		}
-	}
-
-	return {
-		name: fileName,
-		author,
-		transcribedBy,
-		isComposed: true,
-		bpm,
-		bitsPerPage,
-		pitchLevel: pitch,
-		isEncrypted: false,
-		songNotes: notes,
-	};
-}
-
-function parseMidiToSkyFormat(midi, fileName) {
-	const midiToSky = {
-		60: 0, 62: 1, 64: 2, 65: 3, 67: 4, 69: 5, 71: 6,
-		72: 7, 74: 8, 76: 9, 77: 10, 79: 11, 81: 12, 83: 13,
-		84: 14,
-	};
-
-	let tempo = 500000;
-	let author = "Unknown";
-	let transcribedBy = "Unknown";
-	let songName = fileName;
-
-	midi.track.forEach((track) => {
-		if (!track.event) return;
-		track.event.forEach((event) => {
-			if (event.type === 255) {
-				if (event.metaType === 81) tempo = event.data;
-				if (event.metaType === 2 && typeof event.data === "string") {
-					author = event.data.split(",")[0] || author;
-					transcribedBy = event.data.split(",")[1] || transcribedBy;
-				}
-				if (event.metaType === 3 && typeof event.data === "string") songName = event.data;
-			}
-		});
-	});
-
-	const bpm = Math.round(60000000 / tempo);
-	const timeDivision = midi.timeDivision || 480;
-	const notes = [];
-
-	midi.track.forEach((track) => {
-		if (!track.event) return;
-		let absoluteTimeMs = 0;
-		track.event.forEach((event) => {
-			absoluteTimeMs += event.deltaTime * (tempo / 1000) / timeDivision;
-			if (event.type === 9 && event.data && event.data[1] > 0) {
-				const note = event.data[0];
-				let skyKey = midiToSky[note];
-				if (skyKey === undefined) {
-					let closest = 0;
-					let minDiff = 100;
-					for (const key in midiToSky) {
-						const diff = Math.abs(parseInt(key, 10) - note);
-						if (diff < minDiff) {
-							minDiff = diff;
-							closest = midiToSky[key];
-						}
-					}
-					skyKey = closest;
-				}
-				notes.push({ time: Math.round(absoluteTimeMs), key: `1Key${skyKey}` });
-			}
-		});
-	});
-
-	notes.sort((a, b) => a.time - b.time);
-
-	return {
-		name: songName,
-		author,
-		transcribedBy,
-		isComposed: true,
-		bpm,
-		bitsPerPage: 16,
-		pitchLevel: 0,
-		isEncrypted: false,
-		songNotes: notes,
-	};
-}
-
-function encSheet(json, extraMeta = {}) {
+function encSheet(json, extraMeta = {}, preparedSheet = null) {
 	if (json.isEncrypted) {
 		return { errCode: 1, msg: "Sheet has been encrypted!" };
 	}
@@ -2022,7 +1933,18 @@ function encSheet(json, extraMeta = {}) {
 		}
 	}
 
-	const prepared = prepareSheetForStorage(json);
+	let prepared = preparedSheet;
+	if (!prepared) {
+		const decoded = SheetCodec.parse({
+			content: JSON.stringify([json]),
+			fileName: `${json.name || "sheet"}.json`,
+		});
+		prepared = {
+			...SheetCodec.loadStored(decoded.storage, { bitsPerPage: decoded.sheet.bitsPerPage }),
+			bitsPerPage: decoded.sheet.bitsPerPage,
+		};
+		json = decoded.sheet;
+	}
 	const normalizedSheet = {
 		...json,
 		bitsPerPage: prepared.bitsPerPage,
@@ -2088,27 +2010,6 @@ function clearFooter() {
 	document.getElementById("process-bar").value = 0;
 	document.getElementsByClassName("live-time")[0].innerHTML = "00:00";
 	document.getElementsByClassName("total-time")[0].innerHTML = "00:00";
-}
-
-function decodeNums(nums) {
-	const MASK = Object.freeze([
-		16, 34, 56, 18, 62, 19, -25, 55,
-		15, 24, 30, 12, 30, 45, 39, -23,
-		-10, 15, 45, -18, 37, -2, -21, 65,
-		25, -4, -14, 43, 23, -4, -17, -17,
-	]);
-	if (!Array.isArray(nums)) throw new TypeError("decodeNums: input must be an array of numbers");
-	let value = "";
-	for (let i = 0; i < nums.length; i++) {
-		const n = nums[i] | 0;
-		value += String.fromCharCode(n + MASK[i % MASK.length]);
-	}
-	try {
-		return JSON.parse(value.replace(/(].*)/, "]"));
-	} catch (_) {
-		console.error("Failed to parse decrypted string:", value);
-		throw new Error("Decryption resulted in invalid JSON.");
-	}
 }
 
 function btnPrev() {
@@ -2225,21 +2126,6 @@ function sec2array(sec, arr) {
 	const result = { ...arr };
 	for (const time in arr) {
 		if (Number(time) < sec * 1000) delete result[time];
-	}
-	return result;
-}
-
-function decUTF16toUTF8(str) {
-	const chunkSize = 10000;
-	let result = "";
-	for (let i = 0; i < str.length; i += chunkSize) {
-		const chunk = str.slice(i, i + chunkSize);
-		const utf16leArray = new Uint16Array(chunk.length);
-		for (let j = 0; j < chunk.length; j++) {
-			utf16leArray[j] = chunk.charCodeAt(j);
-		}
-		const utf8Array = new TextEncoder().encode(String.fromCharCode.apply(null, utf16leArray));
-		result += new TextDecoder("utf-8").decode(utf8Array);
 	}
 	return result;
 }
